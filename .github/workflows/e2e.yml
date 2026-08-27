@@ -1,0 +1,253 @@
+name: E2E
+
+# Drives the packaged Volt POS desktop app through tauri-driver.
+#
+# This needs a Windows runner with a real desktop session and the WebView2
+# Runtime — it launches a GUI application and screenshots it. `windows-latest`
+# satisfies that; a Linux container never can (see docker/README.md).
+#
+# If the environment backends are not reachable from GitHub's network, move this
+# to a self-hosted Windows runner by changing `runs-on` below. Nothing else in
+# the workflow needs to change.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Which BUILD to drive. dev/staging/prod are three different .exe files.'
+        type: choice
+        required: true
+        default: dev
+        options:
+          - dev
+          - staging
+          - prod
+      lane:
+        description: 'Which specs to run. Ignored for prod, which is always smoke-only.'
+        type: choice
+        required: true
+        default: full
+        options:
+          - full
+          - smoke
+          - regression
+          - critical
+      app_build_run_id:
+        description: 'Run id of the app repo build that produced the installer to test. Leave empty on a self-hosted runner that already has it installed.'
+        type: string
+        required: false
+
+  schedule:
+    # 18:00 UTC = 01:00 ICT. Nightly regression against the dev build only —
+    # staging and prod are always triggered by a human against a specific build.
+    - cron: '0 18 * * *'
+
+# One session per environment, ever. tauri-driver proxies a single WebDriver
+# session, the app enforces single-instance, and both windows share one local
+# database — two concurrent runs would drive each other's app.
+# Queue rather than cancel: a half-killed run leaves orphaned processes behind.
+concurrency:
+  group: e2e-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    # Maps to a GitHub Environment so credentials are scoped per backend and
+    # `prod` can carry required reviewers.
+    environment: ${{ inputs.environment || 'dev' }}
+
+    env:
+      # A scheduled run has no inputs, so it is always the dev lane.
+      ENV: ${{ inputs.environment || 'dev' }}
+      APP_IDENTIFIER: VoltPOS
+      # Set per GitHub Environment when the runner already holds the build (a
+      # self-hosted rig). Left empty, the install step below resolves the
+      # default per-user NSIS location and exports it.
+      APP_PATH: ${{ vars.APP_PATH }}
+      MERCHANT_ID: ${{ vars.MERCHANT_ID }}
+      LOGIN_USERNAME: ${{ secrets.LOGIN_USERNAME }}
+      LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
+      OWNER_PASSCODE: ${{ secrets.OWNER_PASSCODE }}
+      STAFF_PASSCODE: ${{ secrets.STAFF_PASSCODE }}
+      # The updater treats every response as newer and its toast lands on top of
+      # real controls, so this is not optional in CI.
+      AUTO_DISMISS_UPDATER: 'true'
+      # The step overlay is for a human watching the machine; on CI it only
+      # obscures the failure screenshot.
+      SHOW_STEPS: 'false'
+      LOG_LEVEL: info
+
+    steps:
+      - name: Refuse a write-capable lane against production
+        shell: pwsh
+        run: |
+          Write-Host "ENV=$env:ENV  lane=${{ inputs.lane || 'full' }}"
+          if ($env:ENV -eq 'prod' -and '${{ inputs.lane || 'full' }}' -ne 'smoke') {
+            Write-Host "::notice::prod is smoke-only. The '${{ inputs.lane }}' selection is ignored and tests/smoke will run."
+          }
+          # ALLOW_PROD_WRITES is deliberately never set in this workflow. Without
+          # it `loadEnv()` forces WRITE_ALLOWED=false for prod and every
+          # data-creating flow throws on `assertWritesAllowed()`.
+          if ($env:ALLOW_PROD_WRITES) {
+            Write-Host '::error::ALLOW_PROD_WRITES must never be set in CI.'
+            exit 1
+          }
+
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # tauri-driver is a Rust binary from crates.io — there is no npm package
+      # and no prebuilt download. Caching ~/.cargo turns a 3-4 minute compile
+      # into a few seconds.
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: cargo-${{ runner.os }}-tauri-driver-v1
+          restore-keys: |
+            cargo-${{ runner.os }}-tauri-driver-
+
+      # Installs tauri-driver and fetches the msedgedriver matching this
+      # runner's WebView2 Runtime. A version mismatch does not error — the
+      # session simply hangs — so this must not be skipped or hand-pinned.
+      - name: Install drivers
+        run: npm run setup:drivers
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # TODO — SUPPLY THE APPLICATION BUILD UNDER TEST
+      #
+      # Nothing below this point can work without an installed Volt POS
+      # executable COMPILED FOR THE SELECTED ENVIRONMENT. The upstream address
+      # is baked in at compile time by src-tauri/build.rs, so dev, staging and
+      # prod are three different .exe files and there is no runtime switch.
+      #
+      # The app repo's `Build Volt Pos` workflow (.github/workflows/release.yml)
+      # produces an artifact named `tauri-nsis` containing:
+      #     binary.exe      the NSIS installer (installMode: currentUser)
+      #     signature.sig   the updater signature
+      #     desc.txt        version, ENVIRONMENT, branch, build time
+      #
+      # Wire ONE of these up and delete the failing guard below:
+      #
+      #   A. Cross-repo artifact download, using the run id passed as an input:
+      #        gh run download ${{ inputs.app_build_run_id }} `
+      #           --repo <org>/<app-repo> --name tauri-nsis --dir "$env:RUNNER_TEMP\app"
+      #      (needs a token with `actions: read` on the app repo)
+      #
+      #   B. Whatever artifact store your release process publishes installers
+      #      to. Pass its address in as a repository/environment variable —
+      #      do not hardcode a host here.
+      #
+      #   C. A self-hosted Windows runner with the build already installed. Set
+      #      the `APP_PATH` environment variable for that GitHub Environment and
+      #      this step passes without downloading anything.
+      #
+      # Whichever you choose, KEEP THESE TWO CHECKS:
+      #   1. Read desc.txt and fail if its Environment does not match ENV. It is
+      #      the only artifact-side proof of which backend the installer talks to.
+      #   2. Install silently with `binary.exe /S` and leave APP_PATH pointing at
+      #      the resulting %LOCALAPPDATA%\volt-pos\volt-pos-app.exe.
+      # ═══════════════════════════════════════════════════════════════════════
+      - name: Install the Volt POS build under test
+        shell: pwsh
+        run: |
+          $installed = if ($env:APP_PATH) {
+            $env:APP_PATH
+          } else {
+            Join-Path $env:LOCALAPPDATA 'volt-pos\volt-pos-app.exe'
+          }
+
+          if (Test-Path $installed) {
+            Write-Host "Using the build already present at $installed"
+            "APP_PATH=$installed" | Out-File $env:GITHUB_ENV -Append
+            exit 0
+          }
+
+          Write-Host '::error::No application build is available on this runner and no artifact source is configured.'
+          Write-Host '::error::See the TODO block above this step in .github/workflows/e2e.yml.'
+          Write-Host '::error::A green run without a build under test would prove nothing, so this fails deliberately.'
+          exit 1
+
+      - name: Record which build is under test
+        shell: pwsh
+        run: |
+          $descriptor = Join-Path $env:RUNNER_TEMP 'app\desc.txt'
+          if (Test-Path $descriptor) {
+            Get-Content $descriptor | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          } else {
+            "No desc.txt available. Binary: $env:APP_PATH" | Out-File $env:GITHUB_STEP_SUMMARY -Append
+          }
+
+      - name: Preflight
+        run: npm run preflight
+
+      - name: Run tests
+        shell: pwsh
+        run: |
+          $lane = '${{ inputs.lane || 'full' }}'
+          switch ($env:ENV) {
+            # wdio.prod.conf.ts hard-pins specs to tests/smoke and throws if
+            # ENV is anything but prod, so this cannot be widened from here.
+            'prod'    { npm run test:prod }
+            'staging' { npm run test:staging }
+            default   {
+              switch ($lane) {
+                'smoke'      { npm run test:smoke }
+                'regression' { npm run test:regression }
+                'critical'   { npm run test:critical }
+                default      { npm run test:dev }
+              }
+            }
+          }
+
+      # allure-commandline is a Java program.
+      - name: Set up Java for the Allure report
+        if: always()
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Generate the Allure report
+        if: always()
+        continue-on-error: true
+        run: npm run report:allure
+
+      # reports/ carries the failure screenshots, the tail of the app's own log
+      # and the Allure result/report. On a desktop app that is the entire
+      # post-mortem — there is no console to reopen after the fact.
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-reports-${{ inputs.environment || 'dev' }}-${{ github.run_id }}
+          path: |
+            reports/
+            logs/
+          if-no-files-found: warn
+          retention-days: 30
+
+      # A leftover volt-pos-app.exe makes the NEXT run fail in a way that looks
+      # unrelated: tauri-plugin-single-instance hands the new launch to the old
+      # window and the driver ends up with no session.
+      - name: Kill leftover app and driver processes
+        if: always()
+        run: npm run app:kill

@@ -1,0 +1,23 @@
+node_modules/
+reports/
+logs/
+.tmp/
+allure-results/
+allure-report/
+*.log
+
+# Never commit real credentials — only configs/env/.env.example is tracked.
+configs/env/.env
+configs/env/.env.dev
+configs/env/.env.staging
+configs/env/.env.prod
+configs/env/.env.local
+
+# Local driver binaries installed by scripts/setup-drivers.ts
+.drivers/
+
+# DB snapshots taken by scripts/reset-db.ts --backup-only
+.db-backups/
+
+.DS_Store
+Thumbs.db

@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": false,
+
+    "skipLibCheck": true,
+    "noEmit": true,
+    "sourceMap": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@configs/*": ["configs/*"],
+      "@components/*": ["src/components/*"],
+      "@constants/*": ["src/constants/*"],
+      "@data/*": ["src/data/*"],
+      "@db/*": ["src/db/*"],
+      "@flows/*": ["src/flows/*"],
+      "@helpers/*": ["src/helpers/*"],
+      "@pages/*": ["src/pages/*"],
+      "@support/*": ["src/support/*"],
+      "@typings/*": ["src/types/*"],
+      "@utils/*": ["src/utils/*"]
+    },
+
+    "types": ["node", "@wdio/globals/types", "@wdio/mocha-framework", "expect-webdriverio"]
+  },
+  "include": ["configs/**/*.ts", "src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts", "*.ts"],
+  "exclude": ["node_modules", "reports", "logs", ".tmp"]
+}

@@ -1,0 +1,86 @@
+{
+  "name": "e2e-volt-pos-webdriverio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enterprise-grade WebdriverIO + tauri-driver E2E automation framework for the Volt POS desktop app (Tauri v2 / WebView2)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "setup": "npm install && npm run setup:drivers",
+    "setup:drivers": "tsx scripts/setup-drivers.ts",
+    "preflight": "tsx scripts/preflight.ts",
+    "//lanes": "Every `test:*` runs `preflight` first (drivers present, app resolved, no stale instance). ENV picks WHICH BINARY is driven - dev/staging/prod are three different .exe builds, not a runtime flag.",
+    "test": "npm run test:dev",
+    "test:dev": "npm run preflight && cross-env ENV=dev wdio run configs/wdio/wdio.dev.conf.ts",
+    "test:staging": "npm run preflight && cross-env ENV=staging wdio run configs/wdio/wdio.staging.conf.ts",
+    "test:prod": "npm run preflight && cross-env ENV=prod wdio run configs/wdio/wdio.prod.conf.ts",
+    "//suites": "Tag-filtered lanes. @smoke is the only suite allowed to touch prod (read-only).",
+    "test:smoke": "npm run preflight && cross-env ENV=dev wdio run configs/wdio/wdio.dev.conf.ts --suite smoke",
+    "test:regression": "npm run preflight && cross-env ENV=dev wdio run configs/wdio/wdio.dev.conf.ts --suite regression",
+    "test:critical": "npm run preflight && cross-env ENV=dev wdio run configs/wdio/wdio.dev.conf.ts --mochaOpts.grep @critical",
+    "test:spec": "npm run preflight && cross-env ENV=dev wdio run configs/wdio/wdio.dev.conf.ts --spec",
+    "//attach": "ATTACH MODE - drives an ALREADY-RUNNING installed app over CDP instead of letting tauri-driver launch it. `app:launch` starts the app with WebView2 remote debugging on, then `test:attach` connects. This is the only mode that can drive a production install in place.",
+    "app:launch": "tsx scripts/launch-app.ts",
+    "app:kill": "tsx scripts/kill-app.ts",
+    "test:attach": "cross-env ENV=dev WDIO_MODE=attach wdio run configs/wdio/wdio.attach.conf.ts",
+    "//maintenance": "",
+    "db:reset": "tsx scripts/reset-db.ts",
+    "db:backup": "tsx scripts/reset-db.ts --backup-only",
+    "audit:testids": "tsx scripts/audit-testids.ts",
+    "report:allure": "allure generate reports/allure-results --clean -o reports/allure-report",
+    "report:open": "allure open reports/allure-report",
+    "report:serve": "allure serve reports/allure-results",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,json,md,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,json,md,yml}\"",
+    "typecheck": "tsc --noEmit",
+    "//unit": "Pure-function tests for src/domain — no app, no driver. node:test via tsx, so no extra dependency. Runs in ~1s and gates a commit.",
+    "test:unit": "node --import tsx --test \"tests/unit/**/*.test.ts\"",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test:unit",
+    "clean": "rimraf reports logs .tmp"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.10.5",
+    "@wdio/allure-reporter": "^9.31.0",
+    "@wdio/cli": "^9.31.0",
+    "@wdio/globals": "^9.31.0",
+    "@wdio/local-runner": "^9.31.0",
+    "@wdio/mocha-framework": "^9.31.0",
+    "@wdio/spec-reporter": "^9.31.0",
+    "@wdio/types": "^9.31.0",
+    "allure-commandline": "^2.32.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-wdio": "^9.31.0",
+    "expect-webdriverio": "^6.0.9",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.4.2",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0",
+    "webdriverio": "^9.31.0"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml}": [
+      "prettier --write"
+    ]
+  }
+}
