@@ -55,6 +55,21 @@ export class PaymentSuccessPage extends BasePage {
   }
 
   /**
+   * Are all four receipt-delivery actions on screen?
+   *
+   * No Receipt / Print / Text Message / Email — the whole action grid, which is
+   * the reception side of the "Payment Successful!" screen (TC-ORDERFLOW-50).
+   */
+  async areAllReceiptActionsShown(): Promise<boolean> {
+    return (
+      (await this.isVisible(PaymentSuccessIds.noReceiptBtn)) &&
+      (await this.isVisible(PaymentSuccessIds.printReceiptBtn)) &&
+      (await this.isVisible(PaymentSuccessIds.smsReceiptBtn)) &&
+      (await this.isVisible(PaymentSuccessIds.emailReceiptBtn))
+    );
+  }
+
+  /**
    * The order's UUID, read off the URL.
    *
    * The screen itself never prints it: the order CODE only appears in the split

@@ -146,10 +146,28 @@ export abstract class UiObject {
     await el.addValue(value);
   }
 
-  /** Trimmed visible text. */
+  /**
+   * Trimmed visible text.
+   *
+   * `getText()` is the primary read, but WebView2 (observed on runtime 152) has a
+   * quirk: after React replaces a text node in place — the checkout amount display
+   * updating to "$0.00" when the keypad `C` is pressed is the reproducer — the
+   * rendered-text tree `getText()` reads from comes back EMPTY even though the
+   * element is fully visible (`display:block`, non-zero box) and its `textContent`
+   * is correct. That surfaces downstream as `parseMoney("")` throwing "holds no
+   * money amount" on a value that is plainly on screen.
+   *
+   * So when `getText()` is empty, fall back to the `textContent` property, which
+   * is unaffected. The fallback only runs on the empty path, so a genuinely blank
+   * element still reads as "" and the common path is byte-for-byte unchanged.
+   */
   protected async text(loc: Locator, opts: FindOptions = {}): Promise<string> {
     const el = await this.find(loc, opts);
-    return (await el.getText()).trim();
+    const shown = (await el.getText()).trim();
+    if (shown !== '') return shown;
+
+    const raw = await el.getProperty('textContent');
+    return typeof raw === 'string' ? raw.trim() : '';
   }
 
   /**

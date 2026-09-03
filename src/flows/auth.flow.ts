@@ -1,11 +1,13 @@
 import { Timeouts } from '../../configs/constants/timeouts.js';
 import { env } from '../../configs/env/loadEnv.js';
+import { hasHeaderNav } from '../components/index.js';
 import { Routes } from '../constants/routes.js';
 import { step } from '../helpers/steps.js';
 import { waitUntilPath } from '../helpers/wait.js';
 import { switchToMain } from '../helpers/window.js';
 import { homePage, loginPage, splashPage } from '../pages/index.js';
 import type { HomePage } from '../pages/index.js';
+import { returnToHome } from './navigation.flow.js';
 
 /**
  * Getting the app from "a window exists" to "a spec can work".
@@ -124,6 +126,20 @@ export async function ensureLoggedIn(timeout: number = Timeouts.APP_BOOT): Promi
 
   if (boot.screen === 'home') {
     if (!boot.path.startsWith(Routes.HOME)) {
+      // A device with a live backlog boots straight into the pending-orders
+      // queue (`/order-pending`), not `/home` — and `/order-history` is the same
+      // kind of landing. Those are legitimate authenticated screens, not a spec
+      // that left a flow open, and `returnToHome()` reaches the till from them
+      // with a single header click. Recover rather than refuse.
+      //
+      // Checkout, split-order and payment-success are deliberately NOT recovered
+      // here: `hasHeaderNav()` is false for exactly those, and each means a
+      // PREVIOUS flow did not end itself — the spec's job, per the module note.
+      // `returnToHome()` throws on them with that diagnosis, so a real hand-off
+      // bug still fails loudly instead of being bulldozed.
+      if (hasHeaderNav(boot.path)) {
+        return returnToHome();
+      }
       throw new Error(
         `ensureLoggedIn(): the app is signed in but parked on "${boot.path}", not ${Routes.HOME}. ` +
           `Flows never navigate by URL — that would reload the WebView and re-run the whole splash ` +

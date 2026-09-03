@@ -1,3 +1,4 @@
+import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { Routes } from '../../constants/routes.js';
 import {
@@ -10,7 +11,7 @@ import {
   staffGroupTab,
   staffItem,
 } from '../../constants/testids.js';
-import { locator } from '../../helpers/selectors.js';
+import { byRole, locator, textIsAnyOf } from '../../helpers/selectors.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { logStep } from '../../helpers/steps.js';
 import { settle, waitUntilPath } from '../../helpers/wait.js';
@@ -18,12 +19,16 @@ import type { MoneyCents } from '../../types/models.js';
 import { fromCents, parseMoney } from '../../utils/money.js';
 import { BasePage } from '../BasePage.js';
 import type { CheckoutPage } from './CheckoutPage.js';
+import type { SplitOrderPage } from './SplitOrderPage.js';
 
 /**
  * Where `handlePay` lands: `/order/{uuid}/checkout`, plus its nested steps
  * (`/view-cart`, `/processing-payment`) in case the app resumes mid-flow.
  */
 const CHECKOUT_PATH = /^\/order\/[^/]+\/checkout(?:\/|$)/;
+
+/** `/order/{uuid}/split-order` — where {@link HomePage.openSplitOrder} lands. */
+const SPLIT_ORDER_PATH = /^\/order\/[^/]+\/split-order(?:\/|$)/;
 
 /**
  * The confirm button of the shared `ConfirmDialog` (`src/components/confirm-dialog.tsx`).
@@ -44,6 +49,24 @@ const CONFIRM_DIALOG_ACTION: Locator = locator(
   'confirm dialog action',
   'home-confirm-dialog-confirm-btn',
   '[data-slot="alert-dialog-footer"] button:last-of-type',
+);
+
+/**
+ * The "Select Staff First" prompt.
+ *
+ * Declared inline for the same reason as {@link CONFIRM_DIALOG_ACTION}: the app
+ * ships no testid for it, and the catalogue must not carry an invented one.
+ * Raised when a service or Quick Pay is tapped before any staff is on the order
+ * (`-service/index.tsx` guards `handleAddService` on the selected staff). The
+ * English heading is the primary handle; the alert-dialog role is the fallback
+ * for a Vietnamese till, which is safe here because the till is otherwise idle
+ * when this fires — nothing else is open to mistake for it.
+ */
+const SELECT_STAFF_FIRST: Locator = locator(
+  'select staff first prompt',
+  'home-select-staff-first',
+  textIsAnyOf('Select Staff First', 'Vui lòng chọn nhân viên trước'),
+  byRole('alertdialog'),
 );
 
 /** Optional fields of the Quick Pay dialog. */
@@ -327,6 +350,23 @@ export class HomePage extends BasePage {
     return this;
   }
 
+  /**
+   * Is the "Add new customer" quick-add form up?
+   *
+   * `confirmCustomerPhone()` opens it when the typed number matches nobody, so
+   * its name field is the signal that the lookup fell through to a create.
+   */
+  isNewCustomerFormShown(): Promise<boolean> {
+    return this.isVisible(HomeIds.createCustomerNameInput);
+  }
+
+  /** Close the quick-add customer form with Escape, saving nothing. */
+  async dismissNewCustomerForm(): Promise<this> {
+    await browser.keys(['Escape']);
+    await this.waitGone(HomeIds.createCustomerNameInput, Timeouts.SHORT);
+    return this;
+  }
+
   /* --- Order panel ----------------------------------------------------- */
 
   /**
@@ -347,6 +387,171 @@ export class HomePage extends BasePage {
     await logStep('Home: delete the current order');
     await this.click(HomeIds.orderDeleteBtn);
     await this.confirmDestructiveAction();
+    return this;
+  }
+
+  /**
+   * Is a draft order currently open on the till?
+   *
+   * `home-order-delete-btn` (Remove) renders only while a draft is open
+   * (`-order/order-info.tsx`), so its presence is the cheapest proof that
+   * selecting a staff member created an order — and its absence, after a delete,
+   * that the order was discarded.
+   */
+  hasActiveDraft(): Promise<boolean> {
+    return this.isVisible(HomeIds.orderDeleteBtn);
+  }
+
+  /**
+   * Enter change-staff mode for a staff column.
+   *
+   * Only the first half of the interaction: the app then expects a NEW staff
+   * tile to be tapped, so a caller follows this with {@link selectStaff} /
+   * {@link selectFirstStaff}. Rendered only while `canChangeStaff`.
+   */
+  async pressChangeStaff(): Promise<this> {
+    await logStep('Home: change staff');
+    await this.click(HomeIds.orderChangeStaffBtn);
+    return this;
+  }
+
+  /**
+   * Is the order in change-staff mode?
+   *
+   * The cancel affordance only unhides (`{ flex: isChanging }`) while a staff
+   * change is in progress, so its visibility IS the mode — see
+   * `HomeIds.orderChangeStaffCancelBtn`.
+   */
+  isChangeStaffModeActive(): Promise<boolean> {
+    return this.isVisible(HomeIds.orderChangeStaffCancelBtn);
+  }
+
+  /** Leave change-staff mode without swapping anyone. */
+  async cancelChangeStaff(): Promise<this> {
+    await this.click(HomeIds.orderChangeStaffCancelBtn);
+    return this;
+  }
+
+  /** Remove a whole staff column and its services, confirming the dialog it raises. */
+  async removeStaff(): Promise<this> {
+    await logStep('Home: remove the staff column');
+    await this.click(HomeIds.orderRemoveStaffBtn);
+    await this.confirmDestructiveAction();
+    return this;
+  }
+
+  /* --- Cart actions: Promo & Rewards / Note / Merge -------------------- */
+
+  /** Open the Promo & Rewards dialog. The cart must hold at least one line. */
+  async openPromoDialog(): Promise<this> {
+    await logStep('Home: open Promo & Rewards');
+    await this.click(HomeIds.cartPromoBtn);
+    await this.find(HomeIds.cartPromoDialog, { timeout: Timeouts.MEDIUM, visible: true });
+    return this;
+  }
+
+  /** Is the Promo & Rewards dialog on screen? */
+  isPromoDialogShown(): Promise<boolean> {
+    return this.isVisible(HomeIds.cartPromoDialog);
+  }
+
+  /** Close the Promo & Rewards dialog with Escape. */
+  closePromoDialog(): Promise<this> {
+    return this.dismissDialog(HomeIds.cartPromoDialog);
+  }
+
+  /** Open the order-note dialog. */
+  async openNoteDialog(): Promise<this> {
+    await logStep('Home: open order note');
+    await this.click(HomeIds.cartNoteBtn);
+    await this.find(HomeIds.cartNoteDialog, { timeout: Timeouts.MEDIUM, visible: true });
+    return this;
+  }
+
+  /** Is the order-note dialog on screen? */
+  isNoteDialogShown(): Promise<boolean> {
+    return this.isVisible(HomeIds.cartNoteDialog);
+  }
+
+  /** Close the order-note dialog with Escape. */
+  closeNoteDialog(): Promise<this> {
+    return this.dismissDialog(HomeIds.cartNoteDialog);
+  }
+
+  /** Is the Merge Order action offered? It renders only once the order has a line. */
+  isMergeOrderAvailable(): Promise<boolean> {
+    return this.isVisible(HomeIds.cartMergeBtn);
+  }
+
+  /**
+   * Dismiss whichever cart dialog is open with Escape and wait it out.
+   *
+   * Radix keeps the overlay mounted through its exit transition, so the wait is
+   * what makes the next action land on the screen rather than on a dying dialog —
+   * the same reasoning as {@link confirmDestructiveAction}.
+   */
+  async dismissDialog(dialog: Locator): Promise<this> {
+    await browser.keys(['Escape']);
+    await this.waitGone(dialog, Timeouts.SHORT);
+    return this;
+  }
+
+  /* --- Quick Pay dialog probes ----------------------------------------- */
+
+  /** Is the Quick Pay dialog on screen? Its amount field is the readiness signal. */
+  isQuickPayDialogShown(): Promise<boolean> {
+    return this.isVisible(HomeIds.quickPayAmountInput);
+  }
+
+  /** Is the Quick Pay Add button pressable? It unlocks only with an amount AND a service name. */
+  async isQuickPayAddEnabled(): Promise<boolean> {
+    const button = await this.find(HomeIds.quickPayAddBtn, { visible: true });
+    return button.isEnabled();
+  }
+
+  /** Type an amount into the open Quick Pay dialog, without submitting. */
+  async fillQuickPayAmount(amount: MoneyCents): Promise<this> {
+    await this.setValue(HomeIds.quickPayAmountInput, fromCents(amount).toFixed(2));
+    return this;
+  }
+
+  /** Type a service name into the open Quick Pay dialog, without submitting. */
+  async fillQuickPayName(name: string): Promise<this> {
+    await this.setValue(HomeIds.quickPayNameInput, name);
+    return this;
+  }
+
+  /** Close the Quick Pay dialog with Escape. */
+  async closeQuickPayDialog(): Promise<this> {
+    await browser.keys(['Escape']);
+    await this.waitGone(HomeIds.quickPayAmountInput, Timeouts.SHORT);
+    return this;
+  }
+
+  /**
+   * Is the "Select Staff First" prompt up?
+   *
+   * The app raises it when a service or Quick Pay is tapped before any staff is
+   * on the order. See {@link SELECT_STAFF_FIRST}.
+   */
+  isSelectStaffFirstShown(): Promise<boolean> {
+    return this.isVisible(SELECT_STAFF_FIRST);
+  }
+
+  /**
+   * Acknowledge and close the "Select Staff First" prompt.
+   *
+   * The prompt is a single-action alert, so the app's shared `AlertDialog`
+   * action (see {@link CONFIRM_DIALOG_ACTION}) is its Done button; Escape is the
+   * fallback for a build that renders it as a plain dialog.
+   */
+  async dismissSelectStaffFirst(): Promise<this> {
+    if (await this.exists(CONFIRM_DIALOG_ACTION, Timeouts.SHORT)) {
+      await this.click(CONFIRM_DIALOG_ACTION);
+    } else {
+      await browser.keys(['Escape']);
+    }
+    await this.waitGone(SELECT_STAFF_FIRST, Timeouts.SHORT);
     return this;
   }
 
@@ -409,6 +614,28 @@ export class HomePage extends BasePage {
 
     const { default: checkoutPage } = await import('./CheckoutPage.js');
     return checkoutPage;
+  }
+
+  /**
+   * Press the cart's Split icon and land on `/order/{id}/split-order`.
+   *
+   * The button sits between Print and Pay and only renders once the order has
+   * items, so calling this on an empty cart fails as "not clickable" — the honest
+   * report, same as {@link pressPay}. Returns the split-order page via a dynamic
+   * `import()` for the same cycle reason pressPay documents (split-order routes
+   * back to the till through Back to order / finishing the split).
+   */
+  async openSplitOrder(): Promise<SplitOrderPage> {
+    await logStep('Home: open split order');
+    await this.click(HomeIds.cartSplitBtn, { timeout: Timeouts.MEDIUM });
+
+    await waitUntilPath((path) => SPLIT_ORDER_PATH.test(path), {
+      timeout: Timeouts.NAVIGATION,
+      message: 'Split did not open the split-order screen',
+    });
+
+    const { default: splitOrderPage } = await import('./SplitOrderPage.js');
+    return splitOrderPage;
   }
 
   /* --- internals ------------------------------------------------------- */

@@ -500,6 +500,19 @@ export const HomeIds = {
     'home-cart-note-save-btn',
     buttonWithAnyText('Save', 'Lưu'),
   ),
+  /**
+   * The Merge Order action in the cart footer.
+   *
+   * Icon-plus-label, so matched by containment like {@link cartNoteBtn}. The app
+   * renders it only once the order carries at least one line
+   * (`-order/order-info.tsx`), which is exactly the state
+   * TC-ORDERFLOW-20 asserts against.
+   */
+  cartMergeBtn: locator(
+    'merge order button',
+    'home-cart-merge-btn',
+    buttonContainingAnyText('Merge Order', 'Gộp đơn'),
+  ),
   cartPrintBtn: locator(
     'cart print button',
     'home-cart-print-btn',
@@ -508,6 +521,18 @@ export const HomeIds = {
     // carrying `bg-green`, which pins the row without depending on whether Split
     // is present (it is hidden while re-opening an order).
     '//div[./button[contains(@class,"bg-green")]]/button[1]',
+  ),
+  /**
+   * The cart's Split-Order icon — the middle member of the [Print, Split, Pay]
+   * action row (`order-summary.tsx`). Icon-only, so matched positionally like
+   * {@link cartPrintBtn}: the second button in the row whose last button is the
+   * green Pay. Present only once the order has items (hidden while re-opening),
+   * which is exactly when a spec would press it.
+   */
+  cartSplitBtn: locator(
+    'cart split-order button',
+    'home-cart-split-btn',
+    '//div[./button[contains(@class,"bg-green")]]/button[2]',
   ),
   cartPayBtn: locator('cart pay button', 'home-cart-pay-btn', 'button.bg-green'),
 
@@ -699,8 +724,21 @@ export const CheckoutIds = {
     // transaction list. Only rendered once a tender exists.
     rowAmount('Total Paid', 'Tổng đã trả'),
   ),
-  /** `change-remaining-amount.tsx` gives this row the semantic `bg-sherwood-green-20` token class. */
-  remaining: locator('checkout remaining', 'checkout-remaining', 'div.bg-sherwood-green-20'),
+  /**
+   * The "Remaining" row. It keeps its shape but SWAPS its background between
+   * states: `bg-sherwood-green-20` (green) once the tender covers the balance, a
+   * different colour while money is still owed (owed-state class dumped live:
+   * `flex items-center justify-between rounded-lg px-6 py-4 text-lg font-semibold
+   * bg-…`). The old green-only fallback missed every under-tender. Match on the
+   * shared row shape plus the "Remaining" label so both states resolve;
+   * `centsOf()` reads the amount out of the row text.
+   */
+  remaining: locator(
+    'checkout remaining',
+    'checkout-remaining',
+    '//div[contains(@class,"rounded-lg") and contains(@class,"py-4")][contains(normalize-space(),"Remaining") or contains(normalize-space(),"Còn lại")]',
+    'div.bg-sherwood-green-20',
+  ),
   /** Cash-only row; its `#FFF4DD` background is unique to it. */
   change: locator('checkout change', 'checkout-change', 'div[class*="bg-[#FFF4DD]"]'),
 
@@ -744,7 +782,12 @@ export const CheckoutIds = {
   gcCodeInput: locator(
     'gift card code input',
     'checkout-gc-code-input',
-    '[data-slot="dialog-content"] [data-slot="input"]',
+    // `InputCode` renders its REAL <input> as `absolute inset-0 opacity-0` with
+    // NEITHER a testid NOR `data-slot="input"` — verified live on the dev build
+    // (the whole gift-card dialog carries no testids at all). So match the
+    // dialog's single <input> by tag; the earlier `[data-slot="input"]` matched
+    // nothing and stalled the whole redemption 15s in.
+    '[data-slot="dialog-content"] input',
   ),
   gcInvalidMsg: locator(
     'gift card invalid message',
@@ -765,14 +808,23 @@ export const CheckoutIds = {
     textIsAnyOf('Gift Card not Enough Balance', 'Thẻ quà tặng không đủ số dư'),
   ),
   /**
-   * NO FALLBACK, deliberately.
+   * The **Confirm** button on the code-entry screen — verified label, so the
+   * fallback is safe.
    *
    * The manual redemption flow is `Input Gift Card Code` → type → **Confirm** →
-   * balance check → **Pay**, so "redeem" is one of two buttons and the id does
-   * not say which. Guessing wrong here does not fail a lookup — it presses the
-   * other button and takes a payment. Wait for the annotation.
+   * balance check → **Pay**. The original caution here — no fallback, lest an id
+   * guess press the wrong of two buttons and take a payment — assumed Confirm and
+   * Pay might be indistinguishable. Live DOM shows otherwise: they are DIFFERENT
+   * screens of the same dialog (code entry vs balance confirmed) and never coexist,
+   * and their labels differ outright ("Confirm" vs "Pay"). This build exposes NO
+   * testids on the dialog, so the label, scoped to the dialog, is the only handle —
+   * and it cannot collide with Pay.
    */
-  gcRedeemBtn: locator('gift card redeem button', 'checkout-gc-redeem-btn'),
+  gcRedeemBtn: locator(
+    'gift card redeem button',
+    'checkout-gc-redeem-btn',
+    '//*[@data-slot="dialog-content"]//button[normalize-space()="Confirm" or normalize-space()="Xác nhận"]',
+  ),
   gcAcceptedMsg: locator(
     'gift card accepted message',
     'checkout-gc-accepted-msg',
@@ -785,6 +837,30 @@ export const CheckoutIds = {
     // gift-card dialog is portalled to `document.body`, so both can be in the
     // DOM at once.
     '//*[@data-slot="dialog-content"]//button[normalize-space()="Pay" or normalize-space()="Thanh toán"]',
+  ),
+  /**
+   * The **Cancel** button that abandons the gift-card dialog WITHOUT redeeming.
+   *
+   * The accepted-balance screen renders `[Cancel, Pay]` (verified live on the dev
+   * build) and — unlike most Radix dialogs — swallows the Escape key, so a spec
+   * that wants to walk away without spending the card has to press Cancel. Scoped
+   * to the dialog and matched on the exact label so it cannot collide with Pay.
+   */
+  gcCancelBtn: locator(
+    'gift card cancel button',
+    'checkout-gc-cancel-btn',
+    '//*[@data-slot="dialog-content"]//button[normalize-space()="Cancel" or normalize-space()="Huỷ" or normalize-space()="Hủy"]',
+  ),
+  /**
+   * The **Close** button on the gift-card SCAN screen (`[Close, Input Gift Card
+   * Code]`). Reaching a full dismissal from the accepted-balance screen is a
+   * two-hop path — Cancel returns to this scan screen, Close then unmounts the
+   * dialog (verified live). Scoped to the dialog, matched on the exact label.
+   */
+  gcCloseBtn: locator(
+    'gift card close button',
+    'checkout-gc-close-btn',
+    '//*[@data-slot="dialog-content"]//button[normalize-space()="Close" or normalize-space()="Đóng"]',
   ),
 
   /* --- Card tender ------------------------------------------------------ *

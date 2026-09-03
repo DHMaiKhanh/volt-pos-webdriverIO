@@ -23,6 +23,19 @@ export const Paths = {
   LOGS: path.join(ROOT, 'logs'),
   TMP: path.join(ROOT, '.tmp'),
 
+  /**
+   * Self-contained React app that visualises run history — its own package,
+   * NOT wiped by `npm run clean`.
+   */
+  DASHBOARD: path.join(ROOT, 'dashboard'),
+  /** Where the run history the app fetches is persisted (survives `clean`). */
+  DASHBOARD_DATA: path.join(ROOT, 'dashboard', 'public', 'data'),
+  /**
+   * Per-run scratch: the reporter drops one file per spec here, the store folds
+   * them into a run at `onComplete`. Under `reports/` so `clean` wipes it.
+   */
+  DASHBOARD_TMP: path.join(ROOT, 'reports', '.dashboard-tmp'),
+
   /** Driver binaries installed by scripts/setup-drivers.ts. */
   DRIVERS: path.join(ROOT, '.drivers'),
   /** DB snapshots taken before a destructive reset. */

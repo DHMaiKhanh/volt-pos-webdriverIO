@@ -1,0 +1,3811 @@
+{
+  "updatedAt": "2026-09-03T09:55:16.749Z",
+  "runs": [
+    {
+      "runId": "2026-09-03T09-52-52-666Z",
+      "startedAt": "2026-09-03T09:52:52.666Z",
+      "finishedAt": "2026-09-03T09:55:16.749Z",
+      "durationMs": 144083,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 15,
+        "passed": 12,
+        "failed": 0,
+        "skipped": 3,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/checkout/cash-payment.spec.ts",
+          "specName": "cash-payment",
+          "startedAt": "2026-09-03T09:52:57.121Z",
+          "finishedAt": "2026-09-03T09:53:17.292Z",
+          "durationMs": 20171,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Checkout — cash",
+              "tests": [
+                {
+                  "title": "A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "fullTitle": "Checkout — cash.A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "state": "passed",
+                  "durationMs": 10163,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-1",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/checkout-tenders.spec.ts",
+          "specName": "checkout-tenders",
+          "startedAt": "2026-09-03T09:53:22.715Z",
+          "finishedAt": "2026-09-03T09:54:13.650Z",
+          "durationMs": 50935,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Checkout tenders",
+              "tests": [
+                {
+                  "title": "The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "state": "passed",
+                  "durationMs": 3885,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "state": "passed",
+                  "durationMs": 2032,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "state": "passed",
+                  "durationMs": 7012,
+                  "retries": 0
+                },
+                {
+                  "title": "A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1768,
+                  "retries": 0
+                },
+                {
+                  "title": "Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1549,
+                  "retries": 0
+                },
+                {
+                  "title": "Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1849,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-47: Tip is pressable once a tender is chosen — PENDING (the Tip button renders but reads `disabled` on EVERY tender on this device — verified card/cash/gift-card/other — because enabling it needs the customer-display tip handoff / tip-after-payment merchant config, which merchant 20258 does not have set up)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-47: Tip is pressable once a tender is chosen — PENDING (the Tip button renders but reads `disabled` on EVERY tender on this device — verified card/cash/gift-card/other — because enabling it needs the customer-display tip handoff / tip-after-payment merchant config, which merchant 20258 does not have set up)",
+                  "state": "skipped",
+                  "durationMs": 20440,
+                  "retries": 0
+                },
+                {
+                  "title": "Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "state": "passed",
+                  "durationMs": 7419,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "state": "skipped",
+                  "durationMs": 13016,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "state": "skipped",
+                  "durationMs": 13015,
+                  "retries": 0
+                },
+                {
+                  "title": "Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "fullTitle": "Order flow — Checkout tenders.Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "state": "passed",
+                  "durationMs": 4235,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 11,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 3,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-2",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/gift-card-payment.spec.ts",
+          "specName": "gift-card-payment",
+          "startedAt": "2026-09-03T09:54:21.476Z",
+          "finishedAt": "2026-09-03T09:54:45.800Z",
+          "durationMs": 24324,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Gift card payment",
+              "tests": [
+                {
+                  "title": "A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "fullTitle": "Order flow — Gift card payment.A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 6866,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-3",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/payment-success.spec.ts",
+          "specName": "payment-success",
+          "startedAt": "2026-09-03T09:54:52.114Z",
+          "finishedAt": "2026-09-03T09:55:14.659Z",
+          "durationMs": 22545,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Payment success",
+              "tests": [
+                {
+                  "title": "The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 523,
+                  "retries": 0
+                },
+                {
+                  "title": "No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 764,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-51-30-145Z",
+      "startedAt": "2026-09-03T09:51:30.145Z",
+      "finishedAt": "2026-09-03T09:51:55.726Z",
+      "durationMs": 25581,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/checkout/cash-payment.spec.ts",
+          "specName": "cash-payment",
+          "startedAt": "2026-09-03T09:51:34.129Z",
+          "finishedAt": "2026-09-03T09:51:54.058Z",
+          "durationMs": 19929,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Checkout — cash",
+              "tests": [
+                {
+                  "title": "A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "fullTitle": "Checkout — cash.A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "state": "passed",
+                  "durationMs": 10373,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-45-09-986Z",
+      "startedAt": "2026-09-03T09:45:09.986Z",
+      "finishedAt": "2026-09-03T09:48:19.194Z",
+      "durationMs": 189208,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 15,
+        "passed": 11,
+        "failed": 1,
+        "skipped": 3,
+        "passRate": 91.7
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/checkout/cash-payment.spec.ts",
+          "specName": "cash-payment",
+          "startedAt": "2026-09-03T09:45:13.961Z",
+          "finishedAt": "2026-09-03T09:45:45.932Z",
+          "durationMs": 31971,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Checkout — cash",
+              "tests": [
+                {
+                  "title": "A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "fullTitle": "Checkout — cash.A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "state": "failed",
+                  "durationMs": 22013,
+                  "retries": 0,
+                  "error": "Step \"Tender $33.19 in cash\" failed after 15645ms: element (\"//button[normalize-space(.)=\"9\"] | //*[@role=\"button\"][normalize-space(.)=\"9\"]\") still not clickable after 15000ms",
+                  "stack": "Error: Step \"Tender $33.19 in cash\" failed after 15645ms: element (\"//button[normalize-space(.)=\"9\"] | //*[@role=\"button\"][normalize-space(.)=\"9\"]\") still not clickable after 15000ms\n    at step (D:\\Project\\webdriverIO_volt_pos\\src\\helpers\\steps.ts:139:11)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\checkout\\cash-payment.spec.ts:75:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 0
+          }
+        },
+        {
+          "cid": "0-1",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/checkout-tenders.spec.ts",
+          "specName": "checkout-tenders",
+          "startedAt": "2026-09-03T09:45:51.966Z",
+          "finishedAt": "2026-09-03T09:46:37.988Z",
+          "durationMs": 46022,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Checkout tenders",
+              "tests": [
+                {
+                  "title": "The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "state": "passed",
+                  "durationMs": 3906,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "state": "passed",
+                  "durationMs": 2080,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "state": "passed",
+                  "durationMs": 7120,
+                  "retries": 0
+                },
+                {
+                  "title": "A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1827,
+                  "retries": 0
+                },
+                {
+                  "title": "Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1650,
+                  "retries": 0
+                },
+                {
+                  "title": "Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1953,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-47: Tip is pressable once a tender is chosen — PENDING (the Tip button renders but reads `disabled` on EVERY tender on this device — verified card/cash/gift-card/other — because enabling it needs the customer-display tip handoff / tip-after-payment merchant config, which merchant 20258 does not have set up)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-47: Tip is pressable once a tender is chosen — PENDING (the Tip button renders but reads `disabled` on EVERY tender on this device — verified card/cash/gift-card/other — because enabling it needs the customer-display tip handoff / tip-after-payment merchant config, which merchant 20258 does not have set up)",
+                  "state": "skipped",
+                  "durationMs": 20260,
+                  "retries": 0
+                },
+                {
+                  "title": "Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "state": "passed",
+                  "durationMs": 7297,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "state": "skipped",
+                  "durationMs": 12961,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "state": "skipped",
+                  "durationMs": 12961,
+                  "retries": 0
+                },
+                {
+                  "title": "Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "fullTitle": "Order flow — Checkout tenders.Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "state": "passed",
+                  "durationMs": 4226,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 11,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 3,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-2",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/gift-card-payment.spec.ts",
+          "specName": "gift-card-payment",
+          "startedAt": "2026-09-03T09:46:45.615Z",
+          "finishedAt": "2026-09-03T09:47:10.066Z",
+          "durationMs": 24451,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Gift card payment",
+              "tests": [
+                {
+                  "title": "A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "fullTitle": "Order flow — Gift card payment.A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 7966,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-3",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/payment-success.spec.ts",
+          "specName": "payment-success",
+          "startedAt": "2026-09-03T09:47:15.882Z",
+          "finishedAt": "2026-09-03T09:47:37.628Z",
+          "durationMs": 21746,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Payment success",
+              "tests": [
+                {
+                  "title": "The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 452,
+                  "retries": 0
+                },
+                {
+                  "title": "No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 761,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-42-58-843Z",
+      "startedAt": "2026-09-03T09:42:58.843Z",
+      "finishedAt": "2026-09-03T09:43:59.953Z",
+      "durationMs": 61110,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 11,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 3,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/checkout-tenders.spec.ts",
+          "specName": "checkout-tenders",
+          "startedAt": "2026-09-03T09:43:03.010Z",
+          "finishedAt": "2026-09-03T09:43:55.923Z",
+          "durationMs": 52913,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Checkout tenders",
+              "tests": [
+                {
+                  "title": "The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "state": "passed",
+                  "durationMs": 3832,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "state": "passed",
+                  "durationMs": 2027,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "state": "passed",
+                  "durationMs": 7092,
+                  "retries": 0
+                },
+                {
+                  "title": "A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1742,
+                  "retries": 0
+                },
+                {
+                  "title": "Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1628,
+                  "retries": 0
+                },
+                {
+                  "title": "Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1878,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-47: Tip is pressable once a tender is chosen — PENDING (the Tip button renders but reads `disabled` on EVERY tender on this device — verified card/cash/gift-card/other — because enabling it needs the customer-display tip handoff / tip-after-payment merchant config, which merchant 20258 does not have set up)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-47: Tip is pressable once a tender is chosen — PENDING (the Tip button renders but reads `disabled` on EVERY tender on this device — verified card/cash/gift-card/other — because enabling it needs the customer-display tip handoff / tip-after-payment merchant config, which merchant 20258 does not have set up)",
+                  "state": "skipped",
+                  "durationMs": 20660,
+                  "retries": 0
+                },
+                {
+                  "title": "Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "state": "passed",
+                  "durationMs": 7540,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "state": "skipped",
+                  "durationMs": 13119,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "state": "skipped",
+                  "durationMs": 13118,
+                  "retries": 0
+                },
+                {
+                  "title": "Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "fullTitle": "Order flow — Checkout tenders.Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "state": "passed",
+                  "durationMs": 4415,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 11,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 3,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-40-52-129Z",
+      "startedAt": "2026-09-03T09:40:52.129Z",
+      "finishedAt": "2026-09-03T09:41:16.451Z",
+      "durationMs": 24322,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/_inspect.spec.ts",
+          "specName": "_inspect",
+          "startedAt": "2026-09-03T09:40:56.199Z",
+          "finishedAt": "2026-09-03T09:41:15.036Z",
+          "durationMs": 18837,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "INSPECT",
+              "tests": [
+                {
+                  "title": "TIP: tip button enabled state per tender",
+                  "fullTitle": "INSPECT.TIP: tip button enabled state per tender",
+                  "state": "passed",
+                  "durationMs": 10380,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-37-38-413Z",
+      "startedAt": "2026-09-03T09:37:38.413Z",
+      "finishedAt": "2026-09-03T09:39:40.528Z",
+      "durationMs": 122115,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 11,
+        "passed": 8,
+        "failed": 1,
+        "skipped": 2,
+        "passRate": 88.9
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/checkout-tenders.spec.ts",
+          "specName": "checkout-tenders",
+          "startedAt": "2026-09-03T09:37:42.252Z",
+          "finishedAt": "2026-09-03T09:38:35.096Z",
+          "durationMs": 52844,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Checkout tenders",
+              "tests": [
+                {
+                  "title": "The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "state": "passed",
+                  "durationMs": 3780,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "state": "passed",
+                  "durationMs": 2060,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "state": "passed",
+                  "durationMs": 7166,
+                  "retries": 0
+                },
+                {
+                  "title": "A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1780,
+                  "retries": 0
+                },
+                {
+                  "title": "Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1514,
+                  "retries": 0
+                },
+                {
+                  "title": "Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1971,
+                  "retries": 0
+                },
+                {
+                  "title": "Tip is pressable once a tender is chosen (TC-ORDERFLOW-47) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Tip is pressable once a tender is chosen (TC-ORDERFLOW-47) @regression @write",
+                  "state": "failed",
+                  "durationMs": 1744,
+                  "retries": 0,
+                  "error": "expect(received).toBe(expected) // Object.is equality",
+                  "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:165:49)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "state": "passed",
+                  "durationMs": 7860,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "state": "skipped",
+                  "durationMs": 13102,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "state": "skipped",
+                  "durationMs": 13102,
+                  "retries": 0
+                },
+                {
+                  "title": "Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "fullTitle": "Order flow — Checkout tenders.Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "state": "passed",
+                  "durationMs": 4360,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 11,
+            "passed": 8,
+            "failed": 1,
+            "skipped": 2,
+            "passRate": 88.9
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-29-56-894Z",
+      "startedAt": "2026-09-03T09:29:56.894Z",
+      "finishedAt": "2026-09-03T09:35:15.433Z",
+      "durationMs": 318539,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 15,
+        "passed": 7,
+        "failed": 6,
+        "skipped": 2,
+        "passRate": 53.8
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/checkout/cash-payment.spec.ts",
+          "specName": "cash-payment",
+          "startedAt": "2026-09-03T09:30:01.383Z",
+          "finishedAt": "2026-09-03T09:30:22.714Z",
+          "durationMs": 21331,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Checkout — cash",
+              "tests": [
+                {
+                  "title": "A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "fullTitle": "Checkout — cash.A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "state": "passed",
+                  "durationMs": 11545,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-1",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/checkout-tenders.spec.ts",
+          "specName": "checkout-tenders",
+          "startedAt": "2026-09-03T09:30:28.704Z",
+          "finishedAt": "2026-09-03T09:32:14.559Z",
+          "durationMs": 105855,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Checkout tenders",
+              "tests": [
+                {
+                  "title": "The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "state": "passed",
+                  "durationMs": 3244,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1322,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "state": "passed",
+                  "durationMs": 6383,
+                  "retries": 0
+                },
+                {
+                  "title": "A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "state": "failed",
+                  "durationMs": 1073,
+                  "retries": 0,
+                  "error": "expect(received).toBe(expected) // Object.is equality",
+                  "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 0\nReceived: 1318\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:112:51)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15379,
+                  "retries": 0,
+                  "error": "Could not find \"card tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"card tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-card\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(1)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-card\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:124:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15324,
+                  "retries": 0,
+                  "error": "Could not find \"other tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"other tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-other\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(4)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-other\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async CheckoutPage.selectOtherTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:446:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:134:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Tip is pressable once a tender is chosen (TC-ORDERFLOW-47) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Tip is pressable once a tender is chosen (TC-ORDERFLOW-47) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15314,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:145:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15407,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:157:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "state": "skipped",
+                  "durationMs": 19456,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "state": "skipped",
+                  "durationMs": 19456,
+                  "retries": 0
+                },
+                {
+                  "title": "Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "fullTitle": "Order flow — Checkout tenders.Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "state": "failed",
+                  "durationMs": 15368,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:185:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 11,
+            "passed": 3,
+            "failed": 6,
+            "skipped": 2,
+            "passRate": 33.3
+          }
+        },
+        {
+          "cid": "0-2",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/gift-card-payment.spec.ts",
+          "specName": "gift-card-payment",
+          "startedAt": "2026-09-03T09:32:25.037Z",
+          "finishedAt": "2026-09-03T09:32:50.004Z",
+          "durationMs": 24967,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Gift card payment",
+              "tests": [
+                {
+                  "title": "A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "fullTitle": "Order flow — Gift card payment.A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 7955,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-3",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/payment-success.spec.ts",
+          "specName": "payment-success",
+          "startedAt": "2026-09-03T09:32:55.881Z",
+          "finishedAt": "2026-09-03T09:33:16.672Z",
+          "durationMs": 20791,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Payment success",
+              "tests": [
+                {
+                  "title": "The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 572,
+                  "retries": 0
+                },
+                {
+                  "title": "No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 746,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-25-38-651Z",
+      "startedAt": "2026-09-03T09:25:38.651Z",
+      "finishedAt": "2026-09-03T09:26:48.588Z",
+      "durationMs": 69937,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 2,
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0,
+        "passRate": 50
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/_inspect.spec.ts",
+          "specName": "_inspect",
+          "startedAt": "2026-09-03T09:25:45.562Z",
+          "finishedAt": "2026-09-03T09:26:43.569Z",
+          "durationMs": 58007,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "INSPECT",
+              "tests": [
+                {
+                  "title": "DUES: prefill + total per tender, and remaining row states",
+                  "fullTitle": "INSPECT.DUES: prefill + total per tender, and remaining row states",
+                  "state": "passed",
+                  "durationMs": 9551,
+                  "retries": 0
+                },
+                {
+                  "title": "GC_CANCEL: what Cancel does on the accepted dialog",
+                  "fullTitle": "INSPECT.GC_CANCEL: what Cancel does on the accepted dialog",
+                  "state": "failed",
+                  "durationMs": 35768,
+                  "retries": 0,
+                  "error": "Step \"Return to the till\" failed after 15280ms: element (\"header [aria-label=\"Open sidebar\"]\") still not clickable after 15000ms",
+                  "stack": "Error: Step \"Return to the till\" failed after 15280ms: element (\"header [aria-label=\"Open sidebar\"]\") still not clickable after 15000ms\n    at step (D:\\Project\\webdriverIO_volt_pos\\src\\helpers\\steps.ts:139:11)\n    at process.processTimers (node:internal/timers:538:9)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\_recovery\\_inspect.spec.ts:111:5)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 1,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 50
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-09-24-459Z",
+      "startedAt": "2026-09-03T09:09:24.459Z",
+      "finishedAt": "2026-09-03T09:18:39.720Z",
+      "durationMs": 555261,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 15,
+        "passed": 4,
+        "failed": 9,
+        "skipped": 2,
+        "passRate": 30.8
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/checkout/cash-payment.spec.ts",
+          "specName": "cash-payment",
+          "startedAt": "2026-09-03T09:09:29.899Z",
+          "finishedAt": "2026-09-03T09:09:43.054Z",
+          "durationMs": 13155,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Checkout — cash",
+              "tests": [
+                {
+                  "title": "A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "fullTitle": "Checkout — cash.A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "state": "failed",
+                  "durationMs": 1350,
+                  "retries": 0,
+                  "error": "pre-filled amount due: expected $14.51 but got $13.19 (off by -$1.32; 1451 vs 1319 cents).",
+                  "stack": "Error: pre-filled amount due: expected $14.51 but got $13.19 (off by -$1.32; 1451 vs 1319 cents).\n    at expectCentsEqual (D:\\Project\\webdriverIO_volt_pos\\src\\utils\\money.ts:159:9)\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\checkout\\cash-payment.spec.ts:61:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 0
+          }
+        },
+        {
+          "cid": "0-1",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/checkout-tenders.spec.ts",
+          "specName": "checkout-tenders",
+          "startedAt": "2026-09-03T09:09:49.167Z",
+          "finishedAt": "2026-09-03T09:11:57.282Z",
+          "durationMs": 128115,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Checkout tenders",
+              "tests": [
+                {
+                  "title": "The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "state": "passed",
+                  "durationMs": 3415,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "state": "passed",
+                  "durationMs": 1427,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "state": "failed",
+                  "durationMs": 16557,
+                  "retries": 0,
+                  "error": "Could not find \"checkout remaining\" within 15000ms.",
+                  "stack": "Error: Could not find \"checkout remaining\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-remaining\"]\n  - div.bg-sherwood-green-20\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-remaining\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.text (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:165:16)\n    at async CheckoutPage.centsOf (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:709:22)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:99:14)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15417,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:109:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15364,
+                  "retries": 0,
+                  "error": "Could not find \"card tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"card tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-card\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(1)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-card\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at process.processTimers (node:internal/timers:538:9)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:124:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15404,
+                  "retries": 0,
+                  "error": "Could not find \"other tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"other tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-other\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(4)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-other\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async CheckoutPage.selectOtherTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:446:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:134:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Tip is pressable once a tender is chosen (TC-ORDERFLOW-47) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Tip is pressable once a tender is chosen (TC-ORDERFLOW-47) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15491,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:145:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15399,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:157:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "state": "skipped",
+                  "durationMs": 19120,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "state": "skipped",
+                  "durationMs": 19119,
+                  "retries": 0
+                },
+                {
+                  "title": "Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "fullTitle": "Order flow — Checkout tenders.Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "state": "failed",
+                  "durationMs": 15355,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:185:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 11,
+            "passed": 2,
+            "failed": 7,
+            "skipped": 2,
+            "passRate": 22.2
+          }
+        },
+        {
+          "cid": "0-2",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/gift-card-payment.spec.ts",
+          "specName": "gift-card-payment",
+          "startedAt": "2026-09-03T09:12:12.916Z",
+          "finishedAt": "2026-09-03T09:13:36.458Z",
+          "durationMs": 83542,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Gift card payment",
+              "tests": [
+                {
+                  "title": "A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "fullTitle": "Order flow — Gift card payment.A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "state": "failed",
+                  "durationMs": 23306,
+                  "retries": 0,
+                  "error": "\"gift card scan dialog\" was still present after 15000ms.",
+                  "stack": "Error: \"gift card scan dialog\" was still present after 15000ms.\n    at CheckoutPage.waitGone (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:192:11)\n    at async CheckoutPage.closeGiftCardDialog (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:695:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\gift-card-payment.spec.ts:73:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 0
+          }
+        },
+        {
+          "cid": "0-3",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/payment-success.spec.ts",
+          "specName": "payment-success",
+          "startedAt": "2026-09-03T09:13:47.647Z",
+          "finishedAt": "2026-09-03T09:14:05.261Z",
+          "durationMs": 17614,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Payment success",
+              "tests": [
+                {
+                  "title": "The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 630,
+                  "retries": 0
+                },
+                {
+                  "title": "No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 732,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-04-26-579Z",
+      "startedAt": "2026-09-03T09:04:26.579Z",
+      "finishedAt": "2026-09-03T09:05:01.844Z",
+      "durationMs": 35265,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/_inspect.spec.ts",
+          "specName": "_inspect",
+          "startedAt": "2026-09-03T09:04:31.413Z",
+          "finishedAt": "2026-09-03T09:04:59.396Z",
+          "durationMs": 27983,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "INSPECT",
+              "tests": [
+                {
+                  "title": "AMT: enumerate div.text-8xl after cycle+clear",
+                  "fullTitle": "INSPECT.AMT: enumerate div.text-8xl after cycle+clear",
+                  "state": "passed",
+                  "durationMs": 12283,
+                  "retries": 0
+                },
+                {
+                  "title": "FOOTER: cart totals structure",
+                  "fullTitle": "INSPECT.FOOTER: cart totals structure",
+                  "state": "passed",
+                  "durationMs": 7000,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T09-01-47-004Z",
+      "startedAt": "2026-09-03T09:01:47.004Z",
+      "finishedAt": "2026-09-03T09:02:27.277Z",
+      "durationMs": 40273,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/_inspect.spec.ts",
+          "specName": "_inspect",
+          "startedAt": "2026-09-03T09:01:52.339Z",
+          "finishedAt": "2026-09-03T09:02:23.917Z",
+          "durationMs": 31578,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "INSPECT",
+              "tests": [
+                {
+                  "title": "C2: full cart footer HTML",
+                  "fullTitle": "INSPECT.C2: full cart footer HTML",
+                  "state": "passed",
+                  "durationMs": 3073,
+                  "retries": 0
+                },
+                {
+                  "title": "A2: reproduce TC-39 -> TC-40 amount read",
+                  "fullTitle": "INSPECT.A2: reproduce TC-39 -> TC-40 amount read",
+                  "state": "passed",
+                  "durationMs": 19950,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T08-57-30-962Z",
+      "startedAt": "2026-09-03T08:57:30.962Z",
+      "finishedAt": "2026-09-03T08:58:28.228Z",
+      "durationMs": 57266,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 3,
+        "passed": 2,
+        "failed": 1,
+        "skipped": 0,
+        "passRate": 66.7
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/_inspect.spec.ts",
+          "specName": "_inspect",
+          "startedAt": "2026-09-03T08:57:36.667Z",
+          "finishedAt": "2026-09-03T08:58:23.019Z",
+          "durationMs": 46352,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "INSPECT",
+              "tests": [
+                {
+                  "title": "C: home cart footer rows",
+                  "fullTitle": "INSPECT.C: home cart footer rows",
+                  "state": "passed",
+                  "durationMs": 1802,
+                  "retries": 0
+                },
+                {
+                  "title": "A: checkout amount display before/after clearAmount on cash",
+                  "fullTitle": "INSPECT.A: checkout amount display before/after clearAmount on cash",
+                  "state": "passed",
+                  "durationMs": 4750,
+                  "retries": 0
+                },
+                {
+                  "title": "B: gift-card accepted dialog structure + close behaviour",
+                  "fullTitle": "INSPECT.B: gift-card accepted dialog structure + close behaviour",
+                  "state": "failed",
+                  "durationMs": 31441,
+                  "retries": 0,
+                  "error": "Step \"Return to the till\" failed after 15161ms: element (\"header [aria-label=\"Open sidebar\"]\") still not clickable after 15000ms",
+                  "stack": "Error: Step \"Return to the till\" failed after 15161ms: element (\"header [aria-label=\"Open sidebar\"]\") still not clickable after 15000ms\n    at step (D:\\Project\\webdriverIO_volt_pos\\src\\helpers\\steps.ts:139:11)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\_recovery\\_inspect.spec.ts:104:5)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 2,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 66.7
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T08-19-56-158Z",
+      "startedAt": "2026-09-03T08:19:56.158Z",
+      "finishedAt": "2026-09-03T08:55:55.233Z",
+      "durationMs": 2159075,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 105,
+        "passed": 35,
+        "failed": 23,
+        "skipped": 47,
+        "passRate": 60.3
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-7",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/adjust-tip.spec.ts",
+          "specName": "adjust-tip",
+          "startedAt": "2026-09-03T08:22:59.604Z",
+          "finishedAt": "2026-09-03T08:23:27.720Z",
+          "durationMs": 28116,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Adjust Tip",
+              "tests": [
+                {
+                  "title": "The Adjust Tip dialog opens on an eligible order (TC-ORDERFLOW-69) @regression @write",
+                  "fullTitle": "Order flow — Adjust Tip.The Adjust Tip dialog opens on an eligible order (TC-ORDERFLOW-69) @regression @write",
+                  "state": "skipped",
+                  "durationMs": 8442,
+                  "retries": 0
+                },
+                {
+                  "title": "The Adjust Tip dialog opens on an eligible order (TC-ORDERFLOW-69) @regression @write",
+                  "fullTitle": "Order flow — Adjust Tip.The Adjust Tip dialog opens on an eligible order (TC-ORDERFLOW-69) @regression @write",
+                  "state": "skipped",
+                  "durationMs": 3129,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-70: a multi-tender order forces a tender choice — PENDING (multi-settle order)",
+                  "fullTitle": "Order flow — Adjust Tip.TC-ORDERFLOW-70: a multi-tender order forces a tender choice — PENDING (multi-settle order)",
+                  "state": "skipped",
+                  "durationMs": 3127,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 3,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-26",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/smoke/app-launch.spec.ts",
+          "specName": "app-launch",
+          "startedAt": "2026-09-03T08:39:36.485Z",
+          "finishedAt": "2026-09-03T08:39:46.935Z",
+          "durationMs": 10450,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "App launch",
+              "tests": [
+                {
+                  "title": "The app boots past the splash screen into a titled window @smoke",
+                  "fullTitle": "App launch.The app boots past the splash screen into a titled window @smoke",
+                  "state": "passed",
+                  "durationMs": 269,
+                  "retries": 0
+                },
+                {
+                  "title": "Both the staff window and the customer display are open @smoke @dual-window",
+                  "fullTitle": "App launch.Both the staff window and the customer display are open @smoke @dual-window",
+                  "state": "passed",
+                  "durationMs": 452,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-27",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/smoke/authentication.spec.ts",
+          "specName": "authentication",
+          "startedAt": "2026-09-03T08:39:52.251Z",
+          "finishedAt": "2026-09-03T08:40:00.648Z",
+          "durationMs": 8397,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Authentication",
+              "tests": [
+                {
+                  "title": "The session lands on the till, not on the login screen @smoke @critical",
+                  "fullTitle": "Authentication.The session lands on the till, not on the login screen @smoke @critical",
+                  "state": "passed",
+                  "durationMs": 190,
+                  "retries": 0
+                },
+                {
+                  "title": "The authenticated staff directory renders @smoke @critical",
+                  "fullTitle": "Authentication.The authenticated staff directory renders @smoke @critical",
+                  "state": "passed",
+                  "durationMs": 360,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/cash-demo.spec.ts",
+          "specName": "cash-demo",
+          "startedAt": "2026-09-03T08:20:01.345Z",
+          "finishedAt": "2026-09-03T08:20:16.211Z",
+          "durationMs": 14866,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "DEMO — tạo đơn thanh toán cash",
+              "tests": [
+                {
+                  "title": "điều khiển app tạo và thanh toán 1 đơn bằng cash",
+                  "fullTitle": "DEMO — tạo đơn thanh toán cash.điều khiển app tạo và thanh toán 1 đơn bằng cash",
+                  "state": "passed",
+                  "durationMs": 5333,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-4",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/checkout/cash-payment.spec.ts",
+          "specName": "cash-payment",
+          "startedAt": "2026-09-03T08:21:39.552Z",
+          "finishedAt": "2026-09-03T08:22:06.817Z",
+          "durationMs": 27265,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Checkout — cash",
+              "tests": [
+                {
+                  "title": "A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "fullTitle": "Checkout — cash.A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+                  "state": "failed",
+                  "durationMs": 15566,
+                  "retries": 0,
+                  "error": "Step \"Open checkout\" failed after 15145ms: element (\"button.bg-green\") still not clickable after 15000ms",
+                  "stack": "Error: Step \"Open checkout\" failed after 15145ms: element (\"button.bg-green\") still not clickable after 15000ms\n    at step (D:\\Project\\webdriverIO_volt_pos\\src\\helpers\\steps.ts:139:11)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\checkout\\cash-payment.spec.ts:40:24)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 0
+          }
+        },
+        {
+          "cid": "0-24",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/settings/charge-fee.spec.ts",
+          "specName": "charge-fee",
+          "startedAt": "2026-09-03T08:37:45.253Z",
+          "finishedAt": "2026-09-03T08:38:26.178Z",
+          "durationMs": 40925,
+          "retry": 2,
+          "suites": [],
+          "totals": {
+            "tests": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-8",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/checkout-tenders.spec.ts",
+          "specName": "checkout-tenders",
+          "startedAt": "2026-09-03T08:23:35.755Z",
+          "finishedAt": "2026-09-03T08:25:47.440Z",
+          "durationMs": 131685,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Checkout tenders",
+              "tests": [
+                {
+                  "title": "The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+                  "state": "passed",
+                  "durationMs": 3571,
+                  "retries": 0
+                },
+                {
+                  "title": "A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+                  "state": "failed",
+                  "durationMs": 1430,
+                  "retries": 0,
+                  "error": "enter amount display rendered \"\", which holds no money amount. Either the row is not on screen for this order (discount, tip and change all render conditionally) or the locator matched a different element.",
+                  "stack": "Error: enter amount display rendered \"\", which holds no money amount. Either the row is not on screen for this order (discount, tip and change all render conditionally) or the locator matched a different element.\n    at amountIn (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:77:11)\n    at CheckoutPage.centsOf (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:700:23)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:83:14)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15435,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:94:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15337,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at process.processTimers (node:internal/timers:538:9)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:109:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15453,
+                  "retries": 0,
+                  "error": "Could not find \"card tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"card tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-card\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(1)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-card\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:124:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15355,
+                  "retries": 0,
+                  "error": "Could not find \"other tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"other tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-other\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(4)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-other\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at process.processTimers (node:internal/timers:538:9)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async CheckoutPage.selectOtherTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:446:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:134:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)"
+                },
+                {
+                  "title": "Tip is pressable once a tender is chosen (TC-ORDERFLOW-47) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Tip is pressable once a tender is chosen (TC-ORDERFLOW-47) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15447,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:145:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "fullTitle": "Order flow — Checkout tenders.Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15305,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:157:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+                  "state": "skipped",
+                  "durationMs": 19352,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+                  "state": "skipped",
+                  "durationMs": 19351,
+                  "retries": 0
+                },
+                {
+                  "title": "Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "fullTitle": "Order flow — Checkout tenders.Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+                  "state": "failed",
+                  "durationMs": 15398,
+                  "retries": 0,
+                  "error": "Could not find \"cash tab\" within 15000ms.",
+                  "stack": "Error: Could not find \"cash tab\" within 15000ms.\nTried, in order:\n  - [data-testid=\"checkout-tab-cash\"]\n  - div[class*=\"max-w-[600px]\"] > button:nth-of-type(2)\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"checkout-tab-cash\" yet.\n    at CheckoutPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async CheckoutPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async CheckoutPage.selectTender (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:167:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\checkout-tenders.spec.ts:185:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 11,
+            "passed": 1,
+            "failed": 8,
+            "skipped": 2,
+            "passRate": 11.1
+          }
+        },
+        {
+          "cid": "0-5",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/home/create-order.spec.ts",
+          "specName": "create-order",
+          "startedAt": "2026-09-03T08:22:13.483Z",
+          "finishedAt": "2026-09-03T08:22:31.364Z",
+          "durationMs": 17881,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Home — create an order",
+              "tests": [
+                {
+                  "title": "A staff member and a service open a priced draft order @regression @write @critical",
+                  "fullTitle": "Home — create an order.A staff member and a service open a priced draft order @regression @write @critical",
+                  "state": "failed",
+                  "durationMs": 2496,
+                  "retries": 0,
+                  "error": "draft order total: expected $15.83 but got $29.02 (off by $13.19; 1583 vs 2902 cents).",
+                  "stack": "Error: draft order total: expected $15.83 but got $29.02 (off by $13.19; 1583 vs 2902 cents).\n    at expectCentsEqual (D:\\Project\\webdriverIO_volt_pos\\src\\utils\\money.ts:159:9)\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\home\\create-order.spec.ts:49:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "A second service line raises the subtotal @regression @write @critical",
+                  "fullTitle": "Home — create an order.A second service line raises the subtotal @regression @write @critical",
+                  "state": "passed",
+                  "durationMs": 4705,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 1,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 50
+          }
+        },
+        {
+          "cid": "0-9",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/customer-entry.spec.ts",
+          "specName": "customer-entry",
+          "startedAt": "2026-09-03T08:26:03.163Z",
+          "finishedAt": "2026-09-03T08:26:34.124Z",
+          "durationMs": 30961,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Customer entry",
+              "tests": [
+                {
+                  "title": "A phone matching nobody opens the quick-add form (TC-ORDERFLOW-06) @regression @write",
+                  "fullTitle": "Order flow — Customer entry.A phone matching nobody opens the quick-add form (TC-ORDERFLOW-06) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15891,
+                  "retries": 0,
+                  "error": "Can't call elementClick on element with selector \"//button[normalize-space(.)=\"5\"] | //*[@role=\"button\"][normalize-space(.)=\"5\"]\" because element wasn't found",
+                  "stack": "Error: Can't call elementClick on element with selector \"//button[normalize-space(.)=\"5\"] | //*[@role=\"button\"][normalize-space(.)=\"5\"]\" because element wasn't found\n    at implicitWait (D:\\Project\\webdriverIO_volt_pos\\node_modules\\webdriverio\\build\\node.js:729:13)\n    at async <anonymous> (D:\\Project\\webdriverIO_volt_pos\\node_modules\\webdriverio\\build\\node.js:750:12)\n    at async Element.elementErrorHandlerCallbackFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\webdriverio\\build\\node.js:9986:28)\n    at async Element.wrapCommandFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1007:23)\n    at async elementClick (D:\\Project\\webdriverIO_volt_pos\\node_modules\\webdriverio\\build\\node.js:7700:12)\n    at async Element.wrapCommandFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1007:23)\n    at async Element.elementErrorHandlerCallbackFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\webdriverio\\build\\node.js:9963:24)\n    at async Element.wrapCommandFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1007:23)\n    at async HomePage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:126:5)\n    at async HomePage.enterCustomerPhone (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\HomePage.ts:313:7)"
+                },
+                {
+                  "title": "TC-ORDERFLOW-07: existing customer → \"Customers Found\" list — PENDING (needs a customer fixture)",
+                  "fullTitle": "Order flow — Customer entry.TC-ORDERFLOW-07: existing customer → \"Customers Found\" list — PENDING (needs a customer fixture)",
+                  "state": "skipped",
+                  "durationMs": 3657,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-08: duplicate phone → Done attaches the first — PENDING (needs a customer fixture)",
+                  "fullTitle": "Order flow — Customer entry.TC-ORDERFLOW-08: duplicate phone → Done attaches the first — PENDING (needs a customer fixture)",
+                  "state": "skipped",
+                  "durationMs": 3657,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-09: Skip → \"Unknown\" customer — PENDING (no reviewed locator for Skip)",
+                  "fullTitle": "Order flow — Customer entry.TC-ORDERFLOW-09: Skip → \"Unknown\" customer — PENDING (no reviewed locator for Skip)",
+                  "state": "skipped",
+                  "durationMs": 3656,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-10: customer with a saved note → note popup — PENDING (needs a customer fixture)",
+                  "fullTitle": "Order flow — Customer entry.TC-ORDERFLOW-10: customer with a saved note → note popup — PENDING (needs a customer fixture)",
+                  "state": "skipped",
+                  "durationMs": 3656,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 5,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 4,
+            "passRate": 0
+          }
+        },
+        {
+          "cid": "0-6",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/incomes/daily-sale-report.spec.ts",
+          "specName": "daily-sale-report",
+          "startedAt": "2026-09-03T08:22:37.506Z",
+          "finishedAt": "2026-09-03T08:22:53.061Z",
+          "durationMs": 15555,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Daily Sale Report",
+              "tests": [
+                {
+                  "title": "The Sale card matches the schema @regression @critical",
+                  "fullTitle": "Daily Sale Report.The Sale card matches the schema @regression @critical",
+                  "state": "passed",
+                  "durationMs": 263,
+                  "retries": 0
+                },
+                {
+                  "title": "The Total Tip card matches the schema @regression",
+                  "fullTitle": "Daily Sale Report.The Total Tip card matches the schema @regression",
+                  "state": "passed",
+                  "durationMs": 212,
+                  "retries": 0
+                },
+                {
+                  "title": "Total Payment equals its parts, not just the rollup column @regression @critical",
+                  "fullTitle": "Daily Sale Report.Total Payment equals its parts, not just the rollup column @regression @critical",
+                  "state": "passed",
+                  "durationMs": 238,
+                  "retries": 0
+                },
+                {
+                  "title": "Selecting a card moves the chart and the URL together @regression",
+                  "fullTitle": "Daily Sale Report.Selecting a card moves the chart and the URL together @regression",
+                  "state": "passed",
+                  "durationMs": 1018,
+                  "retries": 0
+                },
+                {
+                  "title": "The orders table lists exactly the day's orders @regression",
+                  "fullTitle": "Daily Sale Report.The orders table lists exactly the day's orders @regression",
+                  "state": "passed",
+                  "durationMs": 245,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 5,
+            "passed": 5,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-10",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/dual-screen.spec.ts",
+          "specName": "dual-screen",
+          "startedAt": "2026-09-03T08:26:40.466Z",
+          "finishedAt": "2026-09-03T08:26:49.209Z",
+          "durationMs": 8743,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Customer display",
+              "tests": [
+                {
+                  "title": "TC-ORDERFLOW-80: till waits on \"Customer is adding a tip\" — PENDING (needs launch lane + tip config) @dual-window",
+                  "fullTitle": "Order flow — Customer display.TC-ORDERFLOW-80: till waits on \"Customer is adding a tip\" — PENDING (needs launch lane + tip config) @dual-window",
+                  "state": "skipped",
+                  "durationMs": 2398,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-81: customer \"Add a tip\" screen options — PENDING (needs launch lane + tip config) @dual-window",
+                  "fullTitle": "Order flow — Customer display.TC-ORDERFLOW-81: customer \"Add a tip\" screen options — PENDING (needs launch lane + tip config) @dual-window",
+                  "state": "skipped",
+                  "durationMs": 2397,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 2,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-11",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/gift-card-payment.spec.ts",
+          "specName": "gift-card-payment",
+          "startedAt": "2026-09-03T08:26:53.999Z",
+          "finishedAt": "2026-09-03T08:28:07.224Z",
+          "durationMs": 73225,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Gift card payment",
+              "tests": [
+                {
+                  "title": "A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "fullTitle": "Order flow — Gift card payment.A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+                  "state": "failed",
+                  "durationMs": 12549,
+                  "retries": 0,
+                  "error": "\"gift card scan dialog\" was still present after 5000ms.",
+                  "stack": "Error: \"gift card scan dialog\" was still present after 5000ms.\n    at CheckoutPage.waitGone (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:174:11)\n    at async CheckoutPage.closeGiftCardDialog (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\CheckoutPage.ts:685:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\gift-card-payment.spec.ts:73:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 0
+          }
+        },
+        {
+          "cid": "0-12",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/header-and-search.spec.ts",
+          "specName": "header-and-search",
+          "startedAt": "2026-09-03T08:28:17.168Z",
+          "finishedAt": "2026-09-03T08:28:25.693Z",
+          "durationMs": 8525,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Header & Search",
+              "tests": [
+                {
+                  "title": "TC-ORDERFLOW-71: Cash Drawer absent from the header — PENDING (absence of an unlabelled control)",
+                  "fullTitle": "Order flow — Header & Search.TC-ORDERFLOW-71: Cash Drawer absent from the header — PENDING (absence of an unlabelled control)",
+                  "state": "skipped",
+                  "durationMs": 2630,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-72: scan a gift card for a quick look — PENDING (needs a scanner)",
+                  "fullTitle": "Order flow — Header & Search.TC-ORDERFLOW-72: scan a gift card for a quick look — PENDING (needs a scanner)",
+                  "state": "skipped",
+                  "durationMs": 2630,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-73: scan an order QR → Order History — PENDING (needs a scanner)",
+                  "fullTitle": "Order flow — Header & Search.TC-ORDERFLOW-73: scan an order QR → Order History — PENDING (needs a scanner)",
+                  "state": "skipped",
+                  "durationMs": 2630,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-74: global Search shows four tabs — PENDING (no page object for the search popup)",
+                  "fullTitle": "Order flow — Header & Search.TC-ORDERFLOW-74: global Search shows four tabs — PENDING (no page object for the search popup)",
+                  "state": "skipped",
+                  "durationMs": 2629,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-75: Search by Order ID redirects to detail — PENDING (no page object for the search popup)",
+                  "fullTitle": "Order flow — Header & Search.TC-ORDERFLOW-75: Search by Order ID redirects to detail — PENDING (no page object for the search popup)",
+                  "state": "skipped",
+                  "durationMs": 2629,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 5,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 5,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-13",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/home-cart.spec.ts",
+          "specName": "home-cart",
+          "startedAt": "2026-09-03T08:28:31.209Z",
+          "finishedAt": "2026-09-03T08:31:37.277Z",
+          "durationMs": 186068,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Home & Cart",
+              "tests": [],
+              "suites": [
+                {
+                  "title": "The three-panel till and order creation",
+                  "tests": [
+                    {
+                      "title": "The staff and service panels render populated (TC-ORDERFLOW-01) @regression",
+                      "fullTitle": "Order flow — Home & Cart.The three-panel till and order creation.The staff and service panels render populated (TC-ORDERFLOW-01) @regression",
+                      "state": "passed",
+                      "durationMs": 5400,
+                      "retries": 0
+                    },
+                    {
+                      "title": "A service before any staff raises \"Select Staff First\" (TC-ORDERFLOW-02) @regression",
+                      "fullTitle": "Order flow — Home & Cart.The three-panel till and order creation.A service before any staff raises \"Select Staff First\" (TC-ORDERFLOW-02) @regression",
+                      "state": "failed",
+                      "durationMs": 5568,
+                      "retries": 0,
+                      "error": "expect(received).toBe(expected) // Object.is equality",
+                      "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\home-cart.spec.ts:70:58)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                    },
+                    {
+                      "title": "Selecting a staff opens a draft order (TC-ORDERFLOW-77) @regression @write",
+                      "fullTitle": "Order flow — Home & Cart.The three-panel till and order creation.Selecting a staff opens a draft order (TC-ORDERFLOW-77) @regression @write",
+                      "state": "passed",
+                      "durationMs": 446,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                },
+                {
+                  "title": "A draft with one service",
+                  "tests": [
+                    {
+                      "title": "The draft is priced and payable (TC-ORDERFLOW-03) @regression @write @critical",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.The draft is priced and payable (TC-ORDERFLOW-03) @regression @write @critical",
+                      "state": "passed",
+                      "durationMs": 2440,
+                      "retries": 0
+                    },
+                    {
+                      "title": "The staff search filters the panel (TC-ORDERFLOW-04) @regression",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.The staff search filters the panel (TC-ORDERFLOW-04) @regression",
+                      "state": "failed",
+                      "durationMs": 12666,
+                      "retries": 0,
+                      "error": "expect(received).toBeGreaterThan(expected)",
+                      "stack": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\home-cart.spec.ts:117:50)\n    at process.processTimers (node:internal/timers:538:9)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                    },
+                    {
+                      "title": "The service search filters the panel (TC-ORDERFLOW-05) @regression",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.The service search filters the panel (TC-ORDERFLOW-05) @regression",
+                      "state": "failed",
+                      "durationMs": 12738,
+                      "retries": 0,
+                      "error": "expect(received).toBeGreaterThan(expected)",
+                      "stack": "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\home-cart.spec.ts:127:52)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                    },
+                    {
+                      "title": "The cart footer totals reconcile (TC-ORDERFLOW-21) @regression @write",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.The cart footer totals reconcile (TC-ORDERFLOW-21) @regression @write",
+                      "state": "passed",
+                      "durationMs": 2305,
+                      "retries": 0
+                    },
+                    {
+                      "title": "Promo & Rewards opens its dialog (TC-ORDERFLOW-18) @regression @write",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.Promo & Rewards opens its dialog (TC-ORDERFLOW-18) @regression @write",
+                      "state": "passed",
+                      "durationMs": 1230,
+                      "retries": 0
+                    },
+                    {
+                      "title": "Note opens the order-note dialog (TC-ORDERFLOW-19) @regression @write",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.Note opens the order-note dialog (TC-ORDERFLOW-19) @regression @write",
+                      "state": "passed",
+                      "durationMs": 1345,
+                      "retries": 0
+                    },
+                    {
+                      "title": "Merge Order is offered once the order has a line (TC-ORDERFLOW-20) @regression @write",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.Merge Order is offered once the order has a line (TC-ORDERFLOW-20) @regression @write",
+                      "state": "passed",
+                      "durationMs": 265,
+                      "retries": 0
+                    },
+                    {
+                      "title": "Change Staff enters swap mode (TC-ORDERFLOW-11) @regression @write",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.Change Staff enters swap mode (TC-ORDERFLOW-11) @regression @write",
+                      "state": "failed",
+                      "durationMs": 15494,
+                      "retries": 0,
+                      "error": "Could not find \"change staff button\" within 15000ms.",
+                      "stack": "Error: Could not find \"change staff button\" within 15000ms.\nTried, in order:\n  - [data-testid=\"home-order-change-staff-btn\"]\n  - //button[normalize-space()=\"Change Staff\" or normalize-space()=\"Đổi nhân viên\"] | //*[@role=\"button\"][normalize-space()=\"Change Staff\" or normalize-space()=\"Đổi nhân viên\"]\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"home-order-change-staff-btn\" yet.\n    at HomePage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at process.processTimers (node:internal/timers:538:9)\n    at async HomePage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async HomePage.pressChangeStaff (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\HomePage.ts:414:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\home-cart.spec.ts:158:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                    },
+                    {
+                      "title": "TC-ORDERFLOW-22: edit a cart line price — PENDING (no clickable-row locator)",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.TC-ORDERFLOW-22: edit a cart line price — PENDING (no clickable-row locator)",
+                      "state": "skipped",
+                      "durationMs": 66165,
+                      "retries": 0
+                    },
+                    {
+                      "title": "TC-ORDERFLOW-23: apply an item discount to a cart line — PENDING (no clickable-row locator)",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.TC-ORDERFLOW-23: apply an item discount to a cart line — PENDING (no clickable-row locator)",
+                      "state": "skipped",
+                      "durationMs": 66164,
+                      "retries": 0
+                    },
+                    {
+                      "title": "TC-ORDERFLOW-24: add a per-line service note — PENDING (no clickable-row locator)",
+                      "fullTitle": "Order flow — Home & Cart.A draft with one service.TC-ORDERFLOW-24: add a per-line service note — PENDING (no clickable-row locator)",
+                      "state": "skipped",
+                      "durationMs": 66164,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                }
+              ]
+            }
+          ],
+          "totals": {
+            "tests": 14,
+            "passed": 7,
+            "failed": 4,
+            "skipped": 3,
+            "passRate": 63.6
+          }
+        },
+        {
+          "cid": "0-28",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/smoke/home-screen.spec.ts",
+          "specName": "home-screen",
+          "startedAt": "2026-09-03T08:40:05.767Z",
+          "finishedAt": "2026-09-03T08:40:17.152Z",
+          "durationMs": 11385,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Home screen",
+              "tests": [
+                {
+                  "title": "The staff and service panels are populated @smoke",
+                  "fullTitle": "Home screen.The staff and service panels are populated @smoke",
+                  "state": "passed",
+                  "durationMs": 285,
+                  "retries": 0
+                },
+                {
+                  "title": "Every cart footer row reads back as whole cents @smoke",
+                  "fullTitle": "Home screen.Every cart footer row reads back as whole cents @smoke",
+                  "state": "passed",
+                  "durationMs": 2493,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-25",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/settings/language-switch.spec.ts",
+          "specName": "language-switch",
+          "startedAt": "2026-09-03T08:38:32.676Z",
+          "finishedAt": "2026-09-03T08:39:28.572Z",
+          "durationMs": 55896,
+          "retry": 2,
+          "suites": [],
+          "totals": {
+            "tests": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-23",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-history/listing-and-detail.spec.ts",
+          "specName": "listing-and-detail",
+          "startedAt": "2026-09-03T08:37:12.870Z",
+          "finishedAt": "2026-09-03T08:37:38.294Z",
+          "durationMs": 25424,
+          "retry": 2,
+          "suites": [],
+          "totals": {
+            "tests": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-14",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/network-disconnect.spec.ts",
+          "specName": "network-disconnect",
+          "startedAt": "2026-09-03T08:31:55.771Z",
+          "finishedAt": "2026-09-03T08:32:04.346Z",
+          "durationMs": 8575,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Network disconnect",
+              "tests": [
+                {
+                  "title": "TC-ORDERFLOW-52: new card txn on Try Again → complete — PENDING (LINEAR-ONLY, needs terminal)",
+                  "fullTitle": "Order flow — Network disconnect.TC-ORDERFLOW-52: new card txn on Try Again → complete — PENDING (LINEAR-ONLY, needs terminal)",
+                  "state": "skipped",
+                  "durationMs": 2792,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-53: no new txn → other tender + reconcile — PENDING (LINEAR-ONLY, needs terminal)",
+                  "fullTitle": "Order flow — Network disconnect.TC-ORDERFLOW-53: no new txn → other tender + reconcile — PENDING (LINEAR-ONLY, needs terminal)",
+                  "state": "skipped",
+                  "durationMs": 2791,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 2,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-15",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/order-detail-actions.spec.ts",
+          "specName": "order-detail-actions",
+          "startedAt": "2026-09-03T08:32:09.334Z",
+          "finishedAt": "2026-09-03T08:33:14.904Z",
+          "durationMs": 65570,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Order detail actions",
+              "tests": [
+                {
+                  "title": "The detail pane renders its sections and the charged total (TC-ORDERFLOW-79) @regression @write",
+                  "fullTitle": "Order flow — Order detail actions.The detail pane renders its sections and the charged total (TC-ORDERFLOW-79) @regression @write",
+                  "state": "failed",
+                  "durationMs": 15542,
+                  "retries": 0,
+                  "error": "Could not find \"detail section Order Summary\" within 15000ms.",
+                  "stack": "Error: Could not find \"detail section Order Summary\" within 15000ms.\nTried, in order:\n  - [data-testid=\"order-history-detail-section-Order Summary\"]\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"order-history-detail-section-Order Summary\" yet.\n    at OrderHistoryDetailPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async OrderHistoryDetailPage.text (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:151:16)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\order-detail-actions.spec.ts:80:14)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "An unsettled order offers Cancel / Re-Open, not Refund (TC-ORDERFLOW-55) @regression @write",
+                  "fullTitle": "Order flow — Order detail actions.An unsettled order offers Cancel / Re-Open, not Refund (TC-ORDERFLOW-55) @regression @write",
+                  "state": "failed",
+                  "durationMs": 10407,
+                  "retries": 0,
+                  "error": "expect(received).toBe(expected) // Object.is equality",
+                  "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\order-detail-actions.spec.ts:94:64)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "Cancel Order opens its reason dialog (TC-ORDERFLOW-64) @regression @write",
+                  "fullTitle": "Order flow — Order detail actions.Cancel Order opens its reason dialog (TC-ORDERFLOW-64) @regression @write",
+                  "state": "failed",
+                  "durationMs": 5376,
+                  "retries": 0,
+                  "error": "expect(received).toBe(expected) // Object.is equality",
+                  "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\order-detail-actions.spec.ts:102:62)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "The list filter dialog opens beside the detail pane (TC-ORDERFLOW-54) @regression",
+                  "fullTitle": "Order flow — Order detail actions.The list filter dialog opens beside the detail pane (TC-ORDERFLOW-54) @regression",
+                  "state": "failed",
+                  "durationMs": 15294,
+                  "retries": 0,
+                  "error": "Could not find \"filter button\" within 15000ms.",
+                  "stack": "Error: Could not find \"filter button\" within 15000ms.\nTried, in order:\n  - [data-testid=\"oh-filter-btn\"]\n  - [data-slot=\"dialog-trigger\"]\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"oh-filter-btn\" yet.\n    at OrderHistoryPage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async OrderHistoryPage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:123:16)\n    at async OrderHistoryPage.openFilter (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\OrderHistoryPage.ts:265:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\order-detail-actions.spec.ts:117:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                },
+                {
+                  "title": "TC-ORDERFLOW-56: Settled → Receipt + Refund — PENDING (needs a batched/settled order)",
+                  "fullTitle": "Order flow — Order detail actions.TC-ORDERFLOW-56: Settled → Receipt + Refund — PENDING (needs a batched/settled order)",
+                  "state": "skipped",
+                  "durationMs": 2712,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-57: Canceled → Receipt + voided payment — PENDING (needs a cancelled order)",
+                  "fullTitle": "Order flow — Order detail actions.TC-ORDERFLOW-57: Canceled → Receipt + voided payment — PENDING (needs a cancelled order)",
+                  "state": "skipped",
+                  "durationMs": 2712,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-58: Refunded → Receipt + Refund Information — PENDING (needs a refunded order)",
+                  "fullTitle": "Order flow — Order detail actions.TC-ORDERFLOW-58: Refunded → Receipt + Refund Information — PENDING (needs a refunded order)",
+                  "state": "skipped",
+                  "durationMs": 2712,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-59: Partial Refunded → Receipt / Refund / Partial Refund — PENDING (needs one)",
+                  "fullTitle": "Order flow — Order detail actions.TC-ORDERFLOW-59: Partial Refunded → Receipt / Refund / Partial Refund — PENDING (needs one)",
+                  "state": "skipped",
+                  "durationMs": 2711,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 8,
+            "passed": 0,
+            "failed": 4,
+            "skipped": 4,
+            "passRate": 0
+          }
+        },
+        {
+          "cid": "0-29",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/smoke/order-history.spec.ts",
+          "specName": "order-history",
+          "startedAt": "2026-09-03T08:40:22.774Z",
+          "finishedAt": "2026-09-03T08:40:34.626Z",
+          "durationMs": 11852,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order history",
+              "tests": [
+                {
+                  "title": "The order list loads with addressable, priced rows @smoke",
+                  "fullTitle": "Order history.The order list loads with addressable, priced rows @smoke",
+                  "state": "passed",
+                  "durationMs": 721,
+                  "retries": 0
+                },
+                {
+                  "title": "The filter dialog opens and closes leaving the list untouched @smoke",
+                  "fullTitle": "Order history.The filter dialog opens and closes leaving the list untouched @smoke",
+                  "state": "passed",
+                  "durationMs": 2262,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-1",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/payment-methods-scan.spec.ts",
+          "specName": "payment-methods-scan",
+          "startedAt": "2026-09-03T08:40:40.658Z",
+          "finishedAt": "2026-09-03T08:40:58.088Z",
+          "durationMs": 17430,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "SCAN — 4 phương thức thanh toán",
+              "tests": [
+                {
+                  "title": "quét card / cash / gift-card / other trên một đơn rồi chốt bằng cash",
+                  "fullTitle": "SCAN — 4 phương thức thanh toán.quét card / cash / gift-card / other trên một đơn rồi chốt bằng cash",
+                  "state": "passed",
+                  "durationMs": 8641,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-2",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/payment-methods-settle.spec.ts",
+          "specName": "payment-methods-settle",
+          "startedAt": "2026-09-03T08:20:25.982Z",
+          "finishedAt": "2026-09-03T08:21:05.152Z",
+          "durationMs": 39170,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258",
+              "tests": [
+                {
+                  "title": "Card — chỉ quét: Complete Payment disabled (không settle khi thiếu terminal + handoff)",
+                  "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Card — chỉ quét: Complete Payment disabled (không settle khi thiếu terminal + handoff)",
+                  "state": "passed",
+                  "durationMs": 4152,
+                  "retries": 0
+                },
+                {
+                  "title": "Cash — settle exact -> /payment-success",
+                  "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Cash — settle exact -> /payment-success",
+                  "state": "passed",
+                  "durationMs": 5235,
+                  "retries": 0
+                },
+                {
+                  "title": "Gift Card — redeem 152298102986 -> /payment-success",
+                  "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Gift Card — redeem 152298102986 -> /payment-success",
+                  "state": "passed",
+                  "durationMs": 13146,
+                  "retries": 0
+                },
+                {
+                  "title": "Other (Zelle) — settle -> /payment-success",
+                  "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Other (Zelle) — settle -> /payment-success",
+                  "state": "passed",
+                  "durationMs": 6022,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 4,
+            "passed": 4,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-16",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/payment-success.spec.ts",
+          "specName": "payment-success",
+          "startedAt": "2026-09-03T08:33:26.003Z",
+          "finishedAt": "2026-09-03T08:34:18.232Z",
+          "durationMs": 52229,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Payment success",
+              "tests": [
+                {
+                  "title": "The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+                  "state": "passed",
+                  "durationMs": 674,
+                  "retries": 0
+                },
+                {
+                  "title": "No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "fullTitle": "Order flow — Payment success.No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+                  "state": "failed",
+                  "durationMs": 31406,
+                  "retries": 0,
+                  "error": "Home did not become ready within 30000ms (waiting for \"staff cards\", current path: /order-pending).",
+                  "stack": "Error: Home did not become ready within 30000ms (waiting for \"staff cards\", current path: /order-pending).\n    at HomePage.waitForReady (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\BasePage.ts:94:11)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\payment-success.spec.ts:67:7)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 1,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 50
+          }
+        },
+        {
+          "cid": "0-17",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/quick-pay.spec.ts",
+          "specName": "quick-pay",
+          "startedAt": "2026-09-03T08:34:28.047Z",
+          "finishedAt": "2026-09-03T08:35:40.737Z",
+          "durationMs": 72690,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Quick Pay",
+              "tests": [],
+              "suites": [
+                {
+                  "title": "Without a staff on the order",
+                  "tests": [
+                    {
+                      "title": "Quick Pay before any staff raises \"Select Staff First\" (TC-ORDERFLOW-13) @regression",
+                      "fullTitle": "Order flow — Quick Pay.Without a staff on the order.Quick Pay before any staff raises \"Select Staff First\" (TC-ORDERFLOW-13) @regression",
+                      "state": "passed",
+                      "durationMs": 11290,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                },
+                {
+                  "title": "With a staff on the order",
+                  "tests": [
+                    {
+                      "title": "The Quick Pay dialog opens with Add disabled (TC-ORDERFLOW-14) @regression @write",
+                      "fullTitle": "Order flow — Quick Pay.With a staff on the order.The Quick Pay dialog opens with Add disabled (TC-ORDERFLOW-14) @regression @write",
+                      "state": "failed",
+                      "durationMs": 5591,
+                      "retries": 0,
+                      "error": "expect(received).toBe(expected) // Object.is equality",
+                      "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\quick-pay.spec.ts:70:56)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+                    },
+                    {
+                      "title": "Add unlocks only with an amount AND a name (TC-ORDERFLOW-15) @regression @write",
+                      "fullTitle": "Order flow — Quick Pay.With a staff on the order.Add unlocks only with an amount AND a name (TC-ORDERFLOW-15) @regression @write",
+                      "state": "failed",
+                      "durationMs": 15443,
+                      "retries": 0,
+                      "error": "element (\"div.cursor-pointer.items-center.justify-center\") still not clickable after 15000ms",
+                      "stack": "Error: element (\"div.cursor-pointer.items-center.justify-center\") still not clickable after 15000ms\n    at <anonymous> (D:\\Project\\webdriverIO_volt_pos\\node_modules\\webdriverio\\build\\node.js:6278:15)\n    at async Element.wrapCommandFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1007:23)\n    at async Element.elementErrorHandlerCallbackFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\webdriverio\\build\\node.js:9963:24)\n    at async Element.wrapCommandFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1007:23)\n    at async Element.wrapCommandFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1007:23)\n    at async Element.elementErrorHandlerCallbackFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\webdriverio\\build\\node.js:9963:24)\n    at async Element.wrapCommandFn (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1007:23)\n    at async HomePage.click (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:124:5)\n    at async HomePage.openQuickPay (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\HomePage.ts:269:5)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\quick-pay.spec.ts:81:9)"
+                    },
+                    {
+                      "title": "TC-ORDERFLOW-16: amount capped at $9,999,999.99 — PENDING (clamp assertion undefined)",
+                      "fullTitle": "Order flow — Quick Pay.With a staff on the order.TC-ORDERFLOW-16: amount capped at $9,999,999.99 — PENDING (clamp assertion undefined)",
+                      "state": "skipped",
+                      "durationMs": 17837,
+                      "retries": 0
+                    },
+                    {
+                      "title": "TC-ORDERFLOW-17: Quick Pay item does not persist / takes no item discount — PENDING",
+                      "fullTitle": "Order flow — Quick Pay.With a staff on the order.TC-ORDERFLOW-17: Quick Pay item does not persist / takes no item discount — PENDING",
+                      "state": "skipped",
+                      "durationMs": 17837,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                }
+              ]
+            }
+          ],
+          "totals": {
+            "tests": 5,
+            "passed": 1,
+            "failed": 2,
+            "skipped": 2,
+            "passRate": 33.3
+          }
+        },
+        {
+          "cid": "0-18",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/refund.spec.ts",
+          "specName": "refund",
+          "startedAt": "2026-09-03T08:35:52.152Z",
+          "finishedAt": "2026-09-03T08:36:00.355Z",
+          "durationMs": 8203,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Refund",
+              "tests": [
+                {
+                  "title": "TC-ORDERFLOW-60: un-batched credit disables Refund — PENDING (needs a settled order)",
+                  "fullTitle": "Order flow — Refund.TC-ORDERFLOW-60: un-batched credit disables Refund — PENDING (needs a settled order)",
+                  "state": "skipped",
+                  "durationMs": 2312,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-61: All services = full refund, autofilled total — PENDING (needs a settled order)",
+                  "fullTitle": "Order flow — Refund.TC-ORDERFLOW-61: All services = full refund, autofilled total — PENDING (needs a settled order)",
+                  "state": "skipped",
+                  "durationMs": 2312,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-62: subset = partial refund, pro-rated amount — PENDING (needs a settled order)",
+                  "fullTitle": "Order flow — Refund.TC-ORDERFLOW-62: subset = partial refund, pro-rated amount — PENDING (needs a settled order)",
+                  "state": "skipped",
+                  "durationMs": 2312,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-63: dialog exposes service/method/amount/reason — PENDING (needs a settled order)",
+                  "fullTitle": "Order flow — Refund.TC-ORDERFLOW-63: dialog exposes service/method/amount/reason — PENDING (needs a settled order)",
+                  "state": "skipped",
+                  "durationMs": 2312,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 4,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 4,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-19",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/reopen.spec.ts",
+          "specName": "reopen",
+          "startedAt": "2026-09-03T08:36:05.301Z",
+          "finishedAt": "2026-09-03T08:36:14.036Z",
+          "durationMs": 8735,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Re-open Order",
+              "tests": [
+                {
+                  "title": "TC-ORDERFLOW-65: re-open allowed only once — PENDING (LINEAR-ONLY, mutating)",
+                  "fullTitle": "Order flow — Re-open Order.TC-ORDERFLOW-65: re-open allowed only once — PENDING (LINEAR-ONLY, mutating)",
+                  "state": "skipped",
+                  "durationMs": 2362,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-66: button reads \"Continue Re-open\" mid-flow — PENDING (LINEAR-ONLY, mutating)",
+                  "fullTitle": "Order flow — Re-open Order.TC-ORDERFLOW-66: button reads \"Continue Re-open\" mid-flow — PENDING (LINEAR-ONLY, mutating)",
+                  "state": "skipped",
+                  "durationMs": 2361,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-67: \"Void all\" replaces per-transaction voids — PENDING (LINEAR-ONLY, mutating)",
+                  "fullTitle": "Order flow — Re-open Order.TC-ORDERFLOW-67: \"Void all\" replaces per-transaction voids — PENDING (LINEAR-ONLY, mutating)",
+                  "state": "skipped",
+                  "durationMs": 2361,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-68: Discount/Tax locked, fee/cashback recompute — PENDING (LINEAR-ONLY, mutating)",
+                  "fullTitle": "Order flow — Re-open Order.TC-ORDERFLOW-68: Discount/Tax locked, fee/cashback recompute — PENDING (LINEAR-ONLY, mutating)",
+                  "state": "skipped",
+                  "durationMs": 2361,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 4,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 4,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-21",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/split-order.spec.ts",
+          "specName": "split-order",
+          "startedAt": "2026-09-03T08:36:34.672Z",
+          "finishedAt": "2026-09-03T08:36:52.012Z",
+          "durationMs": 17340,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Split Order",
+              "tests": [
+                {
+                  "title": "Split opens on the split-order screen (TC-ORDERFLOW-25) @regression @write",
+                  "fullTitle": "Order flow — Split Order.Split opens on the split-order screen (TC-ORDERFLOW-25) @regression @write",
+                  "state": "passed",
+                  "durationMs": 148,
+                  "retries": 0
+                },
+                {
+                  "title": "By Items is disabled for a single-line order (TC-ORDERFLOW-26) @regression @write",
+                  "fullTitle": "Order flow — Split Order.By Items is disabled for a single-line order (TC-ORDERFLOW-26) @regression @write",
+                  "state": "passed",
+                  "durationMs": 474,
+                  "retries": 0
+                },
+                {
+                  "title": "Equally defaults to two checks that sum to the whole (TC-ORDERFLOW-27) @regression @write",
+                  "fullTitle": "Order flow — Split Order.Equally defaults to two checks that sum to the whole (TC-ORDERFLOW-27) @regression @write",
+                  "state": "passed",
+                  "durationMs": 2034,
+                  "retries": 0
+                },
+                {
+                  "title": "Add New Check raises the check count (TC-ORDERFLOW-28) @regression @write",
+                  "fullTitle": "Order flow — Split Order.Add New Check raises the check count (TC-ORDERFLOW-28) @regression @write",
+                  "state": "passed",
+                  "durationMs": 4379,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 4,
+            "passed": 4,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-20",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/split-order-multi.spec.ts",
+          "specName": "split-order-multi",
+          "startedAt": "2026-09-03T08:36:19.135Z",
+          "finishedAt": "2026-09-03T08:36:28.877Z",
+          "durationMs": 9742,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Split Order (multi-line)",
+              "tests": [
+                {
+                  "title": "By Items is enabled once the order has more than one line (TC-ORDERFLOW-26) @regression @write",
+                  "fullTitle": "Order flow — Split Order (multi-line).By Items is enabled once the order has more than one line (TC-ORDERFLOW-26) @regression @write",
+                  "state": "skipped",
+                  "durationMs": 3933,
+                  "retries": 0
+                },
+                {
+                  "title": "Equally splits a two-line order into checks that sum to the whole (TC-ORDERFLOW-27) @regression @write",
+                  "fullTitle": "Order flow — Split Order (multi-line).Equally splits a two-line order into checks that sum to the whole (TC-ORDERFLOW-27) @regression @write",
+                  "state": "skipped",
+                  "durationMs": 3933,
+                  "retries": 0
+                },
+                {
+                  "title": "The Receipt Details panel renders the order totals (TC-ORDERFLOW-32) @regression @write",
+                  "fullTitle": "Order flow — Split Order (multi-line).The Receipt Details panel renders the order totals (TC-ORDERFLOW-32) @regression @write",
+                  "state": "skipped",
+                  "durationMs": 3932,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-29: By Amount rejects an over-total — PENDING (no custom-amount keypad driver)",
+                  "fullTitle": "Order flow — Split Order (multi-line).TC-ORDERFLOW-29: By Amount rejects an over-total — PENDING (no custom-amount keypad driver)",
+                  "state": "skipped",
+                  "durationMs": 3932,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-30: By Amount auto-computes the last check — PENDING (no custom-amount keypad driver)",
+                  "fullTitle": "Order flow — Split Order (multi-line).TC-ORDERFLOW-30: By Amount auto-computes the last check — PENDING (no custom-amount keypad driver)",
+                  "state": "skipped",
+                  "durationMs": 3932,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-31: each check pays independently — PENDING (heavy multi-tender settle)",
+                  "fullTitle": "Order flow — Split Order (multi-line).TC-ORDERFLOW-31: each check pays independently — PENDING (heavy multi-tender settle)",
+                  "state": "skipped",
+                  "durationMs": 3933,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-33: By Items assigns each line to a check — PENDING (no row-assignment driver)",
+                  "fullTitle": "Order flow — Split Order (multi-line).TC-ORDERFLOW-33: By Items assigns each line to a check — PENDING (no row-assignment driver)",
+                  "state": "skipped",
+                  "durationMs": 3933,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 7,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 7,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-3",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/split-order-verify.spec.ts",
+          "specName": "split-order-verify",
+          "startedAt": "2026-09-03T08:21:14.734Z",
+          "finishedAt": "2026-09-03T08:21:32.783Z",
+          "durationMs": 18049,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "VERIFY — Split Order port (TC-ORDERFLOW-25/26/27/28)",
+              "tests": [
+                {
+                  "title": "opens split-order from a single-line draft and divides it",
+                  "fullTitle": "VERIFY — Split Order port (TC-ORDERFLOW-25/26/27/28).opens split-order from a single-line draft and divides it",
+                  "state": "passed",
+                  "durationMs": 8512,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-22",
+          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/split-tip.spec.ts",
+          "specName": "split-tip",
+          "startedAt": "2026-09-03T08:36:58.798Z",
+          "finishedAt": "2026-09-03T08:37:07.809Z",
+          "durationMs": 9011,
+          "retry": 2,
+          "suites": [
+            {
+              "title": "Order flow — Split Tip",
+              "tests": [
+                {
+                  "title": "TC-ORDERFLOW-34: Split Tip hidden on a single-staff order — PENDING (needs 2-staff + tip)",
+                  "fullTitle": "Order flow — Split Tip.TC-ORDERFLOW-34: Split Tip hidden on a single-staff order — PENDING (needs 2-staff + tip)",
+                  "state": "skipped",
+                  "durationMs": 2419,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-35: Split Evenly divides equally — PENDING (needs 2-staff order + tip)",
+                  "fullTitle": "Order flow — Split Tip.TC-ORDERFLOW-35: Split Evenly divides equally — PENDING (needs 2-staff order + tip)",
+                  "state": "skipped",
+                  "durationMs": 2418,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-36: Proportion divides by service share — PENDING (needs 2-staff order + tip)",
+                  "fullTitle": "Order flow — Split Tip.TC-ORDERFLOW-36: Proportion divides by service share — PENDING (needs 2-staff order + tip)",
+                  "state": "skipped",
+                  "durationMs": 2418,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-37: Manual makes each amount editable — PENDING (needs 2-staff order + tip)",
+                  "fullTitle": "Order flow — Split Tip.TC-ORDERFLOW-37: Manual makes each amount editable — PENDING (needs 2-staff order + tip)",
+                  "state": "skipped",
+                  "durationMs": 2418,
+                  "retries": 0
+                },
+                {
+                  "title": "TC-ORDERFLOW-38: dialog shows Total Tip + three tabs + Confirm — PENDING (needs the fixture)",
+                  "fullTitle": "Order flow — Split Tip.TC-ORDERFLOW-38: dialog shows Total Tip + three tabs + Confirm — PENDING (needs the fixture)",
+                  "state": "skipped",
+                  "durationMs": 2418,
+                  "retries": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 5,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 5,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T06-28-52-781Z",
+      "startedAt": "2026-09-03T06:28:52.781Z",
+      "finishedAt": "2026-09-03T06:37:12.781Z",
+      "durationMs": 500000,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 11,
+        "passed": 10,
+        "failed": 1,
+        "skipped": 0,
+        "passRate": 90.9
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\tc-01-cash-exact.spec.ts",
+          "specName": "regression/order-flow/tc-01-cash-exact",
+          "startedAt": "2026-09-03T06:28:52.781Z",
+          "finishedAt": "2026-09-03T06:37:12.781Z",
+          "durationMs": 12000,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "tc-01-cash-exact",
+              "tests": [
+                {
+                  "title": "TC-01 takes exact cash",
+                  "fullTitle": "TC-01 takes exact cash",
+                  "state": "passed",
+                  "durationMs": 3900
+                },
+                {
+                  "title": "TC-02 makes change",
+                  "fullTitle": "TC-02 makes change",
+                  "state": "passed",
+                  "durationMs": 4600
+                },
+                {
+                  "title": "TC-03 prints receipt",
+                  "fullTitle": "TC-03 prints receipt",
+                  "state": "passed",
+                  "durationMs": 3500
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 3,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\tc-14-split-order.spec.ts",
+          "specName": "regression/order-flow/tc-14-split-order",
+          "startedAt": "2026-09-03T06:28:52.781Z",
+          "finishedAt": "2026-09-03T06:37:12.781Z",
+          "durationMs": 12300,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "tc-14-split-order",
+              "tests": [
+                {
+                  "title": "TC-14 splits by seat",
+                  "fullTitle": "TC-14 splits by seat",
+                  "state": "passed",
+                  "durationMs": 5200
+                },
+                {
+                  "title": "TC-15 merges back",
+                  "fullTitle": "TC-15 merges back",
+                  "state": "passed",
+                  "durationMs": 2800
+                },
+                {
+                  "title": "TC-16 voids a split",
+                  "fullTitle": "TC-16 voids a split",
+                  "state": "passed",
+                  "durationMs": 4300
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 3,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-history\\order-history-detail.spec.ts",
+          "specName": "regression/order-history/order-history-detail",
+          "startedAt": "2026-09-03T06:28:52.781Z",
+          "finishedAt": "2026-09-03T06:37:12.781Z",
+          "durationMs": 10600,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "order-history-detail",
+              "tests": [
+                {
+                  "title": "opens a paid order",
+                  "fullTitle": "opens a paid order",
+                  "state": "passed",
+                  "durationMs": 2800
+                },
+                {
+                  "title": "re-prints the receipt",
+                  "fullTitle": "re-prints the receipt",
+                  "state": "passed",
+                  "durationMs": 3200
+                },
+                {
+                  "title": "refunds a line",
+                  "fullTitle": "refunds a line",
+                  "state": "failed",
+                  "durationMs": 4600,
+                  "error": "upstream refund returned 502 — sync retry exhausted",
+                  "stack": "Error: upstream refund returned 502 — sync retry exhausted\n    at Page.click (src/pages/pos/CheckoutPage.ts:88:14)\n    at Context.<anonymous> (tests/regression/...)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 2,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 66.7
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\settings\\charge-fee.spec.ts",
+          "specName": "regression/settings/charge-fee",
+          "startedAt": "2026-09-03T06:28:52.781Z",
+          "finishedAt": "2026-09-03T06:37:12.781Z",
+          "durationMs": 5900,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "charge-fee",
+              "tests": [
+                {
+                  "title": "adds a card surcharge",
+                  "fullTitle": "adds a card surcharge",
+                  "state": "passed",
+                  "durationMs": 3400
+                },
+                {
+                  "title": "removes the surcharge",
+                  "fullTitle": "removes the surcharge",
+                  "state": "passed",
+                  "durationMs": 2500
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-03T01-29-17-781Z",
+      "startedAt": "2026-09-03T01:29:17.781Z",
+      "finishedAt": "2026-09-03T01:37:12.781Z",
+      "durationMs": 475000,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 9,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\tc-01-cash-exact.spec.ts",
+          "specName": "regression/order-flow/tc-01-cash-exact",
+          "startedAt": "2026-09-03T01:29:17.781Z",
+          "finishedAt": "2026-09-03T01:37:12.781Z",
+          "durationMs": 12300,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "tc-01-cash-exact",
+              "tests": [
+                {
+                  "title": "TC-01 takes exact cash",
+                  "fullTitle": "TC-01 takes exact cash",
+                  "state": "passed",
+                  "durationMs": 4000
+                },
+                {
+                  "title": "TC-02 makes change",
+                  "fullTitle": "TC-02 makes change",
+                  "state": "passed",
+                  "durationMs": 4700
+                },
+                {
+                  "title": "TC-03 prints receipt",
+                  "fullTitle": "TC-03 prints receipt",
+                  "state": "passed",
+                  "durationMs": 3600
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 3,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\tc-14-split-order.spec.ts",
+          "specName": "regression/order-flow/tc-14-split-order",
+          "startedAt": "2026-09-03T01:29:17.781Z",
+          "finishedAt": "2026-09-03T01:37:12.781Z",
+          "durationMs": 8200,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "tc-14-split-order",
+              "tests": [
+                {
+                  "title": "TC-14 splits by seat",
+                  "fullTitle": "TC-14 splits by seat",
+                  "state": "passed",
+                  "durationMs": 5300
+                },
+                {
+                  "title": "TC-15 merges back",
+                  "fullTitle": "TC-15 merges back",
+                  "state": "passed",
+                  "durationMs": 2900
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\checkout\\checkout-keypad.spec.ts",
+          "specName": "regression/checkout/checkout-keypad",
+          "startedAt": "2026-09-03T01:29:17.781Z",
+          "finishedAt": "2026-09-03T01:37:12.781Z",
+          "durationMs": 4200,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "checkout-keypad",
+              "tests": [
+                {
+                  "title": "types a custom amount",
+                  "fullTitle": "types a custom amount",
+                  "state": "passed",
+                  "durationMs": 2500
+                },
+                {
+                  "title": "clears with backspace",
+                  "fullTitle": "clears with backspace",
+                  "state": "passed",
+                  "durationMs": 1700
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\home\\home-smoke.spec.ts",
+          "specName": "regression/home/home-smoke",
+          "startedAt": "2026-09-03T01:29:17.781Z",
+          "finishedAt": "2026-09-03T01:37:12.781Z",
+          "durationMs": 3400,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "home-smoke",
+              "tests": [
+                {
+                  "title": "shows the till",
+                  "fullTitle": "shows the till",
+                  "state": "passed",
+                  "durationMs": 1900
+                },
+                {
+                  "title": "opens the nav",
+                  "fullTitle": "opens the nav",
+                  "state": "passed",
+                  "durationMs": 1500
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-02T07-28-32-781Z",
+      "startedAt": "2026-09-02T07:28:32.781Z",
+      "finishedAt": "2026-09-02T07:37:12.781Z",
+      "durationMs": 520000,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 11,
+        "passed": 9,
+        "failed": 1,
+        "skipped": 1,
+        "passRate": 90
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\tc-01-cash-exact.spec.ts",
+          "specName": "regression/order-flow/tc-01-cash-exact",
+          "startedAt": "2026-09-02T07:28:32.781Z",
+          "finishedAt": "2026-09-02T07:37:12.781Z",
+          "durationMs": 12700,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "tc-01-cash-exact",
+              "tests": [
+                {
+                  "title": "TC-01 takes exact cash",
+                  "fullTitle": "TC-01 takes exact cash",
+                  "state": "passed",
+                  "durationMs": 4100
+                },
+                {
+                  "title": "TC-02 makes change",
+                  "fullTitle": "TC-02 makes change",
+                  "state": "passed",
+                  "durationMs": 4900
+                },
+                {
+                  "title": "TC-03 prints receipt",
+                  "fullTitle": "TC-03 prints receipt",
+                  "state": "passed",
+                  "durationMs": 3700
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 3,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\tc-14-split-order.spec.ts",
+          "specName": "regression/order-flow/tc-14-split-order",
+          "startedAt": "2026-09-02T07:28:32.781Z",
+          "finishedAt": "2026-09-02T07:37:12.781Z",
+          "durationMs": 13600,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "tc-14-split-order",
+              "tests": [
+                {
+                  "title": "TC-14 splits by seat",
+                  "fullTitle": "TC-14 splits by seat",
+                  "state": "passed",
+                  "durationMs": 5400
+                },
+                {
+                  "title": "TC-15 merges back",
+                  "fullTitle": "TC-15 merges back",
+                  "state": "passed",
+                  "durationMs": 3000
+                },
+                {
+                  "title": "TC-16 voids a split",
+                  "fullTitle": "TC-16 voids a split",
+                  "state": "failed",
+                  "durationMs": 5200,
+                  "error": "void requires owner passcode — prompt not shown",
+                  "stack": "Error: void requires owner passcode — prompt not shown\n    at Page.click (src/pages/pos/CheckoutPage.ts:88:14)\n    at Context.<anonymous> (tests/regression/...)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 2,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 66.7
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\checkout\\checkout-keypad.spec.ts",
+          "specName": "regression/checkout/checkout-keypad",
+          "startedAt": "2026-09-02T07:28:32.781Z",
+          "finishedAt": "2026-09-02T07:37:12.781Z",
+          "durationMs": 4400,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "checkout-keypad",
+              "tests": [
+                {
+                  "title": "types a custom amount",
+                  "fullTitle": "types a custom amount",
+                  "state": "passed",
+                  "durationMs": 2600
+                },
+                {
+                  "title": "clears with backspace",
+                  "fullTitle": "clears with backspace",
+                  "state": "passed",
+                  "durationMs": 1800
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\settings\\charge-fee.spec.ts",
+          "specName": "regression/settings/charge-fee",
+          "startedAt": "2026-09-02T07:28:32.781Z",
+          "finishedAt": "2026-09-02T07:37:12.781Z",
+          "durationMs": 6100,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "charge-fee",
+              "tests": [
+                {
+                  "title": "adds a card surcharge",
+                  "fullTitle": "adds a card surcharge",
+                  "state": "passed",
+                  "durationMs": 3500
+                },
+                {
+                  "title": "removes the surcharge",
+                  "fullTitle": "removes the surcharge",
+                  "state": "passed",
+                  "durationMs": 2600
+                },
+                {
+                  "title": "rejects a negative fee",
+                  "fullTitle": "rejects a negative fee",
+                  "state": "skipped",
+                  "durationMs": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 1,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-09-01T07-28-00-781Z",
+      "startedAt": "2026-09-01T07:28:00.781Z",
+      "finishedAt": "2026-09-01T07:37:12.781Z",
+      "durationMs": 552000,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "20258",
+        "app": "volt-pos-app.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 11,
+        "passed": 7,
+        "failed": 3,
+        "skipped": 1,
+        "passRate": 70
+      },
+      "passed": false,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\tc-01-cash-exact.spec.ts",
+          "specName": "regression/order-flow/tc-01-cash-exact",
+          "startedAt": "2026-09-01T07:28:00.781Z",
+          "finishedAt": "2026-09-01T07:37:12.781Z",
+          "durationMs": 13100,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "tc-01-cash-exact",
+              "tests": [
+                {
+                  "title": "TC-01 takes exact cash",
+                  "fullTitle": "TC-01 takes exact cash",
+                  "state": "passed",
+                  "durationMs": 4200
+                },
+                {
+                  "title": "TC-02 makes change",
+                  "fullTitle": "TC-02 makes change",
+                  "state": "failed",
+                  "durationMs": 5100,
+                  "error": "expected drawer total $42.00 but got $40.00",
+                  "stack": "Error: expected drawer total $42.00 but got $40.00\n    at Page.click (src/pages/pos/CheckoutPage.ts:88:14)\n    at Context.<anonymous> (tests/regression/...)"
+                },
+                {
+                  "title": "TC-03 prints receipt",
+                  "fullTitle": "TC-03 prints receipt",
+                  "state": "passed",
+                  "durationMs": 3800
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 2,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 66.7
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\tc-14-split-order.spec.ts",
+          "specName": "regression/order-flow/tc-14-split-order",
+          "startedAt": "2026-09-01T07:28:00.781Z",
+          "finishedAt": "2026-09-01T07:37:12.781Z",
+          "durationMs": 9300,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "tc-14-split-order",
+              "tests": [
+                {
+                  "title": "TC-14 splits by seat",
+                  "fullTitle": "TC-14 splits by seat",
+                  "state": "failed",
+                  "durationMs": 6200,
+                  "error": "split panel row not displayed",
+                  "stack": "Error: split panel row not displayed\n    at Page.click (src/pages/pos/CheckoutPage.ts:88:14)\n    at Context.<anonymous> (tests/regression/...)"
+                },
+                {
+                  "title": "TC-15 merges back",
+                  "fullTitle": "TC-15 merges back",
+                  "state": "passed",
+                  "durationMs": 3100
+                },
+                {
+                  "title": "TC-16 voids a split",
+                  "fullTitle": "TC-16 voids a split",
+                  "state": "skipped",
+                  "durationMs": 0
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 1,
+            "failed": 1,
+            "skipped": 1,
+            "passRate": 50
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-history\\order-history-detail.spec.ts",
+          "specName": "regression/order-history/order-history-detail",
+          "startedAt": "2026-09-01T07:28:00.781Z",
+          "finishedAt": "2026-09-01T07:37:12.781Z",
+          "durationMs": 11000,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "order-history-detail",
+              "tests": [
+                {
+                  "title": "opens a paid order",
+                  "fullTitle": "opens a paid order",
+                  "state": "passed",
+                  "durationMs": 2900
+                },
+                {
+                  "title": "re-prints the receipt",
+                  "fullTitle": "re-prints the receipt",
+                  "state": "passed",
+                  "durationMs": 3300
+                },
+                {
+                  "title": "refunds a line",
+                  "fullTitle": "refunds a line",
+                  "state": "failed",
+                  "durationMs": 4800,
+                  "error": "refund confirmation dialog timed out",
+                  "stack": "Error: refund confirmation dialog timed out\n    at Page.click (src/pages/pos/CheckoutPage.ts:88:14)\n    at Context.<anonymous> (tests/regression/...)"
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 3,
+            "passed": 2,
+            "failed": 1,
+            "skipped": 0,
+            "passRate": 66.7
+          }
+        },
+        {
+          "cid": "0-0",
+          "file": "D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\settings\\charge-fee.spec.ts",
+          "specName": "regression/settings/charge-fee",
+          "startedAt": "2026-09-01T07:28:00.781Z",
+          "finishedAt": "2026-09-01T07:37:12.781Z",
+          "durationMs": 6300,
+          "retry": 0,
+          "suites": [
+            {
+              "title": "charge-fee",
+              "tests": [
+                {
+                  "title": "adds a card surcharge",
+                  "fullTitle": "adds a card surcharge",
+                  "state": "passed",
+                  "durationMs": 3600
+                },
+                {
+                  "title": "removes the surcharge",
+                  "fullTitle": "removes the surcharge",
+                  "state": "passed",
+                  "durationMs": 2700
+                }
+              ],
+              "suites": []
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    }
+  ]
+}

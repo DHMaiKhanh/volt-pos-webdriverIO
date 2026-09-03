@@ -257,6 +257,16 @@ export class OrderHistoryDetailPage extends BasePage {
     return this;
   }
 
+  /** Is the cancel-order dialog on screen? */
+  isCancelDialogShown(): Promise<boolean> {
+    return this.isVisible(OrderHistoryDetailIds.cancelDialog);
+  }
+
+  /** Close the cancel dialog with Escape, cancelling nothing. */
+  async closeCancelDialog(): Promise<this> {
+    return this.dismissDialog(OrderHistoryDetailIds.cancelDialog);
+  }
+
   /** Pick a cancellation reason. `other` additionally reveals the free-text field. */
   async chooseCancelReason(reason: OrderReason): Promise<this> {
     await this.chooseSelectOption(OrderHistoryDetailIds.cancelReasonSelect, reasonIndex(reason));
@@ -438,6 +448,18 @@ export class OrderHistoryDetailPage extends BasePage {
   /** True on a multi-tender order, where a tender must be chosen before entering an amount. */
   async isTenderPickerOpen(): Promise<boolean> {
     return this.isVisible(OrderHistoryDetailIds.adjustTipDialog);
+  }
+
+  /** Is the adjust-tip amount-entry dialog on screen? */
+  isAdjustTipEntryShown(): Promise<boolean> {
+    return this.isVisible(OrderHistoryDetailIds.adjustTipTransactionDialog);
+  }
+
+  /** Abandon the adjust-tip flow with Escape, saving no change. */
+  async closeAdjustTip(): Promise<this> {
+    await browser.keys(['Escape']);
+    await this.waitGone(OrderHistoryDetailIds.adjustTipTransactionDialog, Timeouts.SHORT);
+    return this;
   }
 
   /** Method label of one tender row of the picker. `index` is 0-based. */

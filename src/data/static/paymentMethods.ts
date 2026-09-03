@@ -96,6 +96,24 @@ export const TENDERS_WITHOUT_HARDWARE: readonly PaymentMethod[] = PAYMENT_METHOD
 );
 
 /**
+ * Gift-card numbers hard-set in source, keyed by merchant.
+ *
+ * A gift card is ACCOUNT data — see {@link giftCard} — so every entry here MUST
+ * be a real, funded card issued in that merchant; a card from another merchant
+ * comes back "not valid" rather than "unknown". This is the standing redemption
+ * card for a device the suite is run on with no personal `.env`, which is why it
+ * lives in source rather than in a git-ignored env file. `GIFT_CARD_CODE` still
+ * overrides it, for a machine pointed at another merchant or another card.
+ *
+ * - `20258` — the test device's merchant (see the device-merchant-20258 note):
+ *   `152298102986`, the shop's standing redemption card. Redemption drains it, so
+ *   keep it topped up.
+ */
+const GIFT_CARD_BY_MERCHANT: Readonly<Record<string, string>> = {
+  '20258': '152298102986',
+};
+
+/**
  * The gift card the redemption specs spend.
  *
  * ## An ACCOUNT value: this card must exist, and it must have money on it
@@ -112,9 +130,14 @@ export const TENDERS_WITHOUT_HARDWARE: readonly PaymentMethod[] = PAYMENT_METHOD
  *
  * Redemption SPENDS the balance, so a card configured here drains across runs —
  * top it up, or point `GIFT_CARD_CODE` at a card kept for this purpose.
+ *
+ * The number resolves in this order: `GIFT_CARD_CODE` if set, else the card
+ * hard-set for `MERCHANT_ID` in {@link GIFT_CARD_BY_MERCHANT} (merchant 20258
+ * ships with `152298102986`), else empty — which {@link requireGiftCardCode}
+ * turns into an actionable error.
  */
 export const giftCard = {
-  code: (process.env.GIFT_CARD_CODE ?? '').trim(),
+  code: resolveGiftCardCode(),
   /** Optional: what the card is expected to hold, in cents, when a spec asserts the balance line. */
   balanceCents: balanceFromEnv(),
 } as const;
@@ -135,11 +158,26 @@ export function requireGiftCardCode(): string {
   if (giftCard.code !== '') return giftCard.code;
 
   throw new Error(
-    `This spec redeems a gift card, but GIFT_CARD_CODE is not set for merchant ${env.MERCHANT_ID}.\n` +
-      `Set it in configs/env/.env.${env.ENV} or configs/env/.env.local, using a card that exists ` +
-      `in this merchant and still holds a balance — redemption spends it.\n` +
+    `This spec redeems a gift card, but no card is configured for merchant ${env.MERCHANT_ID}.\n` +
+      `Either set GIFT_CARD_CODE in configs/env/.env.${env.ENV} / .env.local, or hard-set the ` +
+      `merchant's card in GIFT_CARD_BY_MERCHANT (src/data/static/paymentMethods.ts) — use a card ` +
+      `that exists in this merchant and still holds a balance, redemption spends it.\n` +
       `For the rejection path use INVALID_GIFT_CARD_CODE instead; that one needs no account setup.`,
   );
+}
+
+/**
+ * The gift-card number to spend: `GIFT_CARD_CODE` if set, else the card hard-set
+ * for `MERCHANT_ID`, else empty.
+ *
+ * Env wins so a developer can aim a run at their own card without touching
+ * source; the hard-set default is what makes the redemption specs runnable on a
+ * shared test device with no `.env` at all.
+ */
+function resolveGiftCardCode(): string {
+  const fromEnv = (process.env.GIFT_CARD_CODE ?? '').trim();
+  if (fromEnv !== '') return fromEnv;
+  return GIFT_CARD_BY_MERCHANT[env.MERCHANT_ID] ?? '';
 }
 
 /** `GIFT_CARD_BALANCE_CENTS`, in cents, or `undefined` when the spec does not assert on it. */

@@ -1,0 +1,601 @@
+/*
+ * Palette and layout for the run dashboard.
+ *
+ * Colours are the validated data-viz reference palette: status colours
+ * (good/warning/critical) carry pass/skip/fail — reserved, never reused for
+ * anything else — and a single blue series carries the pass-rate trend. Light is
+ * the default; dark is a *selected* set (its own steps against the dark surface),
+ * applied by OS preference and overridable by the in-app toggle via
+ * `data-theme` on <html>.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces & chrome */
+  --plane: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f2f2ef;
+  --border: rgba(11, 11, 11, 0.1);
+  --grid: #e1e0d9;
+  --baseline: #c3c2b7;
+
+  /* Ink */
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+
+  /* Status (fixed — never themed away from meaning) */
+  --pass: #0ca30c;
+  --fail: #d03b3b;
+  --skip: #fab219;
+  --pass-text: #006300;
+  --fail-text: #b02525;
+
+  /* Single trend series */
+  --series: #2a78d6;
+
+  /* Soft status washes for tiles/rows */
+  --pass-wash: rgba(12, 163, 12, 0.1);
+  --fail-wash: rgba(208, 59, 59, 0.1);
+  --skip-wash: rgba(250, 178, 25, 0.12);
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.04), 0 8px 24px rgba(11, 11, 11, 0.05);
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --border: rgba(255, 255, 255, 0.1);
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --pass: #0ca30c;
+    --fail: #e66767;
+    --skip: #fab219;
+    --pass-text: #4ade4a;
+    --fail-text: #f08a8a;
+    --series: #3987e5;
+    --pass-wash: rgba(12, 163, 12, 0.16);
+    --fail-wash: rgba(230, 103, 103, 0.16);
+    --skip-wash: rgba(250, 178, 25, 0.16);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --plane: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232321;
+  --border: rgba(255, 255, 255, 0.1);
+  --grid: #2c2c2a;
+  --baseline: #383835;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --pass: #0ca30c;
+  --fail: #e66767;
+  --skip: #fab219;
+  --pass-text: #4ade4a;
+  --fail-text: #f08a8a;
+  --series: #3987e5;
+  --pass-wash: rgba(12, 163, 12, 0.16);
+  --fail-wash: rgba(230, 103, 103, 0.16);
+  --skip-wash: rgba(250, 178, 25, 0.16);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--plane);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: 22px;
+  font-weight: 650;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.header .sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Buttons / controls ─────────────────────────────────────────────────── */
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.btn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.btn:active {
+  transform: translateY(0.5px);
+}
+.btn.icon {
+  padding: 7px 9px;
+}
+
+input[type='search'],
+select {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+}
+input[type='search']::placeholder {
+  color: var(--muted);
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-pad {
+  padding: 18px 20px;
+}
+.card-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+.section {
+  margin-bottom: 20px;
+}
+
+/* ── Stat tiles ─────────────────────────────────────────────────────────── */
+.tiles {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.tile {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tile .label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.tile .value {
+  font-size: 30px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.tile .value.hero {
+  font-size: 44px;
+}
+.tile .foot {
+  font-size: 12px;
+  color: var(--muted);
+}
+.tile.accent-pass {
+  background: linear-gradient(180deg, var(--pass-wash), transparent 60%);
+}
+.tile.accent-fail {
+  background: linear-gradient(180deg, var(--fail-wash), transparent 60%);
+}
+.tile.accent-skip {
+  background: linear-gradient(180deg, var(--skip-wash), transparent 60%);
+}
+.value.c-pass {
+  color: var(--pass-text);
+}
+.value.c-fail {
+  color: var(--fail-text);
+}
+.value.c-skip {
+  color: var(--skip);
+}
+
+/* ── Status badge ───────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+.badge.passed {
+  background: var(--pass-wash);
+  color: var(--pass-text);
+}
+.badge.passed .dot {
+  background: var(--pass);
+}
+.badge.failed {
+  background: var(--fail-wash);
+  color: var(--fail-text);
+}
+.badge.failed .dot {
+  background: var(--fail);
+}
+.badge.skipped,
+.badge.pending {
+  background: var(--skip-wash);
+  color: var(--skip);
+}
+.badge.skipped .dot,
+.badge.pending .dot {
+  background: var(--skip);
+}
+
+/* ── Composition bar (stacked pass/fail/skip) ───────────────────────────── */
+.compbar {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+  gap: 2px; /* the 2px surface-gap spacer between segments */
+}
+.compbar span {
+  display: block;
+  height: 100%;
+}
+.compbar .s-pass {
+  background: var(--pass);
+}
+.compbar .s-fail {
+  background: var(--fail);
+}
+.compbar .s-skip {
+  background: var(--skip);
+}
+
+/* ── Run list ───────────────────────────────────────────────────────────── */
+.runlist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+.runrow {
+  text-align: left;
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.runrow:hover {
+  background: var(--surface-2);
+}
+.runrow.active {
+  border-color: var(--series);
+  box-shadow: inset 0 0 0 1px var(--series);
+}
+.runrow .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.runrow .when {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.runrow .meta {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+}
+
+/* ── Spec / test table ──────────────────────────────────────────────────── */
+.spec {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.spec-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  cursor: pointer;
+  background: var(--surface);
+}
+.spec-head:hover {
+  background: var(--surface-2);
+}
+.spec-head .name {
+  font-weight: 600;
+  font-size: 13.5px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spec-head .caret {
+  color: var(--muted);
+  transition: transform 0.12s ease;
+  flex: none;
+}
+.spec-head .caret.open {
+  transform: rotate(90deg);
+}
+.spec-counts {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  flex: none;
+}
+.spec-counts b {
+  font-weight: 650;
+}
+
+.test {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px 9px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.test.failed {
+  background: var(--fail-wash);
+}
+.test .title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.test .suite-prefix {
+  color: var(--muted);
+}
+.test .dur {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+.test-error {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.test-error .msg {
+  color: var(--fail-text);
+  font-weight: 600;
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+.test-error pre {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.filters .spacer {
+  flex: 1;
+}
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.seg button {
+  appearance: none;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 6px 11px;
+  cursor: pointer;
+}
+.seg button:first-child {
+  border-left: 0;
+}
+.seg button.on {
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ── Chart ──────────────────────────────────────────────────────────────── */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+}
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--ink);
+  color: var(--plane);
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  transform: translate(-50%, -115%);
+  box-shadow: var(--shadow);
+  z-index: 5;
+}
+.chart-tooltip b {
+  font-weight: 650;
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 72px 24px;
+  color: var(--muted);
+}
+.empty h2 {
+  color: var(--ink);
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.empty code {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.muted {
+  color: var(--muted);
+}
+.mono {
+  font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+}
+.two-col {
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 860px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Run history sidebar beside the results detail. */
+.layout {
+  grid-template-columns: 340px minmax(0, 1fr);
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Env context strip under the run title. */
+.runmeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.runmeta .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.runmeta .k {
+  color: var(--muted);
+  font-weight: 500;
+}

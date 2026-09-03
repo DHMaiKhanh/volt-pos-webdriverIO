@@ -1,0 +1,224 @@
+{
+  "runId": "2026-09-03T09-52-52-666Z",
+  "startedAt": "2026-09-03T09:52:52.666Z",
+  "finishedAt": "2026-09-03T09:55:16.749Z",
+  "durationMs": 144083,
+  "env": {
+    "name": "dev",
+    "mode": "launch",
+    "merchant": "20258",
+    "app": "volt-pos-app.exe",
+    "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+  },
+  "totals": {
+    "tests": 15,
+    "passed": 12,
+    "failed": 0,
+    "skipped": 3,
+    "passRate": 100
+  },
+  "passed": true,
+  "specs": [
+    {
+      "cid": "0-0",
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/checkout/cash-payment.spec.ts",
+      "specName": "cash-payment",
+      "startedAt": "2026-09-03T09:52:57.121Z",
+      "finishedAt": "2026-09-03T09:53:17.292Z",
+      "durationMs": 20171,
+      "retry": 2,
+      "suites": [
+        {
+          "title": "Checkout — cash",
+          "tests": [
+            {
+              "title": "A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+              "fullTitle": "Checkout — cash.A cash over-tender computes the change to the cent and closes the order @regression @write @payment @critical",
+              "state": "passed",
+              "durationMs": 10163,
+              "retries": 0
+            }
+          ],
+          "suites": []
+        }
+      ],
+      "totals": {
+        "tests": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      }
+    },
+    {
+      "cid": "0-1",
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/checkout-tenders.spec.ts",
+      "specName": "checkout-tenders",
+      "startedAt": "2026-09-03T09:53:22.715Z",
+      "finishedAt": "2026-09-03T09:54:13.650Z",
+      "durationMs": 50935,
+      "retry": 2,
+      "suites": [
+        {
+          "title": "Order flow — Checkout tenders",
+          "tests": [
+            {
+              "title": "The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+              "fullTitle": "Order flow — Checkout tenders.The four tenders show per-method amounts (TC-ORDERFLOW-39) @regression @write",
+              "state": "passed",
+              "durationMs": 3885,
+              "retries": 0
+            },
+            {
+              "title": "A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+              "fullTitle": "Order flow — Checkout tenders.A cash quick-select preset adds to the entry (TC-ORDERFLOW-40) @regression @write",
+              "state": "passed",
+              "durationMs": 2032,
+              "retries": 0
+            },
+            {
+              "title": "A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+              "fullTitle": "Order flow — Checkout tenders.A cash amount below the total leaves a balance (TC-ORDERFLOW-41) @regression @write",
+              "state": "passed",
+              "durationMs": 7012,
+              "retries": 0
+            },
+            {
+              "title": "A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+              "fullTitle": "Order flow — Checkout tenders.A full cash tender clears the balance (TC-ORDERFLOW-42) @regression @write",
+              "state": "passed",
+              "durationMs": 1768,
+              "retries": 0
+            },
+            {
+              "title": "Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+              "fullTitle": "Order flow — Checkout tenders.Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44) @regression @write",
+              "state": "passed",
+              "durationMs": 1549,
+              "retries": 0
+            },
+            {
+              "title": "Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+              "fullTitle": "Order flow — Checkout tenders.Other reveals and records a method-name field (TC-ORDERFLOW-46) @regression @write",
+              "state": "passed",
+              "durationMs": 1849,
+              "retries": 0
+            },
+            {
+              "title": "TC-ORDERFLOW-47: Tip is pressable once a tender is chosen — PENDING (the Tip button renders but reads `disabled` on EVERY tender on this device — verified card/cash/gift-card/other — because enabling it needs the customer-display tip handoff / tip-after-payment merchant config, which merchant 20258 does not have set up)",
+              "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-47: Tip is pressable once a tender is chosen — PENDING (the Tip button renders but reads `disabled` on EVERY tender on this device — verified card/cash/gift-card/other — because enabling it needs the customer-display tip handoff / tip-after-payment merchant config, which merchant 20258 does not have set up)",
+              "state": "skipped",
+              "durationMs": 20440,
+              "retries": 0
+            },
+            {
+              "title": "Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+              "fullTitle": "Order flow — Checkout tenders.Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49) @regression @write",
+              "state": "passed",
+              "durationMs": 7419,
+              "retries": 0
+            },
+            {
+              "title": "TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+              "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)",
+              "state": "skipped",
+              "durationMs": 13016,
+              "retries": 0
+            },
+            {
+              "title": "TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+              "fullTitle": "Order flow — Checkout tenders.TC-ORDERFLOW-48: Print omits the payment method from the preview — PENDING (no receipt-preview reader)",
+              "state": "skipped",
+              "durationMs": 13015,
+              "retries": 0
+            },
+            {
+              "title": "Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+              "fullTitle": "Order flow — Checkout tenders.Complete Payment settles cash, clearing the staff-code guard (TC-ORDERFLOW-76) @regression @write @payment @critical",
+              "state": "passed",
+              "durationMs": 4235,
+              "retries": 0
+            }
+          ],
+          "suites": []
+        }
+      ],
+      "totals": {
+        "tests": 11,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 3,
+        "passRate": 100
+      }
+    },
+    {
+      "cid": "0-2",
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/gift-card-payment.spec.ts",
+      "specName": "gift-card-payment",
+      "startedAt": "2026-09-03T09:54:21.476Z",
+      "finishedAt": "2026-09-03T09:54:45.800Z",
+      "durationMs": 24324,
+      "retry": 2,
+      "suites": [
+        {
+          "title": "Order flow — Gift card payment",
+          "tests": [
+            {
+              "title": "A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+              "fullTitle": "Order flow — Gift card payment.A manually entered code is accepted and unlocks Pay (TC-ORDERFLOW-45) @regression @write @payment",
+              "state": "passed",
+              "durationMs": 6866,
+              "retries": 0
+            }
+          ],
+          "suites": []
+        }
+      ],
+      "totals": {
+        "tests": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      }
+    },
+    {
+      "cid": "0-3",
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/payment-success.spec.ts",
+      "specName": "payment-success",
+      "startedAt": "2026-09-03T09:54:52.114Z",
+      "finishedAt": "2026-09-03T09:55:14.659Z",
+      "durationMs": 22545,
+      "retry": 2,
+      "suites": [
+        {
+          "title": "Order flow — Payment success",
+          "tests": [
+            {
+              "title": "The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+              "fullTitle": "Order flow — Payment success.The four receipt actions render on completion (TC-ORDERFLOW-50) @regression @write @payment",
+              "state": "passed",
+              "durationMs": 523,
+              "retries": 0
+            },
+            {
+              "title": "No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+              "fullTitle": "Order flow — Payment success.No Receipt ends the order and returns to the till (TC-ORDERFLOW-51) @regression @write @payment",
+              "state": "passed",
+              "durationMs": 764,
+              "retries": 0
+            }
+          ],
+          "suites": []
+        }
+      ],
+      "totals": {
+        "tests": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      }
+    }
+  ]
+}

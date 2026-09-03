@@ -38,5 +38,5 @@ export { goToOrderHistory, goToSettings, returnToHome } from './navigation.flow.
 export { createOrder } from './order.flow.js';
 export type { CreatedOrder, CreateOrderInput } from './order.flow.js';
 
-export { payInCash, payWithCard, payWithGiftCard } from './checkout.flow.js';
+export { payInCash, payWithCard, payWithGiftCard, payWithOther } from './checkout.flow.js';
 export type { CashTender } from './checkout.flow.js';

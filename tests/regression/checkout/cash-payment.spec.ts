@@ -15,12 +15,21 @@
 import { expect } from '@wdio/globals';
 import { createOrder, payInCash, returnToHome } from '../../../src/flows/index.js';
 import { step } from '../../../src/helpers/steps.js';
-import { homePage } from '../../../src/pages/index.js';
+import { checkoutPage } from '../../../src/pages/index.js';
 import { Tag, title } from '../../../src/types/testTags.js';
-import { expectCentsEqual, formatMoney } from '../../../src/utils/money.js';
+import { expectCentsEqual } from '../../../src/utils/money.js';
 
-/** What the customer hands over above the amount due: $20.00. */
-const OVERPAY_CENTS = 2_000;
+/**
+ * What the customer hands over above the amount due: the $50 cash preset.
+ *
+ * A PRESET value, not an arbitrary one, on purpose. This build's checkout keypad
+ * renders the preset column ON TOP of the digit column, so the "$50" button
+ * physically covers the "9" key and typing any amount containing a 9 stalls on
+ * "9 still not clickable" (see the checkout-keypad-preset-overlap note). Over-
+ * tendering by ADDING the preset — the clickable top layer — sidesteps the keypad
+ * entirely, and the change then comes out exactly the preset.
+ */
+const OVERPAY_CENTS = 5_000;
 
 describe('Checkout — cash', () => {
   before(async () => {
@@ -37,14 +46,27 @@ describe('Checkout — cash', () => {
       Tag.CRITICAL,
     ),
     async () => {
-      const checkout = await step('Open checkout', () => homePage.pressPay());
-      await checkout.waitForReady();
+      // `createOrder()` in the before hook already presses Pay and leaves the app
+      // on `/order/{id}/checkout` (see order.flow.ts) — pressing Pay again here
+      // would click the card tender's Complete Payment button, which is disabled
+      // until the customer-display handoff and so never becomes clickable. Take
+      // the checkout the flow already opened.
+      const checkout = await step('Open checkout', async () => {
+        await checkoutPage.waitForReady();
+        return checkoutPage;
+      });
 
       const orderId = await checkout.orderId();
+
+      // The amount due differs by tender — the card tab carries the service fee,
+      // the cash tab the cash discount — and the entry field pre-fills the due
+      // for the SELECTED tender. So select cash FIRST, then read the total: read
+      // on the card tab it opens on, the two legitimately differ (live: card
+      // $14.51 vs cash $13.19) and this looks like a part-paid order when it is
+      // not.
+      await checkout.selectTender('cash');
       const totalCents = await checkout.totalCents();
       expect(totalCents).toBeGreaterThan(0);
-
-      await checkout.selectTender('cash');
 
       // `checkout/index.tsx` re-runs `setAmount(remaining)` on every change of
       // method, remaining or tip, so the entry field arrives holding the full
@@ -58,8 +80,12 @@ describe('Checkout — cash', () => {
       // later assertion that it appeared meaningful.
       expect(await checkout.isChangeShown()).toBe(false);
 
+      // Over-tender by ADDING the $50 preset to the pre-filled full due. The
+      // preset button is the clickable layer over the keypad, so this needs no
+      // typed digits (which would stall on the covered "9"), and the change is
+      // then exactly the preset regardless of what the order total happens to be.
+      await step('Over-tender with the $50 cash preset', () => checkout.addCashPreset(OVERPAY_CENTS));
       const tenderedCents = totalCents + OVERPAY_CENTS;
-      await step(`Tender ${formatMoney(tenderedCents)} in cash`, () => checkout.enterAmount(tenderedCents));
 
       expectCentsEqual(await checkout.enteredAmountCents(), tenderedCents, 'entered cash amount');
       expect(await checkout.isChangeShown()).toBe(true);
@@ -70,11 +96,10 @@ describe('Checkout — cash', () => {
       // "the change was computed" from "the balance was cleared".
       expectCentsEqual(await checkout.remainingCents(), 0, 'remaining owed after an over-tender');
 
-      // Completion is handed back to the flow rather than pressed here: the
-      // write rail and the `completed_payment` passcode guard belong on that
-      // side of the layering. Re-passing the same tender is safe because
-      // `enterAmount()` clears the field before typing.
-      const success = await payInCash(orderId, { tenderedCents });
+      // Settle on the amount already in the field. payInCash WITHOUT tenderedCents
+      // presses Complete Payment on the current entry rather than re-typing it —
+      // re-typing an $XX.X9 amount would hit the covered "9" key again.
+      const success = await payInCash(orderId);
 
       expect(await success.orderId()).toBe(orderId);
       expect(await success.isActive()).toBe(true);

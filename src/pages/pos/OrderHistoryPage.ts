@@ -267,6 +267,18 @@ export class OrderHistoryPage extends BasePage {
     return this;
   }
 
+  /** Is the filter dialog on screen? */
+  isFilterDialogShown(): Promise<boolean> {
+    return this.isVisible(OrderHistoryIds.filterDialog);
+  }
+
+  /** Close the filter dialog with Escape, applying nothing. */
+  async closeFilter(): Promise<this> {
+    await browser.keys(['Escape']);
+    await this.waitGone(OrderHistoryIds.filterDialog, Timeouts.SHORT);
+    return this;
+  }
+
   /**
    * Pick a sort field.
    *

@@ -60,6 +60,10 @@ export { default as orderHistoryDetailPage, OrderHistoryDetailPage } from './pos
 /** `/settings/*` — the sidebar and every sub-screen it reaches. */
 export { default as settingsPage, SettingsPage } from './settings/SettingsPage.js';
 
+/** `/settings/charge-fee` — Tip Setting / Tax / Signature under one Save. */
+export { default as chargeFeePage, ChargeFeePage } from './settings/ChargeFeePage.js';
+export type { TipUnit } from './settings/ChargeFeePage.js';
+
 /**
  * `/incomes/*` — the money reports.
  *

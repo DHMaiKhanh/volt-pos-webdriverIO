@@ -180,6 +180,11 @@ export const SplitOrderIds = {
   backToOrder: locator(
     'back to order',
     'split-order-back',
+    // The header back control is icon-only with an aria-label, not visible text,
+    // so the text match never resolves on the shipped build — the aria-label is
+    // the working fallback (verified live 2026-09-03). Kept the text match too in
+    // case a later build labels it visibly.
+    '[aria-label="Back to order"]',
     buttonWithAnyText('Back to order', 'Quay lại đơn hàng'),
   ),
 

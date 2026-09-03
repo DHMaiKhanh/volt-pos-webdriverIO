@@ -5,6 +5,8 @@ import { loadEnv } from '../env/loadEnv.js';
 import { resolveAppCandidates } from '../env/resolveApp.js';
 import AppLifecycleService from '../../src/support/services/AppLifecycleService.js';
 import TauriDriverService from '../../src/support/services/TauriDriverService.js';
+import DashboardReporter from '../reporters/DashboardReporter.js';
+import { beginDashboardRun, finalizeDashboardRun } from '../reporters/dashboardStore.js';
 
 const env = loadEnv();
 
@@ -138,6 +140,10 @@ export const shared: WebdriverIO.Config = {
         useCucumberStepReporter: false,
       },
     ],
+    // Feeds the React run dashboard under `dashboard/`. Passed as a class (not a
+    // package name) because it lives in-repo; the launcher folds its per-spec
+    // output into one run in onComplete below.
+    [DashboardReporter, {}],
   ],
 
   // Order matters: AppLifecycleService.beforeSession clears stale app/driver
@@ -156,6 +162,9 @@ export const shared: WebdriverIO.Config = {
    * "the tests passed" means nothing until you know WHICH build passed them.
    */
   onPrepare(): void {
+    // Clear last run's per-spec fragments and stamp this run's start time.
+    beginDashboardRun();
+
     const candidates = resolveAppCandidates(process.env.APP_PATH, env.VOLT_POS_SRC);
     const lines = [
       '',
@@ -183,5 +192,16 @@ export const shared: WebdriverIO.Config = {
     console.log(
       `\nAllure results: ${Paths.ALLURE_RESULTS}\n  npm run report:allure && npm run report:open\n`,
     );
+
+    // Fold this run's per-spec fragments into one history entry for the dashboard.
+    const summary = finalizeDashboardRun();
+    if (summary) {
+      const { totals } = summary;
+      console.log(
+        `Dashboard updated: ${totals.passed}/${totals.tests} passed ` +
+          `(${totals.failed} failed, ${totals.skipped} skipped)\n` +
+          `  cd dashboard && npm install && npm run dev\n`,
+      );
+    }
   },
 };

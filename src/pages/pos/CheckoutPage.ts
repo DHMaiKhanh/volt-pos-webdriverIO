@@ -1,3 +1,4 @@
+import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { CheckoutIds, checkoutKeypadKey } from '../../constants/testids.js';
 import type { Locator } from '../../helpers/selectors.js';
@@ -365,6 +366,12 @@ export class CheckoutPage extends BasePage {
     return this;
   }
 
+  /** Is the Tip button pressable? Disabled until a tender is selected. */
+  async isTipEnabled(): Promise<boolean> {
+    const button = await this.find(CheckoutIds.tipBtn, { visible: true });
+    return button.isEnabled();
+  }
+
   async pressPrint(): Promise<this> {
     await this.click(CheckoutIds.printBtn);
     return this;
@@ -374,6 +381,11 @@ export class CheckoutPage extends BasePage {
   async pressCashDrawer(): Promise<this> {
     await this.click(CheckoutIds.cashDrawerBtn);
     return this;
+  }
+
+  /** Is the Cash Drawer button on screen? It renders only on the cash tender, never in the header. */
+  isCashDrawerShown(): Promise<boolean> {
+    return this.isVisible(CheckoutIds.cashDrawerBtn);
   }
 
   /**
@@ -655,6 +667,38 @@ export class CheckoutPage extends BasePage {
 
   isGiftCardAccepted(): Promise<boolean> {
     return this.isVisible(CheckoutIds.gcAcceptedMsg);
+  }
+
+  /** Is the gift card's Pay button offered? It appears only after a card is accepted. */
+  isGiftCardPayAvailable(): Promise<boolean> {
+    return this.isVisible(CheckoutIds.gcPayBtn);
+  }
+
+  /**
+   * Abandon the gift-card scan/redeem dialog, leaving the order unpaid.
+   *
+   * For a spec that verifies a card is ACCEPTED without spending it — redemption
+   * drains the shared test card, so a coverage check stops at acceptance.
+   *
+   * The dialog SWALLOWS the Escape key (verified live: Escape leaves it up, which
+   * then blocks the header nav and cascades into the after-hook), and no single
+   * button dismisses it from the accepted-balance screen. The exit is a two-hop
+   * walk: the accepted screen shows `[Cancel, Pay]`, **Cancel** returns to the
+   * scan screen `[Close, Input Gift Card Code]`, and **Close** there unmounts the
+   * dialog. Both hops are guarded so this also works when called straight from
+   * the scan screen (no Cancel to press), with Escape as a last resort.
+   */
+  async closeGiftCardDialog(): Promise<this> {
+    if (await this.exists(CheckoutIds.gcCancelBtn, Timeouts.SHORT)) {
+      await this.click(CheckoutIds.gcCancelBtn);
+    }
+    if (await this.exists(CheckoutIds.gcCloseBtn, Timeouts.SHORT)) {
+      await this.click(CheckoutIds.gcCloseBtn);
+    } else {
+      await browser.keys(['Escape']);
+    }
+    await this.waitGone(CheckoutIds.gcScanDialog, Timeouts.MEDIUM);
+    return this;
   }
 
   /** The card's remaining balance, in cents, as shown after a successful lookup. */

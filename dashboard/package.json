@@ -1,0 +1,23 @@
+{
+  "name": "volt-pos-run-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "React dashboard for Volt POS E2E run history. Reads the JSON the WDIO DashboardReporter writes after every run.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7"
+  }
+}

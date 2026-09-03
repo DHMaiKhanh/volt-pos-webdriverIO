@@ -180,6 +180,51 @@ export async function payWithGiftCard(orderId: string, code: string): Promise<Pa
 }
 
 /**
+ * Settle an order with the "Other" tender under a label and land on the receipt.
+ *
+ * `methodName` is what the cashier types for a tender the app has no button for —
+ * "Zelle", "Bank Transfer", "Personal Check". It is recorded on the transaction
+ * and echoed on the payment-success screen as `Other (<name>)`, which is what
+ * makes it assertable downstream.
+ *
+ * ## Two things it is NOT
+ *
+ * 1. **Untaxed.** Other is a *labelled* tender, not a tax-free one — tax stays
+ *    applied exactly as it does for card, so omitting `amountCents` settles the
+ *    full TAXED balance rather than the pre-tax figure.
+ * 2. **Offline-capable.** The tab renders disabled while the till is offline
+ *    (only cash survives a disconnected till), so a not-clickable failure names
+ *    the Other tab rather than surfacing here.
+ *
+ * Omit `amountCents` to settle the pre-filled balance in full — the cleanest
+ * path, since it presses Complete Payment without touching the checkout keypad.
+ */
+export async function payWithOther(
+  orderId: string,
+  methodName: string,
+  amountCents?: number,
+): Promise<PaymentSuccessPage> {
+  assertWritesAllowed('take an "other" payment');
+
+  if (methodName.trim() === '') {
+    throw new Error(
+      'payWithOther() needs a tender name — the label the sale is recorded under, e.g. "Zelle". ' +
+        'It is echoed on the payment-success screen as `Other (<name>)`; settling under an empty ' +
+        'label would leave the receipt reading plain "Other".',
+    );
+  }
+
+  return step(`Pay with other (${methodName})`, async () => {
+    await requireCheckoutFor(orderId, 'other');
+
+    await checkoutPage.payWithOther(methodName, amountCents);
+    await clearPasscodeGuard();
+
+    return settle(orderId, 'other');
+  });
+}
+
+/**
  * Refuse to take money unless the till is on THIS order's checkout.
  *
  * Two failures at once, and both are cheap here and expensive later.

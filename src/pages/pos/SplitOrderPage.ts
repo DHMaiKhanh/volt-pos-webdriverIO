@@ -189,6 +189,11 @@ export class SplitOrderPage extends BasePage {
    * Receipt panel and payment
    * --------------------------------------------------------------------- */
 
+  /** Is the "Receipt Details" panel (the order's own Subtotal/Tax/Total) on screen? */
+  isReceiptDetailsShown(): Promise<boolean> {
+    return this.isVisible(SplitOrderIds.receiptDetails);
+  }
+
   /** Expand or collapse the receipt breakdown, whichever it currently is. */
   async toggleReceiptDetails(): Promise<this> {
     if (await this.isVisible(SplitOrderIds.showMore, Timeouts.ANIMATION)) {
