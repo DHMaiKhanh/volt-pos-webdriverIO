@@ -23,6 +23,8 @@
     "test:regression": "npm run preflight && cross-env ENV=dev wdio run configs/wdio/wdio.dev.conf.ts --suite regression",
     "test:critical": "npm run preflight && cross-env ENV=dev wdio run configs/wdio/wdio.dev.conf.ts --mochaOpts.grep @critical",
     "test:spec": "npm run preflight && cross-env ENV=dev wdio run configs/wdio/wdio.dev.conf.ts --spec",
+    "//all": "EVERYTHING in one command: 18 unit cases (node:test) + all 227 E2E specs (smoke + regression + _recovery, via the default `tests/**/*.spec.ts` glob) = 245. `&` is cmd's sequential-unconditional operator, so the E2E lane still runs even if a unit case fails. The dashboard reflects only the 227 E2E — unit tests never feed it.",
+    "test:all": "npm run test:unit & npm run test:dev",
     "//attach": "ATTACH MODE - drives an ALREADY-RUNNING installed app over CDP instead of letting tauri-driver launch it. `app:launch` starts the app with WebView2 remote debugging on, then `test:attach` connects. This is the only mode that can drive a production install in place.",
     "app:launch": "tsx scripts/launch-app.ts",
     "app:kill": "tsx scripts/kill-app.ts",

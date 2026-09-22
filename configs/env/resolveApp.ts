@@ -24,8 +24,13 @@ const INSTALL_DIR_CANDIDATES = (localAppData: string, programFiles: string[]): s
   path.join(localAppData, 'volt-pos'),
   path.join(localAppData, 'VoltPOS'),
   path.join(localAppData, 'VoltPOS.Dev'),
+  // The shipped NSIS bundle uses productName "Volt POS" (a space), so the
+  // per-user install actually lands in `%LOCALAPPDATA%\Volt POS`. Without this
+  // entry discovery misses a stock install and preflight fails "App binary".
+  path.join(localAppData, 'Volt POS'),
   ...programFiles.map((root) => path.join(root, 'volt-pos')),
   ...programFiles.map((root) => path.join(root, 'VoltPOS')),
+  ...programFiles.map((root) => path.join(root, 'Volt POS')),
 ];
 
 const EXE_NAMES = ['volt-pos-app.exe', 'volt-pos.exe', 'VoltPOS.exe'];

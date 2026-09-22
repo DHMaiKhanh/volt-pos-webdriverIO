@@ -1,5 +1,7 @@
 import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
+import { env } from '../../../configs/env/loadEnv.js';
+import { passcodeDialog } from '../../components/index.js';
 import { Routes } from '../../constants/routes.js';
 import {
   customerSuggestionItem,
@@ -49,6 +51,9 @@ const CONFIRM_DIALOG_ACTION: Locator = locator(
   'confirm dialog action',
   'home-confirm-dialog-confirm-btn',
   '[data-slot="alert-dialog-footer"] button:last-of-type',
+  // Text fallback for builds whose footer is not slotted: the destructive action
+  // is the confirm button on the "Delete Order — Are you sure?" alert-dialog.
+  '//div[@role="alertdialog"]//button[normalize-space()="Delete" or normalize-space()="Xoá" or normalize-space()="Xóa" or normalize-space()="Confirm" or normalize-space()="Xác nhận"]',
 );
 
 /**
@@ -649,6 +654,14 @@ export class HomePage extends BasePage {
    * screen behind it.
    */
   private async confirmDestructiveAction(): Promise<void> {
+    // A permission-guarded till (merchant 20258) fronts a destructive action
+    // with the PASSCODE guard FIRST: the Remove click opens "Enter staff code
+    // to access Delete Order" — a keypad, not an alert-dialog. Enter the staff
+    // code when that guard is up; on a till without the guard this is a no-op.
+    await passcodeDialog.enterIfPresent(env.STAFF_PASSCODE);
+
+    // The shared ConfirmDialog ("Delete Order — Are you sure?", Cancel / Delete)
+    // then follows in BOTH cases, so always confirm it too.
     await this.click(CONFIRM_DIALOG_ACTION);
     await this.waitGone(CONFIRM_DIALOG_ACTION, Timeouts.MEDIUM);
   }
