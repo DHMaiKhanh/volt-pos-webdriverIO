@@ -16,12 +16,14 @@
  *   - TC-ORDERFLOW-11  Change Staff enters swap mode
  *   - TC-ORDERFLOW-12  removing a staff column clears its services
  *   - TC-ORDERFLOW-78  Remove discards the whole draft
+ *   - TC-ORDERFLOW-22  editing a cart line changes its price
+ *   - TC-ORDERFLOW-23  the Apply-Discount switch toggles on a cart line
+ *   - TC-ORDERFLOW-24  a per-line service note is accepted
  *
- * TC-ORDERFLOW-22/23/24 (edit a service line's price / item-discount / note) are
- * declared pending: opening the per-line editor needs a reviewed locator for the
- * clickable cart row, which the catalogue does not carry yet — the update dialog
- * itself is annotated (`home-update-service-*`) but nothing addresses the row you
- * tap to open it. Add `HomeIds.orderServiceRow-*` and they become live.
+ * TC-22/23/24 open the per-line editor from the cart service row
+ * (`HomeIds.orderServiceRows`, the clickable line the catalogue was missing —
+ * added and verified live 2026-09-10). The update dialog itself was already
+ * annotated (`home-update-service-*`); only the row you tap to open it was new.
  *
  * CREATES DATA: draft orders are written locally and pushed upstream by the sync
  * loop, but NO payment is taken — every draft is voided. dev / staging only.
@@ -163,13 +165,60 @@ describe('Order flow — Home & Cart', () => {
     });
 
     // Edit a cart line — price (TC-ORDERFLOW-22), item discount (TC-ORDERFLOW-23),
-    // note (TC-ORDERFLOW-24). Pending: opening the per-line editor needs a reviewed
-    // locator for the clickable cart row, which the catalogue does not carry yet.
-    it(title('TC-ORDERFLOW-22: edit a cart line price — PENDING (no clickable-row locator)'));
+    // note (TC-ORDERFLOW-24). The per-line editor opens from the cart service row
+    // (`HomeIds.orderServiceRows`, verified live 2026-09-10). Each test opens the
+    // dialog fresh and leaves the line clean for the after-hook — only TC-22 saves,
+    // dropping the line price, which the later two do not depend on.
+    it(
+      title('Editing a cart line changes its price (TC-ORDERFLOW-22)', Tag.REGRESSION, Tag.WRITE),
+      async () => {
+        await homePage.openServiceEditor();
+        expect(await homePage.isServiceEditorShown()).toBe(true);
+        // The field opens on the line's current price.
+        const original = await homePage.serviceEditorPriceCents();
+        expect(original).toBeGreaterThan(0);
 
-    it(title('TC-ORDERFLOW-23: apply an item discount to a cart line — PENDING (no clickable-row locator)'));
+        // Zero the field and enter a new price, then read back whatever the currency
+        // mask settled on — the assertion checks the edit took AND reconciles, not
+        // the mask's per-keystroke model.
+        await homePage.setServiceEditorPrice(1_200);
+        const edited = await homePage.serviceEditorPriceCents();
+        expect(edited).not.toBe(original);
+        await homePage.saveServiceEditor();
 
-    it(title('TC-ORDERFLOW-24: add a per-line service note — PENDING (no clickable-row locator)'));
+        // A single line, so the cart subtotal is exactly the edited line price.
+        expectCentsEqual(await homePage.cartSubtotal(), edited, 'cart subtotal after a price edit');
+      },
+    );
+
+    it(
+      title('Apply Discount toggles on a cart line (TC-ORDERFLOW-23)', Tag.REGRESSION, Tag.WRITE),
+      async () => {
+        await homePage.openServiceEditor();
+
+        // Flip the switch and assert the state changed, whichever way it started —
+        // robust to a merchant that defaults item discount on.
+        const before = await homePage.isItemDiscountOn();
+        await homePage.toggleItemDiscount();
+        expect(await homePage.isItemDiscountOn()).toBe(!before);
+
+        // Leave the line untouched for the after-hook.
+        await homePage.closeServiceEditor();
+      },
+    );
+
+    it(
+      title('A per-line service note is accepted (TC-ORDERFLOW-24)', Tag.REGRESSION, Tag.WRITE),
+      async () => {
+        await homePage.openServiceEditor();
+
+        const note = 'E2E line note';
+        await homePage.setServiceNote(note);
+        expect(await homePage.serviceNoteValue()).toBe(note);
+
+        await homePage.closeServiceEditor();
+      },
+    );
   });
 
   describe('Removing lines and the whole order', () => {

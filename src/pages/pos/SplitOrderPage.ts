@@ -1,5 +1,10 @@
 import { Timeouts } from '../../../configs/constants/timeouts.js';
-import { splitCheckAmount, splitCheckCard, SplitOrderIds } from '../../constants/testids.orders.js';
+import {
+  splitCheckAmount,
+  splitCheckCard,
+  splitKeypadDigit,
+  SplitOrderIds,
+} from '../../constants/testids.orders.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { logStep } from '../../helpers/steps.js';
 import { settle } from '../../helpers/wait.js';
@@ -157,6 +162,45 @@ export class SplitOrderPage extends BasePage {
   async openAmountEditor(index: number): Promise<this> {
     await this.click(splitCheckAmount(index));
     return this;
+  }
+
+  /**
+   * Set one check's amount through the By-Amount keypad.
+   *
+   * The keypad APPENDS digits to the check's current value (cents from the right),
+   * so it is cleared with backspace first, then the target is typed as a cents
+   * string and committed with Done. The app then re-balances the split: the LAST
+   * check absorbs the remainder for a valid entry, and an over-total entry is
+   * refused outright — the split reverts. Those two behaviours are what
+   * TC-ORDERFLOW-30 / TC-ORDERFLOW-29 assert against.
+   */
+  async enterCheckAmount(index: number, amountCents: number): Promise<this> {
+    await logStep(`${this.name}: set check ${String(index)} to ${String(amountCents)} cents`);
+    await this.openAmountEditor(index);
+    await this.clearAmountEntry();
+    for (const digit of String(Math.max(0, Math.trunc(amountCents)))) {
+      await this.click(splitKeypadDigit(digit));
+    }
+    await this.click(SplitOrderIds.amountKeypadDone);
+    // Committing re-balances the checks, so let the cards settle before a read.
+    await settle();
+    return this;
+  }
+
+  /** The sum of every check, in cents — equal to the order total while balanced. */
+  async checksTotalCents(): Promise<number> {
+    return (await this.allCheckAmountsCents()).reduce((sum, amount) => sum + amount, 0);
+  }
+
+  /**
+   * Backspace the amount keypad to empty.
+   *
+   * Fixed count rather than read-until-zero: the keypad has no readable value
+   * node, and a backspace on an already-empty field is a harmless no-op, so
+   * over-pressing costs nothing and avoids a per-press round trip.
+   */
+  private async clearAmountEntry(presses = 12): Promise<void> {
+    for (let i = 0; i < presses; i++) await this.click(SplitOrderIds.amountKeypadBackspace);
   }
 
   /* --------------------------------------------------------------------- *

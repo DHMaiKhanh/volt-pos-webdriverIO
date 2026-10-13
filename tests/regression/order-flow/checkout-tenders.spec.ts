@@ -95,14 +95,15 @@ describe('Order flow — Checkout tenders', () => {
   );
 
   it(
-    title('A cash quick-select preset adds to the entry (TC-ORDERFLOW-40)', Tag.REGRESSION, Tag.WRITE),
+    title('A cash quick-select preset sets the entry (TC-ORDERFLOW-40)', Tag.REGRESSION, Tag.WRITE),
     async () => {
       await checkoutPage.selectTender('cash');
       await checkoutPage.clearAmount();
       expect(await checkoutPage.enteredAmountCents()).toBe(0);
 
-      // $50 preset. Presets ADD to whatever is entered, so from zero it lands on $50.
-      await checkoutPage.addCashPreset(5_000);
+      // $50 preset. On this build a preset REPLACES the entry; from zero that lands
+      // on exactly $50 either way (see the checkout-keypad-preset-overlap note).
+      await checkoutPage.setCashPreset(5_000);
       expect(await checkoutPage.enteredAmountCents()).toBe(5_000);
     },
   );

@@ -2,9 +2,10 @@ import { Timeouts } from '../../configs/constants/timeouts.js';
 import { assertWritesAllowed, env } from '../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../components/index.js';
 import { step } from '../helpers/steps.js';
-import { checkoutPage, paymentSuccessPage } from '../pages/index.js';
+import { checkoutPage, customerDisplayPage, paymentSuccessPage } from '../pages/index.js';
 import type { PaymentSuccessPage } from '../pages/index.js';
 import { CardChargeState } from '../pages/pos/CheckoutPage.js';
+import type { TipChoice } from '../pages/pos/CustomerDisplayPage.js';
 
 /**
  * Taking an order that is already on `/order/{id}/checkout` through to settled.
@@ -60,6 +61,15 @@ export interface CashTender {
    * path.
    */
   tenderedCents?: number;
+  /**
+   * The tip to pick on the customer display IF this merchant runs a tip flow on
+   * cash (20258 does — see {@link completeCustomerTipIfPrompted}). Defaults to
+   * `'none'`. Ignored on a merchant that settles cash straight to the receipt,
+   * where no tip prompt appears and nothing reads this.
+   */
+  tip?: TipChoice;
+  /** A custom tip in cents, typed on the customer-display keypad — overrides {@link tip}. */
+  customTipCents?: number;
 }
 
 /**
@@ -78,58 +88,105 @@ export async function payInCash(orderId: string, tender: CashTender = {}): Promi
 
     await checkoutPage.payWithCash(tender.tenderedCents);
     await clearPasscodeGuard();
+    await completeCustomerTipIfPrompted(tender.tip ?? 'none', tender.customTipCents);
 
-    return settle(orderId, 'cash');
+    return settle(orderId, 'cash', async () =>
+      (await checkoutPage.isWaitingForCustomerTip())
+        ? `The till is still parked on "Customer is adding a tip. Please wait…": this merchant runs a ` +
+          `tip flow on the CASH tender and the customer-display handoff never completed. It needs the ` +
+          `LAUNCH lane, where the customer window is a real WebDriver handle the tip screen can be ` +
+          `driven on.`
+        : '',
+    );
   });
+}
+
+/** Options for {@link payWithCard}. */
+export interface CardPayment {
+  /**
+   * The tip the customer picks on their display. Defaults to `'none'` — the one
+   * choice that always renders, whatever the merchant's tip ladder (see
+   * {@link CustomerDisplayPage}).
+   */
+  tip?: TipChoice;
+  /**
+   * A custom tip in cents, typed on the keypad. Set this — and `tip` is ignored —
+   * on a merchant that exposes no percent presets (e.g. 20258 shows only Custom
+   * Tip + No Tip), where a percentage is entered as its dollar value instead.
+   */
+  customTipCents?: number;
 }
 
 /**
  * Charge the order to a card and land on the receipt screen.
  *
- * ## Two things outside this flow's control
+ * ## The sequence is the app's, not an abbreviation of it
  *
- * 1. **Complete Payment starts DISABLED on the card tender.** The button unlocks
- *    only once the tip + signature handoff comes back from the customer display,
- *    so a card spec drives that second window first (see
- *    `withCustomerWindow()`), and this flow reports the disabled button rather
- *    than clicking into a "not clickable" timeout that names the wrong cause.
- * 2. **The charge needs a real terminal.** The dialog advances on the Bamboo DOT
- *    device's own reply; with no terminal attached it sits on "waiting for
- *    connect device" and never resolves. That is an environment fact, so the
- *    failure below says so instead of retrying.
+ * On merchant 20258 Complete Payment is ENABLED on the card tender, so the flow
+ * is pay-FIRST: press it, clear the permission guard, then the CUSTOMER DISPLAY
+ * drives the rest. The till's charging dialog waits on that handoff, and only
+ * once it completes does the terminal charge proceed — so skipping the customer
+ * side parks the dialog on "charging" indefinitely (verified live 2026-09-10).
+ *
+ * The customer side is two steps, both driven here:
+ *   1. the tip screen — {@link CardPayment.tip} (default No Tip), plus a signature
+ *      when the tip screen carries one; then
+ *   2. AFTER the tapped card is approved on the terminal, a standalone signature
+ *      the app pushes on the display.
+ *
+ * ## What it needs
+ *
+ * The LAUNCH lane (the customer display is only a WebDriver handle there), a
+ * STAFF_PASSCODE the merchant accepts for `completed_payment`, and a real Bamboo
+ * DOT terminal that approves the tapped card. The approval is what makes the
+ * charge outlast {@link Timeouts.API}, so the settle waits on
+ * {@link Timeouts.CARD_CHARGE}.
  */
-export async function payWithCard(orderId: string): Promise<PaymentSuccessPage> {
+export async function payWithCard(orderId: string, payment: CardPayment = {}): Promise<PaymentSuccessPage> {
   assertWritesAllowed('take a card payment');
 
   return step('Pay by card', async () => {
     await requireCheckoutFor(orderId, 'card');
-
     await checkoutPage.selectTender('card');
-
-    if (!(await checkoutPage.isCompletePaymentEnabled())) {
-      throw new Error(
-        `Complete Payment is disabled on the card tender for order ${orderId}. ` +
-          `The card flow unlocks it only after the customer display returns the tip and the ` +
-          `signature — drive that window first (helpers/window.ts → withCustomerWindow) and wait ` +
-          `for checkoutPage.waitForCustomerHandoff() before calling payWithCard().`,
-      );
-    }
 
     await checkoutPage.pressCompletePayment();
     await clearPasscodeGuard();
 
-    await checkoutPage.waitForCardChargingDialog(Timeouts.MEDIUM);
+    // 1) The customer's tip screen. No Tip is the choice that always exists; the
+    //    screen also carries a signature region on a merchant that signs. A
+    //    `customTipCents` overrides the preset path, for a merchant that offers
+    //    only Custom Tip + No Tip (its keypad appends the amount as cents).
+    await customerDisplayPage.waitForTipPrompt(Timeouts.LONG);
+    if (payment.customTipCents !== undefined) {
+      await customerDisplayPage.enterCustomTip(payment.customTipCents);
+    } else {
+      await customerDisplayPage.chooseTip(payment.tip ?? 'none');
+    }
+    if (await customerDisplayPage.isSignaturePadShown()) {
+      await customerDisplayPage.sign();
+    }
+    await customerDisplayPage.pressContinue();
 
-    // Deliberately NOT waitForCardChargeState(SUCCESS): the dialog unmounts as the
-    // router leaves for payment-success, so a poll that samples one beat late reads
-    // "closed" and burns the full budget on a charge that was approved. The
-    // navigation is the outcome; the dialog state is only worth reading if it stalls.
-    return settle(orderId, 'card', async () => {
-      const state = await checkoutPage.cardChargeState();
-      return state === CardChargeState.CHARGING
-        ? `The charging dialog is still "${state}", which is where it parks with no terminal attached.`
-        : `The charging dialog reports "${state}".`;
-    });
+    // 2) Once the tapped card is APPROVED on the terminal, the display pushes a
+    //    standalone signature — wait it out on the card budget, since the approval
+    //    is what takes the time, then sign and confirm.
+    await customerDisplayPage.waitForSignaturePad(Timeouts.CARD_CHARGE);
+    await customerDisplayPage.signAndContinue();
+
+    // The navigation is the outcome; the dialog state is only worth reading if the
+    // settle stalls.
+    return settle(
+      orderId,
+      'card',
+      async () => {
+        const state = await checkoutPage.cardChargeState();
+        return state === CardChargeState.CHARGING
+          ? `The charging dialog is still "${state}" after ${String(Timeouts.CARD_CHARGE / 1000)}s — ` +
+              `the terminal never approved the tapped card, or the customer-display handoff stalled.`
+          : `The charging dialog reports "${state}".`;
+      },
+      Timeouts.CARD_CHARGE,
+    );
   });
 }
 
@@ -164,6 +221,9 @@ export async function payWithGiftCard(orderId: string, code: string): Promise<Pa
     await checkoutPage.selectTender('gift-card');
     await checkoutPage.pressCompletePayment();
     await clearPasscodeGuard();
+    // Same BEFORE-style tip handoff as cash/other on 20258 — drive it (no-op when
+    // absent) before the scan dialog, which only opens once the tip is resolved.
+    await completeCustomerTipIfPrompted('none');
 
     await checkoutPage.waitForGiftCardScanDialog(Timeouts.MEDIUM);
     await checkoutPage.enterGiftCardCode(code);
@@ -219,6 +279,13 @@ export async function payWithOther(
 
     await checkoutPage.payWithOther(methodName, amountCents);
     await clearPasscodeGuard();
+    // 20258 runs a BEFORE-style tip flow on non-card tenders too (see
+    // completeCustomerTipIfPrompted): pressing Complete Payment parks the till on
+    // "Customer is adding a tip. Please wait…" and pushes the tip screen to the
+    // customer display, so "other" must drive that handoff exactly as cash does —
+    // without it the settle sits on the wait dialog until the API timeout. A
+    // no-op on a merchant that settles "other" straight to the receipt.
+    await completeCustomerTipIfPrompted('none');
 
     return settle(orderId, 'other');
   });
@@ -259,6 +326,41 @@ async function clearPasscodeGuard(): Promise<void> {
 }
 
 /**
+ * Drive the customer-display tip prompt when the merchant pushes one on a
+ * non-card tender.
+ *
+ * A merchant can run a BEFORE-style tip flow on CASH (and gift-card / other),
+ * not only on card — 20258 does exactly this on cash. Pressing Complete Payment
+ * then does NOT go straight to the receipt: it parks the till on its "Customer
+ * is adding a tip. Please wait…" dialog ({@link CheckoutPage.isWaitingForCustomerTip})
+ * and pushes the tip screen to the customer display, and the sale settles only
+ * once the customer side picks a tip and presses Continue. A merchant without
+ * that flow settles cash straight to payment-success and never shows the dialog.
+ *
+ * So this is CONDITIONAL — the same shape as {@link clearPasscodeGuard}: it
+ * drives the handoff only while the till is actually waiting, and returns a
+ * no-op otherwise, so it is safe on a merchant that does not tip cash.
+ *
+ * Needs the LAUNCH lane, where the customer display is a real WebDriver handle.
+ */
+async function completeCustomerTipIfPrompted(tip: TipChoice, customTipCents?: number): Promise<void> {
+  if (!(await checkoutPage.isWaitingForCustomerTip())) return;
+
+  await customerDisplayPage.waitForTipPrompt(Timeouts.LONG);
+  if (customTipCents !== undefined) {
+    await customerDisplayPage.enterCustomTip(customTipCents);
+  } else {
+    await customerDisplayPage.chooseTip(tip);
+  }
+  // A cash tip screen carries no signature on 20258, but a merchant that signs
+  // renders the pad inside this same screen — sign it when it is there.
+  if (await customerDisplayPage.isSignaturePadShown()) {
+    await customerDisplayPage.sign();
+  }
+  await customerDisplayPage.pressContinue();
+}
+
+/**
  * Wait for the payment to land on the success screen.
  *
  * `diagnose` is what turns a timeout into a report: the tender knows what its
@@ -269,9 +371,10 @@ async function settle(
   orderId: string,
   tender: string,
   diagnose?: () => Promise<string>,
+  timeout: number = Timeouts.API,
 ): Promise<PaymentSuccessPage> {
   try {
-    return await paymentSuccessPage.waitForNavigation(Timeouts.API);
+    return await paymentSuccessPage.waitForNavigation(timeout);
   } catch (error) {
     const detail = diagnose ? await diagnose().catch(() => '') : '';
     throw new Error(

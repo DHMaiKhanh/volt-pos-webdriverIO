@@ -48,9 +48,18 @@ describe('Order flow — Order detail actions', () => {
     const created = await createOrder();
     orderId = created.orderId;
     await checkoutPage.waitForReady();
+
+    // Read the CASH total — what actually gets charged. createOrder leaves the
+    // checkout on the card tab, whose total carries the service fee (live: card
+    // $69.30 vs cash $66.00), so reading it there would compare the order-history
+    // summary against a figure this cash order never charged.
+    await checkoutPage.selectTender('cash');
     paidTotalCents = await checkoutPage.totalCents();
 
-    const success = await payInCash(orderId, { tenderedCents: paidTotalCents });
+    // Exact settle: omit tenderedCents so payInCash presses Complete Payment on the
+    // pre-filled balance instead of typing it (typing a total containing "9" stalls
+    // on the preset-covered "9" key — see checkout-keypad-preset-overlap).
+    const success = await payInCash(orderId);
     await success.continueToNextOrder();
     await success.waitForFlowToEnd();
 

@@ -91,4 +91,43 @@ describe('Order flow — Split Order', () => {
 
     expect(await splitOrderPage.checkCount()).toBe(before + 1);
   });
+
+  // By Amount needs no second line — it divides the TOTAL across checks by guest
+  // count — so these live here rather than in split-order-multi.spec.ts.
+  it(
+    title('By Amount refuses an amount over the order total (TC-ORDERFLOW-29)', Tag.REGRESSION, Tag.WRITE),
+    async () => {
+      await splitOrderPage.selectMethod('byAmount');
+
+      const total = await splitOrderPage.checksTotalCents();
+      expect(total).toBeGreaterThan(0);
+
+      // Enter more than the whole order into the first check. The app refuses it:
+      // the split reverts, still summing to the total with no check above it.
+      await splitOrderPage.enterCheckAmount(1, total + 10_000);
+
+      const after = await splitOrderPage.allCheckAmountsCents();
+      expect(after.reduce((sum, amount) => sum + amount, 0)).toBe(total);
+      expect(Math.max(...after)).toBeLessThanOrEqual(total);
+    },
+  );
+
+  it(
+    title('By Amount auto-computes the last check (TC-ORDERFLOW-30)', Tag.REGRESSION, Tag.WRITE),
+    async () => {
+      await splitOrderPage.selectMethod('byAmount');
+
+      const total = await splitOrderPage.checksTotalCents();
+      expect(total).toBeGreaterThan(0);
+
+      // Set the first check to a third of the total; the remaining check(s) absorb
+      // the difference, so the split still sums to the whole.
+      const firstTarget = Math.floor(total / 3);
+      await splitOrderPage.enterCheckAmount(1, firstTarget);
+
+      const after = await splitOrderPage.allCheckAmountsCents();
+      expect(after[0]).toBe(firstTarget);
+      expect(after.reduce((sum, amount) => sum + amount, 0)).toBe(total);
+    },
+  );
 });

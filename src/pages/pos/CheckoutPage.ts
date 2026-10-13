@@ -223,15 +223,39 @@ export class CheckoutPage extends BasePage {
   }
 
   /**
-   * Add a cash quick-select preset to the entry.
+   * Tap a cash quick-select preset. It SETS the entry to exactly that amount.
    *
-   * Presets ADD to whatever is already entered rather than replacing it, and the
-   * column only exists on the cash tab (`showLayoutQuickSelect = paymentMethod
+   * On build 1.1.x a preset REPLACES whatever is entered rather than adding to it
+   * (empirically 264->50->10->50, and clear->0->100), so it is a "customer handed
+   * a $X bill" shortcut, not an accumulator. To OVER-tender a specific order you
+   * therefore cannot add a small preset on top of the due — the preset must exceed
+   * the balance on its own, or you type the amount with {@link setCashTendered}.
+   * The column only exists on the cash tab (`showLayoutQuickSelect = paymentMethod
    * === CASH`), so calling this on any other tender finds nothing.
    */
-  async addCashPreset(preset: CashPreset): Promise<this> {
+  async setCashPreset(preset: CashPreset): Promise<this> {
     await this.click(checkoutKeypadKey(String(preset)));
     return this;
+  }
+
+  /**
+   * Type a cash tender, for the over-tender cases the presets cannot express.
+   *
+   * REFUSES any amount containing a 9: this build renders the $5/$10/$50/$100
+   * preset column ON TOP of the digit column, and the "$50" button physically
+   * covers the "9" key, so a press on "9" reports "still not clickable" (see the
+   * checkout-keypad-preset-overlap note). Callers over-tender with a 9-free amount
+   * comfortably above the order total — e.g. $888.88 — and assert the change as
+   * `tendered - due`, which holds whatever the total happens to be.
+   */
+  async setCashTendered(tenderedCents: number): Promise<this> {
+    if (String(tenderedCents).includes('9')) {
+      throw new Error(
+        `setCashTendered(${String(tenderedCents)}): this build's $50 preset covers the "9" key, so ` +
+          `an amount containing a 9 stalls the keypad. Pick a 9-free tender (e.g. 88888 = $888.88).`,
+      );
+    }
+    return this.enterAmount(tenderedCents);
   }
 
   /** What the big Enter Amount display currently shows, in cents. */
