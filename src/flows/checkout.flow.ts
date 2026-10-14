@@ -223,7 +223,9 @@ export async function payWithGiftCard(orderId: string, code: string): Promise<Pa
     await clearPasscodeGuard();
     // Same BEFORE-style tip handoff as cash/other on 20258 — drive it (no-op when
     // absent) before the scan dialog, which only opens once the tip is resolved.
-    await completeCustomerTipIfPrompted('none');
+    // The wait dialog rides the settle API round-trip and can take longer than the
+    // cash path's, so give its appearance the MEDIUM budget.
+    await completeCustomerTipIfPrompted('none', undefined, Timeouts.MEDIUM);
 
     await checkoutPage.waitForGiftCardScanDialog(Timeouts.MEDIUM);
     await checkoutPage.enterGiftCardCode(code);
@@ -237,6 +239,105 @@ export async function payWithGiftCard(orderId: string, code: string): Promise<Pa
 
     return settle(orderId, 'gift card');
   });
+}
+
+/**
+ * Redeem SEVERAL gift cards onto one order — the app's native partial-redemption
+ * path — and land on the receipt screen.
+ *
+ * ## The sequence is the app's, verified live (2026-10-13, dev build)
+ *
+ * When a redeemed card holds LESS than the amount due, the dialog does not reject
+ * it: it offers **"Redeem & Add New Check"** under "Gift card not Enough Balance —
+ * Redeem with current balance and add a new check for the remaining amount?".
+ * Pressing it spends that card's WHOLE balance toward the order, drops the
+ * remaining due, and returns the SAME dialog to its scan screen so the next card
+ * can be entered — no second Complete Payment. The first card that COVERS what is
+ * left comes back "Gift Card Accepted" with a Pay button, and pressing Pay settles
+ * the order to `/payment-success`.
+ *
+ * So the loop is: redeem a card; if it covers, Pay and we are done; if it is short,
+ * Redeem & Add New Check and move to the next card. The caller passes the cards in
+ * spend order, leanest first being the natural choice.
+ *
+ * Two ways it fails LOUDLY rather than hanging:
+ *   - a card the server rejects (invalid / wrong merchant) — same diagnosis as the
+ *     single-card flow; and
+ *   - the cards run out while the order is still short — the LAST card was itself
+ *     insufficient, so there is nothing left to cover the remainder. The error says
+ *     to pass another card or settle the rest on a different tender.
+ */
+export async function payWithGiftCards(
+  orderId: string,
+  codes: readonly string[],
+): Promise<PaymentSuccessPage> {
+  assertWritesAllowed('take a gift-card payment');
+
+  if (codes.length === 0 || codes.some((code) => code.trim() === '')) {
+    throw new Error(
+      'payWithGiftCards() needs at least one non-empty gift-card number. For a single card use ' +
+        'payWithGiftCard(); this flow is for splitting one order across two or more cards.',
+    );
+  }
+
+  return step(
+    `Pay with ${String(codes.length)} gift cards [${codes.map((c) => `••••${c.slice(-4)}`).join(', ')}]`,
+    async () => {
+      await requireCheckoutFor(orderId, 'gift card');
+
+      await checkoutPage.selectTender('gift-card');
+      await checkoutPage.pressCompletePayment();
+      await clearPasscodeGuard();
+      // Same BEFORE-style tip handoff as the single-card flow — drive it once, before
+      // the scan dialog opens. It does NOT re-prompt per partial redemption.
+      await completeCustomerTipIfPrompted('none', undefined, Timeouts.MEDIUM);
+      await checkoutPage.waitForGiftCardScanDialog(Timeouts.MEDIUM);
+
+      let covered = false;
+      for (let i = 0; i < codes.length; i += 1) {
+        const code = codes[i]!;
+        const isLast = i === codes.length - 1;
+
+        await checkoutPage.enterGiftCardCode(code);
+        await checkoutPage.redeemGiftCard();
+
+        if (await checkoutPage.isGiftCardAccepted()) {
+          await checkoutPage.payWithGiftCardBalance();
+          covered = true;
+          break;
+        }
+
+        // Short of the balance. Partial-redeem this card and carry on — unless it was
+        // the last one, in which case the cards simply did not add up.
+        if (await checkoutPage.isGiftCardInsufficient()) {
+          if (isLast) {
+            throw new Error(
+              `The ${String(codes.length)} gift cards for order ${orderId} did not cover the balance: ` +
+                `the last card (••••${code.slice(-4)}) was still short after the earlier ones were ` +
+                `redeemed. Pass another funded card, or settle the remainder on a different tender.`,
+            );
+          }
+          await checkoutPage.redeemAndAddNewCheck();
+          // The redeem is an API round-trip; wait for the dialog to return to its scan
+          // screen before the next code is typed.
+          await checkoutPage.waitForGiftCardScanDialog(Timeouts.MEDIUM);
+          continue;
+        }
+
+        // Neither accepted nor insufficient — invalid / wrong merchant / no verdict.
+        throw new Error(await giftCardRejection(code, orderId));
+      }
+
+      if (!covered) {
+        throw new Error(
+          `Exhausted all ${String(codes.length)} gift cards for order ${orderId} without one covering ` +
+            `the remaining balance. Nothing settled.`,
+        );
+      }
+
+      return settle(orderId, 'gift card');
+    },
+  );
 }
 
 /**
@@ -343,8 +444,23 @@ async function clearPasscodeGuard(): Promise<void> {
  *
  * Needs the LAUNCH lane, where the customer display is a real WebDriver handle.
  */
-async function completeCustomerTipIfPrompted(tip: TipChoice, customTipCents?: number): Promise<void> {
-  if (!(await checkoutPage.isWaitingForCustomerTip())) return;
+export async function completeCustomerTipIfPrompted(
+  tip: TipChoice,
+  customTipCents?: number,
+  appearTimeout: number = Timeouts.SHORT,
+): Promise<void> {
+  // The "Customer is adding a tip. Please wait…" dialog renders a BEAT after
+  // Complete Payment — it rides the settle's API round-trip — so a single read
+  // races it: it returns false, the caller then waits on the scan/receipt and the
+  // un-driven tip wedges the sale. On gift card the gap is wider (the scan dialog
+  // only opens AFTER the tip resolves), so that path passes a longer
+  // `appearTimeout`. A merchant that settles without a before-tip handoff never
+  // shows the dialog, so the poll expires and this is a no-op.
+  const waiting = await browser
+    .waitUntil(() => checkoutPage.isWaitingForCustomerTip(), { timeout: appearTimeout, interval: 250 })
+    .then(() => true)
+    .catch(() => false);
+  if (!waiting) return;
 
   await customerDisplayPage.waitForTipPrompt(Timeouts.LONG);
   if (customTipCents !== undefined) {

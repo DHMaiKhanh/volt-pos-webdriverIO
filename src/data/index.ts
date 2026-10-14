@@ -42,5 +42,16 @@ export {
 } from './static/paymentMethods.js';
 export type { PaymentMethodFixture } from './static/paymentMethods.js';
 
+export {
+  activeGiftCards,
+  emptyActiveGiftCards,
+  fundedActiveGiftCards,
+  GIFT_CARD_CATALOG_MERCHANT,
+  giftCardCatalog,
+  pickFundedActiveGiftCards,
+  requireFundedActiveGiftCard,
+} from './static/giftCards.js';
+export type { GiftCardRecord, GiftCardStatus } from './static/giftCards.js';
+
 export { anOrder, OrderBuilder } from './builders/orderBuilder.js';
 export type { OrderDraft } from './builders/orderBuilder.js';

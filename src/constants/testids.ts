@@ -932,6 +932,20 @@ export const CheckoutIds = {
     'checkout-gc-accepted-msg',
     textIsAnyOf('Gift Card Accepted', 'Thẻ quà tặng hợp lệ'),
   ),
+  /**
+   * The **Scan Again** button shown on the rejection screen. After a code comes
+   * back "Gift card is not valid", the dialog replaces the scan view (and its
+   * "Input Gift Card Code" button) with `[…, Scan Again]` — verified live on the
+   * dev build. A spec that re-enters a second code after a rejection must press
+   * this first to return to the scan/input screen; without it the next
+   * `enterGiftCardCode` looks for an "Input Gift Card Code" button that is gone.
+   * Scoped to the dialog, matched on the exact label.
+   */
+  gcScanAgainBtn: locator(
+    'gift card scan-again button',
+    'checkout-gc-scan-again-btn',
+    '//*[@data-slot="dialog-content"]//button[normalize-space()="Scan Again" or normalize-space()="Quét lại"]',
+  ),
   gcPayBtn: locator(
     'gift card pay button',
     'checkout-gc-pay-btn',
@@ -939,6 +953,24 @@ export const CheckoutIds = {
     // gift-card dialog is portalled to `document.body`, so both can be in the
     // DOM at once.
     '//*[@data-slot="dialog-content"]//button[normalize-space()="Pay" or normalize-space()="Thanh toán"]',
+  ),
+  /**
+   * The **Redeem & Add New Check** button on the INSUFFICIENT-balance screen.
+   *
+   * When a redeemed card holds LESS than the amount due, the dialog swaps Pay for
+   * this button under "Gift card not Enough Balance — Redeem with current balance
+   * and add a new check for the remaining amount?" (verified live 2026-10-13 on the
+   * dev build). Pressing it redeems the card's WHOLE balance toward the order and
+   * splits the UNPAID remainder onto a new check — the app's native multi-gift-card
+   * path. Scoped to the dialog, matched on the exact label; the dialog carries no
+   * testids on this build.
+   */
+  gcRedeemAddCheckBtn: locator(
+    'gift card redeem-and-add-check button',
+    'checkout-gc-redeem-add-check-btn',
+    '//*[@data-slot="dialog-content"]//button[contains(normalize-space(),"Add New Check") or ' +
+      'contains(normalize-space(),"Redeem & Add") or contains(normalize-space(),"thêm hoá đơn") or ' +
+      'contains(normalize-space(),"thêm hóa đơn")]',
   ),
   /**
    * The **Cancel** button that abandons the gift-card dialog WITHOUT redeeming.
@@ -1026,7 +1058,14 @@ export const CheckoutIds = {
   waitingCustomerTipDialog: locator(
     'waiting for customer tip dialog',
     'waiting-customer-tip-dialog',
-    byRole('dialog'),
+    // The testid is absent on the dev build, and a bare role="dialog" fallback
+    // matches ANY open dialog — the gift-card SCAN dialog and the passcode guard
+    // included — so `isWaitingForCustomerTip()` would read true whenever a dialog
+    // is up and send the gift-card flow off to drive a tip that is not there.
+    // Anchor on the dialog's own copy instead (verified live: "Customer is adding
+    // a tip." / "Please wait…"), so it is true for the tip-wait dialog ALONE.
+    '//*[@data-slot="dialog-content"][contains(normalize-space(),"Customer is adding a tip")' +
+      ' or contains(normalize-space(),"đang thêm tiền tip") or contains(normalize-space(),"Vui lòng chờ")]',
   ),
   waitingCustomerSignatureDialog: locator(
     'waiting for customer signature dialog',

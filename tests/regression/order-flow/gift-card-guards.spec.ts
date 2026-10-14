@@ -31,24 +31,24 @@ import { expect } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { env } from '../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../../src/components/index.js';
-import { giftCard, INVALID_GIFT_CARD_CODE } from '../../../src/data/index.js';
-import { createOrder, returnToHome } from '../../../src/flows/index.js';
+import {
+  fundedActiveGiftCards,
+  INVALID_GIFT_CARD_CODE,
+  requireFundedActiveGiftCard,
+} from '../../../src/data/index.js';
+import { completeCustomerTipIfPrompted, createOrder, returnToHome } from '../../../src/flows/index.js';
 import { checkoutPage, homePage } from '../../../src/pages/index.js';
 import { Tag, title } from '../../../src/types/testTags.js';
 
 describe('Payment flows — Gift Card', () => {
-  before(async function (this: Mocha.Context): Promise<void> {
-    if (giftCard.code === '') {
-      // No card configured for this merchant — a skip, not a failure.
-      this.skip();
-    }
-    this.timeout(Timeouts.MOCHA_HOOK);
-
-    await returnToHome();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
-
-    await createOrder();
-    await checkoutPage.waitForReady();
+  before(function (this: Mocha.Context): void {
+    // No FUNDED card in the catalog for this merchant — a skip, not a failure. The
+    // acceptance branch below redeems against a card that must actually cover the
+    // order, so it uses a funded catalog card (the old hard-set 152298102986
+    // drains across runs and, once empty, is "accepted" but offers no Pay). The
+    // order is built inside the test, not here: creating it in a before-hook left
+    // the gift-card customer handoff racing the scan dialog.
+    if (fundedActiveGiftCards.length === 0) this.skip();
   });
 
   after(async () => {
@@ -64,11 +64,25 @@ describe('Payment flows — Gift Card', () => {
       Tag.WRITE,
       Tag.PAYMENT,
     ),
-    async () => {
+    async function (this: Mocha.Context): Promise<void> {
+      this.timeout(Timeouts.MOCHA_HOOK);
+
+      await returnToHome();
+      if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+      await createOrder();
+      await checkoutPage.waitForReady();
+
       await checkoutPage.selectTender('gift-card');
       await checkoutPage.pressCompletePayment();
       // Complete Payment may raise the passcode guard before the scan dialog.
       await passcodeDialog.enterIfPresent(env.STAFF_PASSCODE);
+      // On 20258 the gift-card tender pushes a BEFORE-style tip to the customer
+      // display and parks the till on "Customer is adding a tip. Please wait…" —
+      // the scan dialog only opens once that handoff is resolved. Drive it (the
+      // same step payWithGiftCard runs); a no-op on a merchant without the flow.
+      // Needs the LAUNCH lane (the dev lane is one). MEDIUM: the wait dialog rides
+      // the settle API round-trip, so its appearance can lag a few seconds.
+      await completeCustomerTipIfPrompted('none', undefined, Timeouts.MEDIUM);
       await checkoutPage.waitForGiftCardScanDialog();
 
       // A number from another merchant / a bad number is rejected on lookup — the
@@ -78,8 +92,10 @@ describe('Payment flows — Gift Card', () => {
       expect(await checkoutPage.isGiftCardInvalid()).toBe(true);
 
       // A funded number for THIS merchant is accepted and unlocks Pay — the "đủ"
-      // branch. Stop at acceptance; do not press Pay, so the balance is untouched.
-      await checkoutPage.enterGiftCardCode(giftCard.code);
+      // branch. Uses the richest catalog card so acceptance is never mistaken for
+      // a drained card. Stop at acceptance; do not press Pay, so the balance is
+      // untouched.
+      await checkoutPage.enterGiftCardCode(requireFundedActiveGiftCard().code);
       await checkoutPage.redeemGiftCard();
       expect(await checkoutPage.isGiftCardAccepted()).toBe(true);
       expect(await checkoutPage.isGiftCardPayAvailable()).toBe(true);

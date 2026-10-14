@@ -655,6 +655,11 @@ export class CheckoutPage extends BasePage {
     return this;
   }
 
+  /** Is the gift-card scan/redeem dialog currently open? Non-throwing. */
+  isGiftCardScanDialogOpen(timeout: number = Timeouts.ANIMATION): Promise<boolean> {
+    return this.isVisible(CheckoutIds.gcScanDialog, timeout);
+  }
+
   /**
    * Type a gift-card number instead of scanning it.
    *
@@ -664,6 +669,13 @@ export class CheckoutPage extends BasePage {
    * reaches React's change handler normally.
    */
   async enterGiftCardCode(code: string): Promise<this> {
+    // Re-entry after a rejection: once a code reads "not valid", the dialog swaps
+    // the scan view for a "Scan Again" button and the "Input Gift Card Code"
+    // button is gone. Press Scan Again first to return to the scan screen — a
+    // quick no-op on the first entry, where that button never exists.
+    if (await this.exists(CheckoutIds.gcScanAgainBtn, Timeouts.SHORT)) {
+      await this.click(CheckoutIds.gcScanAgainBtn);
+    }
     await this.click(CheckoutIds.gcInputCodeBtn);
     await this.setValue(CheckoutIds.gcCodeInput, code, { visible: false });
     return this;
@@ -679,6 +691,23 @@ export class CheckoutPage extends BasePage {
   async payWithGiftCardBalance(): Promise<this> {
     await this.click(CheckoutIds.gcPayBtn);
     return this;
+  }
+
+  /**
+   * On the insufficient-balance screen, redeem the card's whole balance and split
+   * the unpaid remainder onto a new check — the app's native multi-gift-card path.
+   *
+   * Only offered when {@link isGiftCardInsufficient} is true; on the accepted
+   * screen there is no such button and this finds nothing.
+   */
+  async redeemAndAddNewCheck(): Promise<this> {
+    await this.click(CheckoutIds.gcRedeemAddCheckBtn);
+    return this;
+  }
+
+  /** Is the "Redeem & Add New Check" button offered? Proof the insufficient-split path is available. */
+  isGiftCardRedeemAddCheckAvailable(): Promise<boolean> {
+    return this.isVisible(CheckoutIds.gcRedeemAddCheckBtn);
   }
 
   isGiftCardInvalid(): Promise<boolean> {

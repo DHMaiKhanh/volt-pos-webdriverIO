@@ -1,8 +1,8 @@
 {
-  "runId": "2026-10-12T19-16-14-284Z",
-  "startedAt": "2026-10-12T19:16:14.284Z",
-  "finishedAt": "2026-10-12T19:21:02.014Z",
-  "durationMs": 287730,
+  "runId": "2026-10-13T11-26-10-735Z",
+  "startedAt": "2026-10-13T11:26:10.735Z",
+  "finishedAt": "2026-10-13T11:28:35.712Z",
+  "durationMs": 144977,
   "env": {
     "name": "dev",
     "mode": "launch",
@@ -11,94 +11,54 @@
     "upstream": "https://volt-pos.v2.dev-fastboypay.com"
   },
   "totals": {
-    "tests": 10,
-    "passed": 10,
-    "failed": 0,
+    "tests": 4,
+    "passed": 3,
+    "failed": 1,
     "skipped": 0,
-    "passRate": 100
+    "passRate": 75
   },
-  "passed": true,
+  "passed": false,
   "specs": [
     {
       "cid": "0-0",
-      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/charge-other-matrix.spec.ts",
-      "specName": "charge-other-matrix",
-      "startedAt": "2026-10-12T19:16:19.236Z",
-      "finishedAt": "2026-10-12T19:20:39.179Z",
-      "durationMs": 259943,
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/payment-methods-settle.spec.ts",
+      "specName": "payment-methods-settle",
+      "startedAt": "2026-10-13T11:26:14.286Z",
+      "finishedAt": "2026-10-13T11:27:21.518Z",
+      "durationMs": 67232,
       "retry": 2,
       "suites": [
         {
-          "title": "Order flow — \"Other\" charge matrix",
+          "title": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258",
           "tests": [
             {
-              "title": "Zelle, single line, exact, settles (TC-ORDERFLOW-104) @regression @write @payment @critical",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Zelle, single line, exact, settles (TC-ORDERFLOW-104) @regression @write @payment @critical",
+              "title": "Card — chỉ quét: Complete Payment disabled (không settle khi thiếu terminal + handoff)",
+              "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Card — chỉ quét: Complete Payment disabled (không settle khi thiếu terminal + handoff)",
+              "state": "failed",
+              "durationMs": 2396,
+              "retries": 0,
+              "error": "expect(received).toBe(expected) // Object.is equality",
+              "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: false\nReceived: true\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\_recovery\\payment-methods-settle.spec.ts:93:59)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+            },
+            {
+              "title": "Cash — settle exact -> /payment-success",
+              "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Cash — settle exact -> /payment-success",
               "state": "passed",
-              "durationMs": 17097,
+              "durationMs": 11267,
               "retries": 0
             },
             {
-              "title": "Bank Transfer label is recorded, settles (TC-ORDERFLOW-105) @regression @write @payment",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Bank Transfer label is recorded, settles (TC-ORDERFLOW-105) @regression @write @payment",
+              "title": "Gift Card — redeem the standing card -> /payment-success",
+              "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Gift Card — redeem the standing card -> /payment-success",
               "state": "passed",
-              "durationMs": 19433,
+              "durationMs": 22037,
               "retries": 0
             },
             {
-              "title": "Personal Check, single line, settles (TC-ORDERFLOW-106) @regression @write @payment",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Personal Check, single line, settles (TC-ORDERFLOW-106) @regression @write @payment",
+              "title": "Other (Zelle) — settle -> /payment-success",
+              "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Other (Zelle) — settle -> /payment-success",
               "state": "passed",
-              "durationMs": 18563,
-              "retries": 0
-            },
-            {
-              "title": "Venmo, two-line order, settles (TC-ORDERFLOW-107) @regression @write @payment",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Venmo, two-line order, settles (TC-ORDERFLOW-107) @regression @write @payment",
-              "state": "passed",
-              "durationMs": 18303,
-              "retries": 0
-            },
-            {
-              "title": "Cash App, three-line order, settles (TC-ORDERFLOW-108) @regression @write @payment",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Cash App, three-line order, settles (TC-ORDERFLOW-108) @regression @write @payment",
-              "state": "passed",
-              "durationMs": 19063,
-              "retries": 0
-            },
-            {
-              "title": "Zelle, price-override ($25), settles (TC-ORDERFLOW-109) @regression @write @payment",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Zelle, price-override ($25), settles (TC-ORDERFLOW-109) @regression @write @payment",
-              "state": "passed",
-              "durationMs": 20239,
-              "retries": 0
-            },
-            {
-              "title": "Zelle + item discount, settles (TC-ORDERFLOW-110) @regression @write @payment",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Zelle + item discount, settles (TC-ORDERFLOW-110) @regression @write @payment",
-              "state": "passed",
-              "durationMs": 19840,
-              "retries": 0
-            },
-            {
-              "title": "Zelle, different staff/service tile, settles (TC-ORDERFLOW-111) @regression @write @payment",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Zelle, different staff/service tile, settles (TC-ORDERFLOW-111) @regression @write @payment",
-              "state": "passed",
-              "durationMs": 17860,
-              "retries": 0
-            },
-            {
-              "title": "Zelle, further staff/service tile, settles (TC-ORDERFLOW-112) @regression @write @payment",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Zelle, further staff/service tile, settles (TC-ORDERFLOW-112) @regression @write @payment",
-              "state": "passed",
-              "durationMs": 18284,
-              "retries": 0
-            },
-            {
-              "title": "Bank Transfer + discount + two lines, settles (TC-ORDERFLOW-113) @regression @write @payment",
-              "fullTitle": "Order flow — \"Other\" charge matrix.Bank Transfer + discount + two lines, settles (TC-ORDERFLOW-113) @regression @write @payment",
-              "state": "passed",
-              "durationMs": 20866,
+              "durationMs": 12338,
               "retries": 0
             }
           ],
@@ -106,11 +66,11 @@
         }
       ],
       "totals": {
-        "tests": 10,
-        "passed": 10,
-        "failed": 0,
+        "tests": 4,
+        "passed": 3,
+        "failed": 1,
         "skipped": 0,
-        "passRate": 100
+        "passRate": 75
       }
     }
   ]

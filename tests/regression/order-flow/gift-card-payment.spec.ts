@@ -21,17 +21,17 @@ import { expect } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { env } from '../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../../src/components/index.js';
-import { giftCard } from '../../../src/data/static/paymentMethods.js';
-import { createOrder, returnToHome } from '../../../src/flows/index.js';
+import { fundedActiveGiftCards, requireFundedActiveGiftCard } from '../../../src/data/index.js';
+import { completeCustomerTipIfPrompted, createOrder, returnToHome } from '../../../src/flows/index.js';
 import { checkoutPage, homePage } from '../../../src/pages/index.js';
 import { Tag, title } from '../../../src/types/testTags.js';
 
 describe('Order flow — Gift card payment', () => {
   before(async function (this: Mocha.Context): Promise<void> {
-    if (giftCard.code === '') {
-      // No card configured for this merchant — a skip, not a failure.
-      this.skip();
-    }
+    // No funded card in the catalog for this merchant — a skip, not a failure.
+    // Acceptance must unlock Pay, which needs a card that actually covers the
+    // order, so this uses a funded catalog card (not the drained hard-set one).
+    if (fundedActiveGiftCards.length === 0) this.skip();
 
     this.timeout(Timeouts.MOCHA_HOOK);
 
@@ -61,9 +61,14 @@ describe('Order flow — Gift card payment', () => {
 
       // Complete Payment may raise the passcode guard before the scan dialog.
       await passcodeDialog.enterIfPresent(env.STAFF_PASSCODE);
+      // 20258 pushes a before-tip handoff to the customer display and parks the
+      // till on "Please wait…" until it is resolved; the scan dialog only opens
+      // after. Drive it (no-op on a merchant without the flow). Needs the LAUNCH
+      // lane. MEDIUM: the wait dialog rides the settle API round-trip.
+      await completeCustomerTipIfPrompted('none', undefined, Timeouts.MEDIUM);
 
       await checkoutPage.waitForGiftCardScanDialog();
-      await checkoutPage.enterGiftCardCode(giftCard.code);
+      await checkoutPage.enterGiftCardCode(requireFundedActiveGiftCard().code);
       await checkoutPage.redeemGiftCard();
 
       expect(await checkoutPage.isGiftCardAccepted()).toBe(true);

@@ -15,8 +15,9 @@
  *   - Cash      : settle EXACT — bỏ tenderedCents, bấm thẳng Complete Payment trên
  *                 số pre-fill (KHÔNG gõ keypad → né overlap phím "9", xem
  *                 checkout-keypad-preset-overlap).
- *   - Gift Card : redeem thẻ 152298102986 — số set cứng cho tiệm 20258 ở
- *                 `src/data/static/paymentMethods.ts` (GIFT_CARD_BY_MERCHANT) — rồi
+ *   - Gift Card : redeem thẻ standing của tiệm 20258 (giftCard.code — set cứng ở
+ *                 `src/data/static/paymentMethods.ts` GIFT_CARD_BY_MERCHANT, env
+ *                 GIFT_CARD_CODE override được) — rồi
  *                 settle. `enterGiftCardCode` gõ vào ô thẻ riêng, không đụng keypad
  *                 checkout. Nếu thẻ không đủ số dư, `payWithGiftCard` ném lỗi nói rõ
  *                 đó là split payment, không phải fail thầm.
@@ -112,8 +113,8 @@ describe('Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) �
     expect(await success.isActive()).toBe(true);
   });
 
-  it('Gift Card — redeem 152298102986 -> /payment-success', async () => {
-    // Số thẻ set cứng cho tiệm 20258 (env GIFT_CARD_CODE vẫn override được nếu đặt).
+  it('Gift Card — redeem the standing card -> /payment-success', async () => {
+    // Thẻ standing set cứng cho tiệm 20258 (env GIFT_CARD_CODE override được nếu đặt).
     expect(giftCard.code).toBeTruthy();
 
     const { orderId } = await step('Tạo đơn cho gift card', () => createOrder());

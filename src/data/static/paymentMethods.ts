@@ -106,11 +106,15 @@ export const TENDERS_WITHOUT_HARDWARE: readonly PaymentMethod[] = PAYMENT_METHOD
  * overrides it, for a machine pointed at another merchant or another card.
  *
  * - `20258` — the test device's merchant (see the device-merchant-20258 note):
- *   `152298102986`, the shop's standing redemption card. Redemption drains it, so
- *   keep it topped up.
+ *   `973047331197`, the richest funded card in the gift-card catalog
+ *   (src/data/static/giftCards.json) and verified live to redeem and settle on
+ *   2026-10-13. The previous default `152298102986` is NOT in this merchant's
+ *   catalog and the server rejects it as "not valid" — it drained / was reissued,
+ *   so every redemption spec failed at the lookup. Picking the richest catalog
+ *   card means redemption barely dents the balance, so it needs no topping up.
  */
 const GIFT_CARD_BY_MERCHANT: Readonly<Record<string, string>> = {
-  '20258': '152298102986',
+  '20258': '973047331197',
 };
 
 /**
