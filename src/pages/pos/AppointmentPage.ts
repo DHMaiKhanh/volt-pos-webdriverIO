@@ -58,6 +58,24 @@ export class AppointmentPage extends BasePage {
     return (await this.findAll(AppointmentIds.appointmentCards, { timeout: Timeouts.SHORT })).length;
   }
 
+  /**
+   * Is there a calendar card for `customerName`?
+   *
+   * The correlation key for the web→app sync check: an appointment booked on the
+   * GoPOS web POS should appear here once it syncs down. Matches on the card's
+   * visible text (case-insensitive substring) because the calendar component
+   * carries no testid per card — see {@link AppointmentIds.appointmentCards}.
+   */
+  async hasAppointmentFor(customerName: string): Promise<boolean> {
+    const needle = customerName.trim().toLowerCase();
+    const cards = await this.findAll(AppointmentIds.appointmentCards, { timeout: Timeouts.MEDIUM });
+    for (const card of cards) {
+      const text = (await card.getText().catch(() => '')) || '';
+      if (text.toLowerCase().includes(needle)) return true;
+    }
+    return false;
+  }
+
   /* --------------------------------------------------------------------- *
    * The create/edit dialog
    * --------------------------------------------------------------------- */
