@@ -20,16 +20,16 @@ import { Tag, title } from '../../../src/types/testTags.js';
 import { expectCentsEqual } from '../../../src/utils/money.js';
 
 /**
- * What the customer hands over above the amount due: the $50 cash preset.
+ * The full cash tender typed in — comfortably above the order total, and 9-free.
  *
- * A PRESET value, not an arbitrary one, on purpose. This build's checkout keypad
- * renders the preset column ON TOP of the digit column, so the "$50" button
- * physically covers the "9" key and typing any amount containing a 9 stalls on
- * "9 still not clickable" (see the checkout-keypad-preset-overlap note). Over-
- * tendering by ADDING the preset — the clickable top layer — sidesteps the keypad
- * entirely, and the change then comes out exactly the preset.
+ * This build's checkout keypad renders the preset column ON TOP of the digit
+ * column, so the "$50" button physically covers the "9" key and typing any amount
+ * containing a 9 stalls on "9 still not clickable" (see the checkout-keypad-
+ * preset-overlap note). The presets ALSO replace the entry rather than add to it,
+ * so change can no longer be dialled in by preset. Typing a fixed 9-free amount
+ * ($888.88) over-tenders any order and the change is then `tendered - due`.
  */
-const OVERPAY_CENTS = 5_000;
+const OVER_TENDER_CENTS = 88_888;
 
 describe('Checkout — cash', () => {
   before(async () => {
@@ -80,16 +80,20 @@ describe('Checkout — cash', () => {
       // later assertion that it appeared meaningful.
       expect(await checkout.isChangeShown()).toBe(false);
 
-      // Over-tender by ADDING the $50 preset to the pre-filled full due. The
-      // preset button is the clickable layer over the keypad, so this needs no
-      // typed digits (which would stall on the covered "9"), and the change is
-      // then exactly the preset regardless of what the order total happens to be.
-      await step('Over-tender with the $50 cash preset', () => checkout.addCashPreset(OVERPAY_CENTS));
-      const tenderedCents = totalCents + OVERPAY_CENTS;
+      // Over-tender by TYPING a fixed 9-free amount ($888.88). setCashTendered
+      // refuses any amount with a 9 (the "$50" preset covers that key) and clears
+      // the field before typing, so the entry lands on exactly the tender and the
+      // change is `tendered - due` whatever the order total happens to be.
+      await step('Over-tender by typing $888.88 (9-free)', () => checkout.setCashTendered(OVER_TENDER_CENTS));
+      const tenderedCents = OVER_TENDER_CENTS;
 
       expectCentsEqual(await checkout.enteredAmountCents(), tenderedCents, 'entered cash amount');
       expect(await checkout.isChangeShown()).toBe(true);
-      expectCentsEqual(await checkout.changeCents(), OVERPAY_CENTS, 'change owed back to the customer');
+      expectCentsEqual(
+        await checkout.changeCents(),
+        tenderedCents - totalCents,
+        'change owed back to the customer',
+      );
 
       // Over-tendering must not leave the order believing it is still owed
       // money: `remainingAmount` clamps at zero on the high side. This separates

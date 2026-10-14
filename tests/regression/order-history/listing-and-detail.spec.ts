@@ -37,9 +37,11 @@ describe('Order history — the order this run took', () => {
     orderId = await checkout.orderId();
     paidTotalCents = await checkout.totalCents();
 
-    // Exact tender: no change to reconcile, so the row's total is the order
-    // total and nothing else.
-    await payInCash(orderId, { tenderedCents: paidTotalCents });
+    // Exact tender: no change to reconcile, so the row's total is the order total
+    // and nothing else. Omit tenderedCents so payInCash settles on the pre-filled
+    // balance instead of typing it — typing a total containing "9" stalls on the
+    // preset-covered "9" key (see checkout-keypad-preset-overlap).
+    await payInCash(orderId);
 
     await returnToHome();
     await goToOrderHistory();

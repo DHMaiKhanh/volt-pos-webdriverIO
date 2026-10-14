@@ -8,11 +8,10 @@
  *   - TC-ORDERFLOW-27  Equally still sums to the whole on a two-line order
  *   - TC-ORDERFLOW-32  the Receipt Details panel renders the order's own totals
  *
- * Pending, because the page object has no driver for these interactions yet — a
- * By-Amount custom-amount keypad and a By-Items row-to-check assignment, neither
- * annotated in the catalogue:
- *   - TC-ORDERFLOW-29  By Amount rejects a total over the order total
- *   - TC-ORDERFLOW-30  By Amount auto-computes the last check
+ * By Amount (TC-ORDERFLOW-29 / 30) needs no second line — it divides the TOTAL by
+ * guest count — so those two now live in split-order.spec.ts with the keypad
+ * driver (`SplitOrderPage.enterCheckAmount`). What stays pending here needs a
+ * multi-line order the by-items row driver / a multi-tender settle:
  *   - TC-ORDERFLOW-31  each check pays independently with the four tenders
  *   - TC-ORDERFLOW-33  By Items assigns each line to a check
  *
@@ -101,14 +100,8 @@ describe('Order flow — Split Order (multi-line)', () => {
     },
   );
 
-  it(title('TC-ORDERFLOW-29: By Amount rejects an over-total — PENDING (no custom-amount keypad driver)'));
-
-  it(
-    title(
-      'TC-ORDERFLOW-30: By Amount auto-computes the last check — PENDING (no custom-amount keypad driver)',
-    ),
-  );
-
+  // TC-ORDERFLOW-29 / 30 (By Amount) moved to split-order.spec.ts — they need no
+  // second line, so they run on the always-available single-line order.
   it(title('TC-ORDERFLOW-31: each check pays independently — PENDING (heavy multi-tender settle)'));
 
   it(title('TC-ORDERFLOW-33: By Items assigns each line to a check — PENDING (no row-assignment driver)'));

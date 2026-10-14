@@ -1,5 +1,6 @@
 import { Timeouts } from '../../configs/constants/timeouts.js';
-import { appNav, hasHeaderNav } from '../components/index.js';
+import { env } from '../../configs/env/loadEnv.js';
+import { appNav, hasHeaderNav, passcodeDialog } from '../components/index.js';
 import { Routes } from '../constants/routes.js';
 import { step } from '../helpers/steps.js';
 import { waitUntilPath } from '../helpers/wait.js';
@@ -145,6 +146,16 @@ export async function goToOrderHistory(): Promise<OrderHistoryPage> {
     if (!(await orderHistoryPage.isActive())) {
       await appNav.goToOrderHistory();
     }
+
+    // Order History is a permission-gated screen on some merchants: opening it
+    // raises the "Enter staff code to access Order History" guard, a modal that
+    // covers the header and the search box. Left unanswered it surfaces
+    // downstream as the misleading pair "search input never became ready" (the
+    // readyAnchor is behind the overlay) and a header logo that no longer takes
+    // a click. Satisfy it the way every other gated screen does — one unlock per
+    // run, then a cached 30-minute grant — before waiting on the page itself.
+    await passcodeDialog.unlockForRun(env.STAFF_PASSCODE);
+
     return orderHistoryPage.waitForReady(Timeouts.MEDIUM);
   });
 }
@@ -168,6 +179,16 @@ export async function goToSettings(): Promise<SettingsPage> {
     if (!(await settingsPage.isActive())) {
       await appNav.openSidebarLink(Routes.SETTINGS_BUSINESS);
     }
+
+    // Merchant Settings is a permission-gated area on some merchants (20258 does
+    // this): opening it raises the "Enter staff code to access Merchant Settings"
+    // guard, a modal that covers the sub-nav rail. Left unanswered it surfaces
+    // downstream as `settingsPage.openSection()` finding the section link "still
+    // not clickable" — the link is behind the overlay, not missing. Satisfy it the
+    // way `goToOrderHistory` does: one unlock per run, then a cached 30-minute
+    // grant. Settings is owner-gated, so it takes OWNER_PASSCODE.
+    await passcodeDialog.unlockForRun(env.OWNER_PASSCODE);
+
     return settingsPage.waitForReady(Timeouts.MEDIUM);
   });
 }

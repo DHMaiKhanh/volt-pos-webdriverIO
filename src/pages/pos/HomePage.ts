@@ -1,5 +1,7 @@
 import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
+import { env } from '../../../configs/env/loadEnv.js';
+import { passcodeDialog } from '../../components/index.js';
 import { Routes } from '../../constants/routes.js';
 import {
   customerSuggestionItem,
@@ -49,6 +51,9 @@ const CONFIRM_DIALOG_ACTION: Locator = locator(
   'confirm dialog action',
   'home-confirm-dialog-confirm-btn',
   '[data-slot="alert-dialog-footer"] button:last-of-type',
+  // Text fallback for builds whose footer is not slotted: the destructive action
+  // is the confirm button on the "Delete Order — Are you sure?" alert-dialog.
+  '//div[@role="alertdialog"]//button[normalize-space()="Delete" or normalize-space()="Xoá" or normalize-space()="Xóa" or normalize-space()="Confirm" or normalize-space()="Xác nhận"]',
 );
 
 /**
@@ -183,19 +188,38 @@ export class HomePage extends BasePage {
    * order follows the merchant's sort setting and is not stable across accounts.
    */
   async selectFirstStaff(): Promise<this> {
-    await logStep('Home: select the first staff member');
-    const tiles = await this.findAll(HomeIds.staffItems, { timeout: Timeouts.MEDIUM });
-    const first = tiles[0];
+    return this.selectStaffByIndex(0);
+  }
 
-    if (!first) {
+  /**
+   * Select the staff tile at `index` (0-based) among those mounted right now.
+   *
+   * The positional sibling of {@link selectStaff}: it books by WHERE a tile sits,
+   * not by WHO it is, so a spec can walk `0, 1, 2, …` to put a run of orders on
+   * different people without hard-coding an account. {@link selectFirstStaff} is
+   * just this at index 0.
+   *
+   * Bounded by react-virtual (see the virtualization note): only on-screen tiles
+   * are mounted, so the first screenful is always addressable and a far index
+   * would need a scroll the panel does not do here. Drive it off
+   * {@link visibleStaffCount} — `for (let i = 0; i < n; i++)` — and an
+   * out-of-range index throws with the count it actually saw.
+   */
+  async selectStaffByIndex(index: number): Promise<this> {
+    await logStep(`Home: select staff tile #${index + 1}`);
+    const tiles = await this.findAll(HomeIds.staffItems, { timeout: Timeouts.MEDIUM });
+    const tile = tiles[index];
+
+    if (!tile) {
       throw new Error(
-        `${this.name}: the staff panel is empty, so no order can be started. ` +
-          `Either the staff directory did not sync, or the active group tab filters everything out.`,
+        `${this.name}: no staff tile at index ${index} — ${tiles.length} mounted. ` +
+          `An empty panel means the directory did not sync or the active group tab filters ` +
+          `everything out; a too-high index means you walked past visibleStaffCount().`,
       );
     }
 
-    await first.waitForClickable({ timeout: Timeouts.SHORT });
-    await first.click();
+    await tile.waitForClickable({ timeout: Timeouts.SHORT });
+    await tile.click();
     return this;
   }
 
@@ -236,19 +260,37 @@ export class HomePage extends BasePage {
 
   /** Add whichever service tile renders first. Same caveat as {@link selectFirstStaff}. */
   async addFirstService(): Promise<this> {
-    await logStep('Home: add the first service');
-    const tiles = await this.findAll(HomeIds.serviceItems, { timeout: Timeouts.MEDIUM });
-    const first = tiles[0];
+    return this.addServiceByIndex(0);
+  }
 
-    if (!first) {
+  /**
+   * Add the service tile at `index` (0-based) among those mounted right now.
+   *
+   * The positional sibling of {@link addService}: it sells by WHERE a tile sits,
+   * not by WHICH item it is. Call it more than once with different indices to put
+   * several distinct lines on one order, or across successive orders to vary what
+   * each sells — no hard-coded service id either way. {@link addFirstService} is
+   * this at index 0.
+   *
+   * Same react-virtual bound as {@link selectStaffByIndex}: address within
+   * {@link visibleServiceCount}. The app APPENDS, so adding the same index twice
+   * sells that line twice — step the index to vary the item.
+   */
+  async addServiceByIndex(index: number): Promise<this> {
+    await logStep(`Home: add service tile #${index + 1}`);
+    const tiles = await this.findAll(HomeIds.serviceItems, { timeout: Timeouts.MEDIUM });
+    const tile = tiles[index];
+
+    if (!tile) {
       throw new Error(
-        `${this.name}: the service panel is empty. A search term or a category with no items ` +
-          `will do this — clear the search box before adding a service blind.`,
+        `${this.name}: no service tile at index ${index} — ${tiles.length} mounted. ` +
+          `An empty panel comes from a search term or a category with no items (clear the search ` +
+          `first); a too-high index means you walked past visibleServiceCount().`,
       );
     }
 
-    await first.waitForClickable({ timeout: Timeouts.SHORT });
-    await first.click();
+    await tile.waitForClickable({ timeout: Timeouts.SHORT });
+    await tile.click();
     return this;
   }
 
@@ -496,6 +538,115 @@ export class HomePage extends BasePage {
     return this;
   }
 
+  /* --- Cart line editor (update-service dialog) ------------------------ */
+
+  /**
+   * Open the per-line editor for the first cart service line.
+   *
+   * Tapping a cart line opens `order-item-dialog.tsx` — the price field, an
+   * Apply-Discount switch and a note field. The line is a `cursor-pointer` row
+   * that renders only while a SINGLE draft is active (see
+   * {@link HomeIds.orderServiceRows}); readiness keys on the price field rather
+   * than the shared dialog role, so it cannot resolve against a stale overlay.
+   */
+  async openServiceEditor(): Promise<this> {
+    await logStep('Home: open the cart line editor');
+    const rows = await this.findAll(HomeIds.orderServiceRows, { timeout: Timeouts.MEDIUM });
+    const first = rows[0];
+    if (!first) {
+      throw new Error(
+        `${this.name}: no editable cart line found. The per-line editor opens from a cart ` +
+          `service row, which renders only while exactly one draft is active — build the draft, ` +
+          `and clear any leftover orders first.`,
+      );
+    }
+
+    await first.waitForClickable({ timeout: Timeouts.SHORT });
+    await first.click();
+    await this.find(HomeIds.updateServicePriceInput, { visible: true, timeout: Timeouts.MEDIUM });
+    return this;
+  }
+
+  /** Is the update-service dialog open? Its price field is the signal. */
+  isServiceEditorShown(): Promise<boolean> {
+    return this.isVisible(HomeIds.updateServicePriceInput);
+  }
+
+  /** The price field's current value, in cents. */
+  async serviceEditorPriceCents(): Promise<MoneyCents> {
+    return parseMoney(await this.value(HomeIds.updateServicePriceInput));
+  }
+
+  /**
+   * Overwrite the line price.
+   *
+   * The field is a masked `InputCurrency` PRE-FILLED with the current line price,
+   * and typing into it appends to the mask ($54.00 + "12.00" → $5,412.00…). So it
+   * is zeroed with the dialog's own "Reset amount" control first, and only then
+   * entered as a decimal the way the empty Quick Pay field is driven.
+   */
+  async setServiceEditorPrice(amount: MoneyCents): Promise<this> {
+    await this.click(HomeIds.updateServiceResetAmountBtn);
+    await this.setValue(HomeIds.updateServicePriceInput, fromCents(amount).toFixed(2));
+    return this;
+  }
+
+  /**
+   * Is the Apply-Discount switch on?
+   *
+   * Reads the Radix state either way it can be exposed — `aria-checked` when the
+   * accessibility attribute is present, `data-state="checked"` otherwise.
+   */
+  async isItemDiscountOn(): Promise<boolean> {
+    const el = await this.find(HomeIds.updateServiceDiscountSwitch, { visible: true });
+    const aria = await el.getAttribute('aria-checked');
+    if (aria === 'true' || aria === 'false') return aria === 'true';
+    return (await el.getAttribute('data-state')) === 'checked';
+  }
+
+  /** Flip the Apply-Discount switch. */
+  async toggleItemDiscount(): Promise<this> {
+    await this.click(HomeIds.updateServiceDiscountSwitch);
+    return this;
+  }
+
+  /**
+   * Type a discount amount into the field the switch reveals.
+   *
+   * Flipping {@link toggleItemDiscount} on alone keeps Save disabled — the app
+   * treats a `0` discount as "nothing to apply" — so a case that wants a discount
+   * must enter a non-zero value here. `value` is taken in the mode the dialog is
+   * already in (a "%"/"$" pair beside the field switches it); the default suits a
+   * plain percentage. The switch must already be on.
+   */
+  async setItemDiscount(value: string): Promise<this> {
+    await this.setValue(HomeIds.updateServiceDiscountInput, value);
+    return this;
+  }
+
+  /** Type a per-line note (the app caps it at 50 characters). */
+  async setServiceNote(note: string): Promise<this> {
+    await this.setValue(HomeIds.updateServiceNoteInput, note);
+    return this;
+  }
+
+  /** The note field's current value. */
+  serviceNoteValue(): Promise<string> {
+    return this.value(HomeIds.updateServiceNoteInput);
+  }
+
+  /** Save the editor and wait for it to close. */
+  async saveServiceEditor(): Promise<this> {
+    await this.click(HomeIds.updateServiceSaveBtn);
+    await this.waitGone(HomeIds.updateServicePriceInput, Timeouts.MEDIUM);
+    return this;
+  }
+
+  /** Close the editor without saving, via Escape. */
+  async closeServiceEditor(): Promise<this> {
+    return this.dismissDialog(HomeIds.updateServicePriceInput);
+  }
+
   /* --- Quick Pay dialog probes ----------------------------------------- */
 
   /** Is the Quick Pay dialog on screen? Its amount field is the readiness signal. */
@@ -617,6 +768,20 @@ export class HomePage extends BasePage {
   }
 
   /**
+   * Is the cart's Split action offered right now?
+   *
+   * The icon sits between Print and Pay and the app only lets an order be split
+   * once its total clears the minimum (the doc's "Total Order > $5" rule), so a
+   * cheap order renders it hidden or disabled. A spec proving the gate checks this
+   * on a sub-threshold order; `false` is the expected answer there, not a fault.
+   */
+  async isSplitOrderAvailable(): Promise<boolean> {
+    if (!(await this.isVisible(HomeIds.cartSplitBtn, Timeouts.ANIMATION))) return false;
+    const button = await this.find(HomeIds.cartSplitBtn, { visible: true });
+    return button.isEnabled();
+  }
+
+  /**
    * Press the cart's Split icon and land on `/order/{id}/split-order`.
    *
    * The button sits between Print and Pay and only renders once the order has
@@ -649,6 +814,14 @@ export class HomePage extends BasePage {
    * screen behind it.
    */
   private async confirmDestructiveAction(): Promise<void> {
+    // A permission-guarded till (merchant 20258) fronts a destructive action
+    // with the PASSCODE guard FIRST: the Remove click opens "Enter staff code
+    // to access Delete Order" — a keypad, not an alert-dialog. Enter the staff
+    // code when that guard is up; on a till without the guard this is a no-op.
+    await passcodeDialog.enterIfPresent(env.STAFF_PASSCODE);
+
+    // The shared ConfirmDialog ("Delete Order — Are you sure?", Cancel / Delete)
+    // then follows in BOTH cases, so always confirm it too.
     await this.click(CONFIRM_DIALOG_ACTION);
     await this.waitGone(CONFIRM_DIALOG_ACTION, Timeouts.MEDIUM);
   }

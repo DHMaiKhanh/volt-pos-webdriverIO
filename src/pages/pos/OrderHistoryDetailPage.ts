@@ -262,6 +262,17 @@ export class OrderHistoryDetailPage extends BasePage {
     return this.isVisible(OrderHistoryDetailIds.cancelDialog);
   }
 
+  /**
+   * The cancel dialog's full text, for the "All payments will be voided" warning.
+   *
+   * Reads the whole `alertdialog` rather than a dedicated line — the warning ships
+   * no testid of its own, and the dialog is otherwise just the reason select plus
+   * its two buttons, so the body text is unambiguous.
+   */
+  async readCancelDialogText(): Promise<string> {
+    return this.text(OrderHistoryDetailIds.cancelDialog, { timeout: Timeouts.MEDIUM });
+  }
+
   /** Close the cancel dialog with Escape, cancelling nothing. */
   async closeCancelDialog(): Promise<this> {
     return this.dismissDialog(OrderHistoryDetailIds.cancelDialog);
@@ -308,6 +319,21 @@ export class OrderHistoryDetailPage extends BasePage {
     await this.click(OrderHistoryDetailIds.actionRefund);
     await this.find(OrderHistoryDetailIds.refundDialog, { timeout: Timeouts.MEDIUM, visible: true });
     return this;
+  }
+
+  /** Is the refund dialog on screen? */
+  isRefundDialogShown(): Promise<boolean> {
+    return this.isVisible(OrderHistoryDetailIds.refundDialog);
+  }
+
+  /** The refund dialog's full text — for the method options and any inline alert. */
+  async readRefundDialogText(): Promise<string> {
+    return this.text(OrderHistoryDetailIds.refundDialog, { timeout: Timeouts.MEDIUM });
+  }
+
+  /** Close the refund dialog with Escape, refunding nothing. */
+  async closeRefundDialog(): Promise<this> {
+    return this.dismissDialog(OrderHistoryDetailIds.refundDialog);
   }
 
   /**
@@ -398,6 +424,21 @@ export class OrderHistoryDetailPage extends BasePage {
     await this.click(OrderHistoryDetailIds.actionReopen);
     await this.find(OrderHistoryDetailIds.reopenDialog, { timeout: Timeouts.MEDIUM, visible: true });
     return this;
+  }
+
+  /** Is the re-open confirmation dialog on screen? */
+  isReopenDialogShown(): Promise<boolean> {
+    return this.isVisible(OrderHistoryDetailIds.reopenDialog);
+  }
+
+  /** The re-open dialog's full text (the one-time / "Void all" warning it carries). */
+  async readReopenDialogText(): Promise<string> {
+    return this.text(OrderHistoryDetailIds.reopenDialog, { timeout: Timeouts.MEDIUM });
+  }
+
+  /** Close the re-open dialog with Escape, re-opening nothing. */
+  async closeReopenDialog(): Promise<this> {
+    return this.dismissDialog(OrderHistoryDetailIds.reopenDialog);
   }
 
   /**

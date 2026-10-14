@@ -202,7 +202,39 @@ export const SplitOrderIds = {
   ),
 
   confirm: locator('split confirm', 'split-order-confirm', buttonWithAnyText(...both(Actions.confirm))),
+
+  /**
+   * The By-Amount keypad, shown in a dialog when a check's amount is tapped.
+   *
+   * It has no text input — the digits drive the check card's amount directly, and
+   * the entry APPENDS cents from the right (tapping into $46.20 gives $462.0X), so
+   * a caller clears with {@link amountKeypadBackspace} before typing. Verified live
+   * 2026-09-10 (attach): layout is 1-9, then `00`, `0`, an icon-only backspace,
+   * then Done.
+   */
+  amountKeypadDone: locator(
+    'split amount keypad done',
+    'split-amount-keypad-done',
+    '//*[@data-slot="popover-content" or @role="dialog"]//button[normalize-space()="Done" or normalize-space()="Xong" or normalize-space()="Hoàn tất"]',
+  ),
+  amountKeypadBackspace: locator(
+    'split amount keypad backspace',
+    'split-amount-keypad-backspace',
+    // Icon-only, so it is the ONLY text-less button in the keypad popover — the
+    // digits carry text and Done a label. `.//svg` is not usable in XPath (the
+    // SVG namespace makes it miss), and the keys are not DOM siblings, so a
+    // positional walk from "0" finds nothing — the empty-text match is what works.
+    '//*[@data-slot="popover-content" or @role="dialog"]//button[not(normalize-space())]',
+  ),
 } satisfies Record<string, Locator>;
+
+/** One digit key of the By-Amount keypad, scoped to its popover. Digits are locale-neutral. */
+export const splitKeypadDigit = (digit: string): Locator =>
+  locator(
+    `split amount keypad ${digit}`,
+    `split-amount-keypad-${digit}`,
+    `//*[@data-slot="popover-content" or @role="dialog"]//button[normalize-space()="${digit}"]`,
+  );
 
 /**
  * One check card, by its 1-based number.

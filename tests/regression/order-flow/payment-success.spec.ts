@@ -28,9 +28,12 @@ describe('Order flow — Payment success', () => {
 
     const { orderId } = await createOrder();
     await checkoutPage.waitForReady();
-    const totalCents = await checkoutPage.totalCents();
 
-    await payInCash(orderId, { tenderedCents: totalCents });
+    // Exact settle: omit tenderedCents so payInCash presses Complete Payment on
+    // the pre-filled balance instead of typing it. Typing the total would stall on
+    // the "9" key the "$50" preset covers when the total contains a 9 (e.g.
+    // $65.95) — see the checkout-keypad-preset-overlap note.
+    await payInCash(orderId);
     await paymentSuccessPage.waitForReady();
   });
 

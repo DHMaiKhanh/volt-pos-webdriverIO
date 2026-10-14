@@ -390,7 +390,11 @@ export const HomeIds = {
   quickPayAmountInput: locator(
     'quick pay amount input',
     'home-quickpay-amount-input',
-    '[data-slot="dialog-content"] [data-slot="input"]:nth-of-type(1)',
+    // Build 1.1.x ships NO testid and the fields are `data-slot="form-control"`,
+    // not `data-slot="input"`, so the old CSS matched nothing. The amount field is
+    // the only one carrying the "0.00" placeholder — the name field is "Service
+    // Name", the note "Add note".
+    inputWithAnyPlaceholder('0.00'),
   ),
   quickPayNameInput: locator(
     'quick pay name input',
@@ -399,7 +403,13 @@ export const HomeIds = {
     // VP-802's `-name-` spelling, so the placeholder is what ties the two.
     inputWithAnyPlaceholder('Service Name', 'Tên dịch vụ'),
   ),
-  quickPayNoteInput: locator('quick pay note input', 'home-quickpay-note-input', '[data-slot="textarea"]'),
+  // Build 1.1.x renders the note as a <textarea data-slot="form-control"> with the
+  // "Add note" placeholder — not a `data-slot="textarea"`, which matched nothing.
+  quickPayNoteInput: locator(
+    'quick pay note input',
+    'home-quickpay-note-input',
+    '//textarea[@placeholder="Add note" or @placeholder="Thêm ghi chú"]',
+  ),
   quickPayAddBtn: locator(
     'quick pay add button',
     'home-quickpay-add-btn',
@@ -410,11 +420,13 @@ export const HomeIds = {
   orderDeleteBtn: locator(
     'delete order button',
     'home-order-delete-btn',
-    // `-order/order-info.tsx` — the destructive-styled trigger in the order
-    // header, labelled `t("global.remove")`. The class is what separates it from
-    // the icon-only remove buttons on the service and staff rows, which carry no
-    // text at all.
-    '//button[contains(@class,"text-destructive")][normalize-space()="Remove" or normalize-space()="Xoá"]',
+    // `-order/order-info.tsx` — the trigger in the order header, labelled
+    // `t("global.remove")`. Build 1.1.x dropped the `text-destructive` class the
+    // old XPath keyed on (it now styles the button through `data-slot="button"`),
+    // so match on the exact text instead — the icon-only remove buttons on the
+    // service and staff rows carry no text, so an exact-text match still excludes
+    // them.
+    '//button[@data-slot="button"][normalize-space()="Remove" or normalize-space()="Xoá"]',
   ),
   /* Both customer buttons are icon-only `button.size-13.rounded-full`, side by
    * side in the order header's `min-w-[120px]` box, in the order [edit, remove]
@@ -472,6 +484,85 @@ export const HomeIds = {
     // carried in the selector to separate it from the Quick Pay dialog's own
     // submit, which says `Add` / `Update` instead.
     '//*[@data-slot="dialog-content"]//button[@type="submit"][normalize-space()="Save" or normalize-space()="Lưu"]',
+  ),
+  /**
+   * The clickable cart service line — the row a cashier taps to open the
+   * update-service dialog (price / Apply-Discount / note).
+   *
+   * PROPOSED. Neither source annotates it, and it was the missing handle that
+   * left TC-ORDERFLOW-22/23/24 pending. Verified live on the dev build
+   * (2026-09-10, attach): the editable cart lines are `cursor-pointer` **DIV**s
+   * with a bottom divider, each holding a service name and a `$` price — distinct
+   * from the service-catalogue tiles, which are `li.cursor-pointer`, and from the
+   * order-card `button` the panel collapses each order into when MORE THAN ONE
+   * order is open. So this resolves only against a SINGLE active draft, which is
+   * exactly the state the three cases build. The `$`-price predicate is what
+   * separates a service line from any other bordered clickable row.
+   */
+  orderServiceRows: locator(
+    'cart service line rows',
+    'home-order-service-item-',
+    byTestIdPrefix('home-order-service-item-'),
+    '//div[contains(@class,"cursor-pointer")][contains(@class,"border-b")][.//*[starts-with(normalize-space(),"$")]]',
+  ),
+  /**
+   * The price field of the update-service dialog (an `InputCurrency`).
+   *
+   * Its placeholder `0.00` is locale-neutral, and it is the first input in the
+   * dialog. Doubles as the dialog's readiness signal — more specific than the
+   * shared `role="dialog"` on {@link updateServiceDialog}.
+   */
+  updateServicePriceInput: locator(
+    'update service price input',
+    'home-update-service-price-input',
+    '//*[@data-slot="dialog-content"]//input[@placeholder="0.00"]',
+  ),
+  /**
+   * The Apply-Discount switch inside the update-service dialog. Radix `Switch`,
+   * so the on/off lives on `data-state` / `aria-checked`, never the value.
+   */
+  updateServiceDiscountSwitch: locator(
+    'update service item-discount switch',
+    'home-update-service-discount-switch',
+    '//*[@data-slot="dialog-content"]//*[@role="switch"]',
+  ),
+  /**
+   * The discount-VALUE field the Apply-Discount switch reveals. Flipping the
+   * switch alone leaves Save disabled — the app needs a non-zero amount here (a
+   * "%"/"$" pair beside it picks the mode) — and the field ships no testid, so it
+   * is pinned as the dialog text input that is neither the price (`0.00`) nor the
+   * note (`Add note`). Only present while the switch is on.
+   */
+  updateServiceDiscountInput: locator(
+    'update service discount input',
+    'home-update-service-discount-input',
+    '//*[@data-slot="dialog-content"]//input[@type="text"][not(@placeholder="0.00") and not(@placeholder="Add note")]',
+  ),
+  /**
+   * The per-line note field of the update-service dialog (the app caps it at 50
+   * characters). Placeholder `Add note`; the positional last-input is the
+   * language-proof backup — the price is the dialog's first input, the note the
+   * last when no discount row is showing.
+   */
+  updateServiceNoteInput: locator(
+    'update service note input',
+    'home-update-service-note-input',
+    inputWithAnyPlaceholder('Add note', 'Thêm ghi chú'),
+    '(//*[@data-slot="dialog-content"]//input[@data-slot="input"])[last()]',
+  ),
+  /**
+   * The "Reset amount" control beside the price field — clears it to $0.00.
+   *
+   * Needed because the price field is a masked `InputCurrency` PRE-FILLED with the
+   * line price, and typing into it appends to the mask ($54 → $5,412…). Zeroing it
+   * first makes entry behave like the empty Quick Pay field. Its `aria-label` is
+   * hardcoded English (an app a11y gap, like the split-order steppers), so the
+   * fallback is language-bound — fine for a control that has no visible text.
+   */
+  updateServiceResetAmountBtn: locator(
+    'update service reset-amount button',
+    'home-update-service-reset-amount-btn',
+    '//*[@data-slot="dialog-content"]//button[@aria-label="Reset amount"]',
   ),
 
   // --- Cart footer ---
@@ -739,8 +830,19 @@ export const CheckoutIds = {
     '//div[contains(@class,"rounded-lg") and contains(@class,"py-4")][contains(normalize-space(),"Remaining") or contains(normalize-space(),"Còn lại")]',
     'div.bg-sherwood-green-20',
   ),
-  /** Cash-only row; its `#FFF4DD` background is unique to it. */
-  change: locator('checkout change', 'checkout-change', 'div[class*="bg-[#FFF4DD]"]'),
+  /**
+   * Cash-only "Change" row, rendered only while change is above zero.
+   *
+   * Build 1.1.x names the highlight with the semantic token `bg-sharp-yellow-20`
+   * (the same family as `remaining`'s `bg-sherwood-green-20`), not the raw
+   * `#FFF4DD` hex the old fallback matched. Text-first, colour-class second.
+   */
+  change: locator(
+    'checkout change',
+    'checkout-change',
+    '//div[contains(@class,"rounded-lg") and contains(@class,"py-4")][contains(normalize-space(),"Change") or contains(normalize-space(),"Tiền thối")]',
+    'div[class*="bg-sharp-yellow-20"]',
+  ),
 
   // --- Action buttons (`-order-checkout-detail/list-action-detail.tsx`) ---
   /**
@@ -830,6 +932,20 @@ export const CheckoutIds = {
     'checkout-gc-accepted-msg',
     textIsAnyOf('Gift Card Accepted', 'Thẻ quà tặng hợp lệ'),
   ),
+  /**
+   * The **Scan Again** button shown on the rejection screen. After a code comes
+   * back "Gift card is not valid", the dialog replaces the scan view (and its
+   * "Input Gift Card Code" button) with `[…, Scan Again]` — verified live on the
+   * dev build. A spec that re-enters a second code after a rejection must press
+   * this first to return to the scan/input screen; without it the next
+   * `enterGiftCardCode` looks for an "Input Gift Card Code" button that is gone.
+   * Scoped to the dialog, matched on the exact label.
+   */
+  gcScanAgainBtn: locator(
+    'gift card scan-again button',
+    'checkout-gc-scan-again-btn',
+    '//*[@data-slot="dialog-content"]//button[normalize-space()="Scan Again" or normalize-space()="Quét lại"]',
+  ),
   gcPayBtn: locator(
     'gift card pay button',
     'checkout-gc-pay-btn',
@@ -837,6 +953,24 @@ export const CheckoutIds = {
     // gift-card dialog is portalled to `document.body`, so both can be in the
     // DOM at once.
     '//*[@data-slot="dialog-content"]//button[normalize-space()="Pay" or normalize-space()="Thanh toán"]',
+  ),
+  /**
+   * The **Redeem & Add New Check** button on the INSUFFICIENT-balance screen.
+   *
+   * When a redeemed card holds LESS than the amount due, the dialog swaps Pay for
+   * this button under "Gift card not Enough Balance — Redeem with current balance
+   * and add a new check for the remaining amount?" (verified live 2026-10-13 on the
+   * dev build). Pressing it redeems the card's WHOLE balance toward the order and
+   * splits the UNPAID remainder onto a new check — the app's native multi-gift-card
+   * path. Scoped to the dialog, matched on the exact label; the dialog carries no
+   * testids on this build.
+   */
+  gcRedeemAddCheckBtn: locator(
+    'gift card redeem-and-add-check button',
+    'checkout-gc-redeem-add-check-btn',
+    '//*[@data-slot="dialog-content"]//button[contains(normalize-space(),"Add New Check") or ' +
+      'contains(normalize-space(),"Redeem & Add") or contains(normalize-space(),"thêm hoá đơn") or ' +
+      'contains(normalize-space(),"thêm hóa đơn")]',
   ),
   /**
    * The **Cancel** button that abandons the gift-card dialog WITHOUT redeeming.
@@ -924,7 +1058,14 @@ export const CheckoutIds = {
   waitingCustomerTipDialog: locator(
     'waiting for customer tip dialog',
     'waiting-customer-tip-dialog',
-    byRole('dialog'),
+    // The testid is absent on the dev build, and a bare role="dialog" fallback
+    // matches ANY open dialog — the gift-card SCAN dialog and the passcode guard
+    // included — so `isWaitingForCustomerTip()` would read true whenever a dialog
+    // is up and send the gift-card flow off to drive a tip that is not there.
+    // Anchor on the dialog's own copy instead (verified live: "Customer is adding
+    // a tip." / "Please wait…"), so it is true for the tip-wait dialog ALONE.
+    '//*[@data-slot="dialog-content"][contains(normalize-space(),"Customer is adding a tip")' +
+      ' or contains(normalize-space(),"đang thêm tiền tip") or contains(normalize-space(),"Vui lòng chờ")]',
   ),
   waitingCustomerSignatureDialog: locator(
     'waiting for customer signature dialog',
@@ -1300,18 +1441,19 @@ export const CustomerDisplayIds = {
   tipOptionCustom: locator(
     'custom tip button',
     'customer-tip-option-custom',
-    'button[class*="bg-[#E0E9FF]"]:nth-of-type(1)',
+    // The build ships no testid and dropped the `bg-[#E0E9FF]` class the old
+    // fallback pinned; the label is the stable anchor (English on this device —
+    // verified live 2026-09-22, and the docs render it English even in VI prose).
+    buttonWithAnyText('Custom Tip'),
   ),
-  tipOptionNone: locator(
-    'no tip button',
-    'customer-tip-option-none',
-    'button[class*="bg-[#E0E9FF]"]:nth-of-type(2)',
-  ),
+  tipOptionNone: locator('no tip button', 'customer-tip-option-none', buttonWithAnyText('No Tip')),
   tipContinueBtn: locator(
     'customer continue button',
     'customer-tip-continue-btn',
     buttonWithAnyText('Continue', 'Tiếp tục'),
   ),
+  /** Closes the custom-tip keypad and re-enables Continue on the tip screen. */
+  tipCustomDone: locator('custom tip Done', 'customer-tip-custom-done', buttonWithAnyText('Done')),
   /** `signaturepad.tsx` mounts `signature_pad` on a real `<canvas>` — the only one in the app. */
   signaturePad: locator('customer signature pad', 'customer-signature-pad', 'canvas'),
 } satisfies Record<string, Locator>;
@@ -1458,7 +1600,15 @@ export const orderHistoryDetail = (orderId: string): Locator =>
  * so this id shifts with the merchant language — see the group note.
  */
 export const orderHistoryDetailSection = (title: string): Locator =>
-  locator(`detail section ${title}`, `order-history-detail-section-${title}`);
+  locator(
+    `detail section ${title}`,
+    `order-history-detail-section-${title}`,
+    // Build 1.1.x ships no testid here; each section is a `data-slot="card"` whose
+    // `card-title` is the (translated) heading — the same shape detailInformation
+    // and detailPayment already fall back to (verified live: cards titled Order
+    // Information / Order Summary / Service Details / Tip / Payment Details / Order Note).
+    cardWithTitle(title),
+  );
 
 /** A status checkbox in the order-history filter. `-shared/order-history.constants.ts` hardcodes the DOM id. */
 export const orderHistoryStatusFilter = (statusId: string): Locator =>
@@ -1498,6 +1648,14 @@ export const paymentSuccessActionBtn = (value: string): Locator =>
  */
 export const customerTipOption = (percent: number | string): Locator =>
   locator(`customer tip option ${percent}`, `customer-tip-option-${percent}`);
+
+/**
+ * A key on the customer custom-tip keypad (the shared `Keypad`, no testids).
+ * Digits append as cents — 1,0,0,0 → $10.00 — and MUST be driven with real
+ * clicks; a JS click does not register (see CheckoutPage's keypad note).
+ */
+export const customerTipKeypadKey = (key: string | number): Locator =>
+  locator(`custom tip keypad ${key}`, `customer-tip-keypad-${key}`, buttonWithAnyText(String(key)));
 
 /**
  * Payment-method button on the customer display. CONFIRMED — this id ships today

@@ -1,7 +1,12 @@
 import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { Routes } from '../../constants/routes.js';
-import { CustomerDisplayIds, customerPayBy, customerTipOption } from '../../constants/testids.js';
+import {
+  CustomerDisplayIds,
+  customerPayBy,
+  customerTipKeypadKey,
+  customerTipOption,
+} from '../../constants/testids.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { settle } from '../../helpers/wait.js';
 import { withCustomerWindow } from '../../helpers/window.js';
@@ -154,16 +159,35 @@ export class CustomerDisplayPage extends BasePage {
     });
   }
 
-  /**
-   * Open the custom-amount keypad.
-   *
-   * Only opens it. Driving that keypad needs a `customer-tip-keypad-*` locator
-   * family, which neither VP-802 nor the app declares yet — the view reuses the
-   * shared `Keypad` through `-components/tip-keypad.tsx` with no testids on it.
-   */
+  /** Open the custom-amount keypad. See {@link enterCustomTip} to also type into it. */
   openCustomTip(): Promise<this> {
     return withCustomerWindow(async () => {
       await this.click(CustomerDisplayIds.tipOptionCustom);
+      return this;
+    });
+  }
+
+  /**
+   * Enter a custom tip, in cents, via the Custom Tip keypad.
+   *
+   * The only tip path a merchant without percent presets exposes — 20258 shows
+   * just Custom Tip + No Tip. The shared `Keypad` has no testids, so each key is
+   * matched by its label ({@link customerTipKeypadKey}), and it APPENDS raw
+   * digits as cents exactly like the checkout keypad: `enterCustomTip(1000)`
+   * reads back `$10.00`. The keys only respond to a real pointer click — a JS
+   * click is silently dropped — so this drives them through `this.click`.
+   *
+   * "Done" closes the keypad and re-enables Continue on the tip screen; the
+   * caller presses Continue (and signs first when the pad is up), same as any
+   * other tip choice.
+   */
+  enterCustomTip(cents: number): Promise<this> {
+    return withCustomerWindow(async () => {
+      await this.click(CustomerDisplayIds.tipOptionCustom);
+      for (const digit of String(Math.max(0, Math.trunc(cents)))) {
+        await this.click(customerTipKeypadKey(digit));
+      }
+      await this.click(CustomerDisplayIds.tipCustomDone);
       return this;
     });
   }

@@ -1,6 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import WDIOReporter, { type RunnerStats, type SuiteStats, type TestStats } from '@wdio/reporter';
+import WDIOReporter, {
+  type HookStats,
+  type RunnerStats,
+  type SuiteStats,
+  type TestStats,
+} from '@wdio/reporter';
 import { Paths } from '../constants/paths.js';
 import type {
   DashboardSpecResult,
@@ -85,9 +90,34 @@ export default class DashboardReporter extends WDIOReporter {
   private toSuite(suite: SuiteStats): DashboardSuite {
     return {
       title: suite.title,
-      tests: suite.tests.map((t) => this.toTest(t)),
+      // A `before all` / `after all` hook that throws aborts its suite around
+      // the `it`s rather than inside one, so the failure lands in `suite.hooks`
+      // and NEVER in `suite.tests`. Counting tests alone made such a spec
+      // contribute zero tests and zero failures — `hasContent` then dropped the
+      // suite entirely and the run read as a green pass while a whole spec file
+      // had failed. Surface each failed hook as a synthetic failed test so it is
+      // counted and its error reaches the drawer.
+      tests: [...suite.tests.map((t) => this.toTest(t)), ...this.failedHooks(suite.hooks)],
       suites: suite.suites.map((s) => this.toSuite(s)).filter(hasContent),
     };
+  }
+
+  /** Failed before/after hooks, shaped as failed tests. Passing hooks are dropped. */
+  private failedHooks(hooks: readonly HookStats[]): DashboardTest[] {
+    return hooks
+      .filter((h) => h.state === 'failed' || h.error !== undefined || (h.errors?.length ?? 0) > 0)
+      .map((hook) => {
+        const err = hook.error ?? hook.errors?.[0];
+        return {
+          title: hook.title,
+          fullTitle: hook.title,
+          state: 'failed' as const,
+          durationMs: hook.duration ?? 0,
+          retries: 0,
+          error: firstLine(err?.message) || 'Hook failed',
+          stack: trimStack(err?.stack),
+        };
+      });
   }
 
   private toTest(test: TestStats): DashboardTest {

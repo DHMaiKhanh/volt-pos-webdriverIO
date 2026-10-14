@@ -23,6 +23,13 @@ export const Timeouts = {
   NAVIGATION: 30_000,
   /** Upstream HTTP (sync push/pull, payment gateway). */
   API: 30_000,
+  /**
+   * A card charge on a real terminal: present card + PIN/insert + gateway auth.
+   * Measured live 2026-09-10 — a manual tap exceeds {@link API}'s 30s, so the
+   * card settle waits on this instead (checkout.flow.ts → payWithCard). Kept
+   * under {@link MOCHA_HOOK} so the test still fails cleanly rather than the hook.
+   */
+  CARD_CHARGE: 120_000,
   /** Splash screen: migrations + DB open + first sync. Measured worst case ~50s cold. */
   APP_BOOT: 90_000,
   /** tauri-driver / msedgedriver must answer on its port within this window. */
