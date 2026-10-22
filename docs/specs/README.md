@@ -43,6 +43,7 @@
 | Order Management                        | [order-management.md](order-management.md)                   |
 | Order Pending                           | [order-pending.md](order-pending.md)                         |
 | Split Order                             | [split-order.md](split-order.md)                             |
+| Checkout Type Setting (VP-4591)         | [checkout-type-setting.md](checkout-type-setting.md)         |
 | Book Appointment from POS               | [book-appointment-from-pos.md](book-appointment-from-pos.md) |
 | [DEMO] QR Payment — Spec & Requirements | [demo-qr-payment-spec.md](demo-qr-payment-spec.md)           |
 

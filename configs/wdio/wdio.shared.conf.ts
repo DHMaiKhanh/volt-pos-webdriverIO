@@ -56,6 +56,7 @@ export const shared: WebdriverIO.Config = {
     checkout: [spec('regression', 'checkout', '**', '*.spec.ts')],
     orderHistory: [spec('regression', 'order-history', '**', '*.spec.ts')],
     settings: [spec('regression', 'settings', '**', '*.spec.ts')],
+    checkoutType: [spec('regression', 'checkout-type', '**', '*.spec.ts')],
   },
 
   /**

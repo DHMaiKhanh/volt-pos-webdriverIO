@@ -56,6 +56,11 @@ export interface AppEnv {
   /** Staff passcode used by payment flows (needs `completed_payment`). */
   STAFF_PASSCODE: string;
   STAFF_NAME: string;
+  /**
+   * Phone (digits only) of a customer of MERCHANT_ID whose loyalty balance the
+   * Checkout Type specs (VP-4591) may grow. Empty = those specs skip.
+   */
+  LOYALTY_CUSTOMER_PHONE: string;
 
   // ── Safety rails ───────────────────────────────────────────────────────────
   /**
@@ -196,6 +201,7 @@ export function loadEnv(force = false): AppEnv {
     OWNER_PASSCODE: process.env.OWNER_PASSCODE ?? '8888',
     STAFF_PASSCODE: process.env.STAFF_PASSCODE ?? '9999',
     STAFF_NAME: process.env.STAFF_NAME ?? '',
+    LOYALTY_CUSTOMER_PHONE: (process.env.LOYALTY_CUSTOMER_PHONE ?? '').replace(/\D/g, ''),
 
     WRITE_ALLOWED: writeAllowed,
     RESET_DB: envName === 'prod' ? false : toBool(process.env.RESET_DB, false),

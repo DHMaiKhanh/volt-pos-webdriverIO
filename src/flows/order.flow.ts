@@ -23,6 +23,11 @@ export interface CreateOrderInput {
   staff?: StaffRef;
   /** What to sell. Omitted, the first tile in the service panel is used. */
   service?: ServiceRef;
+  /**
+   * Attach an EXISTING customer by phone (digits only) — Done takes the first
+   * match. Omitted, the order is a walk-in, which earns no loyalty points.
+   */
+  customerPhone?: string;
 }
 
 export interface CreatedOrder {
@@ -69,6 +74,7 @@ export async function createOrder(input: CreateOrderInput = {}): Promise<Created
     await homePage.waitForReady(Timeouts.MEDIUM);
 
     await addStaff(input.staff);
+    if (input.customerPhone !== undefined) await attachCustomer(input.customerPhone);
     await addService(input.service);
 
     const checkout = await homePage.pressPay();
@@ -106,6 +112,22 @@ async function addService(service?: ServiceRef): Promise<void> {
   requireId(service.id, 'service', service.name);
   if (service.name !== '') await homePage.searchService(service.name);
   await homePage.addService(service.id);
+}
+
+/**
+ * Attach a known customer. A number that matches nobody opens the quick-add
+ * form instead — that is a fixture problem, so it fails here rather than
+ * letting the order go through as a walk-in that silently earns nothing.
+ */
+async function attachCustomer(phone: string): Promise<void> {
+  await homePage.attachCustomerByPhone(phone);
+  if (await homePage.isNewCustomerFormShown()) {
+    await homePage.dismissNewCustomerForm();
+    throw new Error(
+      `createOrder(): phone ${phone} matches no customer on this merchant — the quick-add form opened. ` +
+        `Point the fixture (e.g. LOYALTY_CUSTOMER_PHONE) at an existing customer.`,
+    );
+  }
 }
 
 /**
