@@ -35,8 +35,8 @@ export type { BootResult, BootScreen } from './auth.flow.js';
  */
 export { goToOrderHistory, goToSettings, returnToHome } from './navigation.flow.js';
 
-export { createOrder } from './order.flow.js';
-export type { CreatedOrder, CreateOrderInput } from './order.flow.js';
+export { createOrder, openPendingOrder } from './order.flow.js';
+export type { CreatedOrder, CreateOrderInput, OpenPendingOrderInput } from './order.flow.js';
 
 export {
   completeCustomerTipIfPrompted,

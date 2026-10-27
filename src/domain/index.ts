@@ -26,3 +26,23 @@ export type {
 } from './incomeCalc.js';
 
 export { computePeriodDays, computePeriodRange } from './payPeriod.js';
+
+export {
+  CHECKOUT_TYPE,
+  expectedAward,
+  isGiftCardSaleOnly,
+  methodEarns,
+  parsePointPaymentSetting,
+  pointsFromConfig,
+  POINT_METHODS,
+} from './loyaltyPoints.js';
+export type {
+  CheckoutType,
+  ExpectedAward,
+  ExpectedAwardInput,
+  PointMethod,
+  PointMethodConfig,
+  PointOrderItem,
+  PointPaymentSetting,
+  PointTender,
+} from './loyaltyPoints.js';

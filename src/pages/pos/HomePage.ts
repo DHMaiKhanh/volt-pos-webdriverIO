@@ -7,6 +7,7 @@ import {
   customerSuggestionItem,
   HomeIds,
   homeCustomerKeypadKey,
+  promoRewardOption,
   removeServiceBtn,
   serviceCategory,
   serviceItem,
@@ -574,6 +575,20 @@ export class HomePage extends BasePage {
   /** Close the Promo & Rewards dialog with Escape. */
   closePromoDialog(): Promise<this> {
     return this.dismissDialog(HomeIds.cartPromoDialog);
+  }
+
+  /**
+   * Redeem the reward labelled `content` on the open order: open Promo &
+   * Rewards, tick its row, Apply. The Rewards tab only renders once the order
+   * has a customer, and a reward the customer cannot afford is not listed.
+   */
+  async applyReward(content: string): Promise<this> {
+    await this.openPromoDialog();
+    await logStep(`Home: redeem reward "${content}"`);
+    await this.click(promoRewardOption(content), { timeout: Timeouts.MEDIUM });
+    await this.click(HomeIds.cartPromoApplyBtn);
+    await this.waitGone(HomeIds.cartPromoDialog, Timeouts.MEDIUM);
+    return this;
   }
 
   /** Open the order-note dialog. */

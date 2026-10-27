@@ -1,6 +1,6 @@
 import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
-import { CheckoutIds, checkoutKeypadKey } from '../../constants/testids.js';
+import { cashierTipKeypadKey, CheckoutIds, checkoutKeypadKey } from '../../constants/testids.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { settle, waitUntilPath } from '../../helpers/wait.js';
 import { parseMoney } from '../../utils/money.js';
@@ -409,6 +409,20 @@ export class CheckoutPage extends BasePage {
   /** Hand the tip screen to the customer display. Disabled when the order cannot be tipped. */
   async pressTip(): Promise<this> {
     await this.click(CheckoutIds.tipBtn);
+    return this;
+  }
+
+  /**
+   * Add a cashier tip through the Tip keypad (`cashier-tip-keypad-dialog.tsx`).
+   * The keypad builds the amount in cents, so 500 is typed `5 0 0` = $5.00.
+   * The tip lands on the Card tender only.
+   */
+  async addCashierTip(cents: number): Promise<this> {
+    await this.pressTip();
+    await this.find(CheckoutIds.cashierTipDialog, { timeout: Timeouts.MEDIUM, visible: true });
+    for (const digit of String(cents)) await this.click(cashierTipKeypadKey(digit));
+    await this.click(CheckoutIds.cashierTipAddBtn);
+    await this.waitGone(CheckoutIds.cashierTipDialog);
     return this;
   }
 

@@ -1,6 +1,415 @@
 {
-  "updatedAt": "2026-10-27T07:04:32.088Z",
+  "updatedAt": "2026-10-27T10:54:01.162Z",
   "runs": [
+    {
+      "runId": "2026-10-27T10-53-50-265Z",
+      "startedAt": "2026-10-27T10:53:50.265Z",
+      "finishedAt": "2026-10-27T10:54:01.162Z",
+      "durationMs": 10897,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "14",
+        "app": "volt-pos.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 6,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 6,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/2.POS/e2e_volt_pos_webdriverIO/tests/regression/checkout-type/checkout-type.spec.ts",
+          "specName": "checkout-type",
+          "startedAt": "2026-10-27T10:53:52.945Z",
+          "finishedAt": "2026-10-27T10:54:00.580Z",
+          "durationMs": 7635,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "Checkout Type — points on completion (VP-4591)",
+              "tests": [],
+              "suites": [
+                {
+                  "title": "2. Manual",
+                  "tests": [
+                    {
+                      "title": "CHK-POS-011: Manual $0 order (full redeem) earns nothing @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).2. Manual.CHK-POS-011: Manual $0 order (full redeem) earns nothing @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1970,
+                      "retries": 0
+                    },
+                    {
+                      "title": "CHK-POS-011: Manual $0 order (full redeem) earns nothing @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).2. Manual.CHK-POS-011: Manual $0 order (full redeem) earns nothing @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1690,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                },
+                {
+                  "title": "3. Auto",
+                  "tests": [
+                    {
+                      "title": "CHK-POS-017: Auto $0 order (full redeem) earns no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).3. Auto.CHK-POS-017: Auto $0 order (full redeem) earns no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1689,
+                      "retries": 0
+                    },
+                    {
+                      "title": "CHK-POS-017: Auto $0 order (full redeem) earns no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).3. Auto.CHK-POS-017: Auto $0 order (full redeem) earns no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1381,
+                      "retries": 0
+                    },
+                    {
+                      "title": "CHK-POS-018: Auto $0 order + tip earns no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).3. Auto.CHK-POS-018: Auto $0 order + tip earns no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1380,
+                      "retries": 0
+                    },
+                    {
+                      "title": "CHK-POS-018: Auto $0 order + tip earns no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).3. Auto.CHK-POS-018: Auto $0 order + tip earns no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1090,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                }
+              ]
+            }
+          ],
+          "totals": {
+            "tests": 6,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 6,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-10-27T10-52-30-225Z",
+      "startedAt": "2026-10-27T10:52:30.225Z",
+      "finishedAt": "2026-10-27T10:52:42.483Z",
+      "durationMs": 12258,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "14",
+        "app": "volt-pos.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 6,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 6,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/2.POS/e2e_volt_pos_webdriverIO/tests/regression/checkout-type/checkout-type.spec.ts",
+          "specName": "checkout-type",
+          "startedAt": "2026-10-27T10:52:34.129Z",
+          "finishedAt": "2026-10-27T10:52:41.861Z",
+          "durationMs": 7732,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "Checkout Type — points on completion (VP-4591)",
+              "tests": [],
+              "suites": [
+                {
+                  "title": "2. Manual",
+                  "tests": [
+                    {
+                      "title": "CHK-POS-011: Manual $0 order (full redeem) earns nothing @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).2. Manual.CHK-POS-011: Manual $0 order (full redeem) earns nothing @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 2009,
+                      "retries": 0
+                    },
+                    {
+                      "title": "CHK-POS-011: Manual $0 order (full redeem) earns nothing @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).2. Manual.CHK-POS-011: Manual $0 order (full redeem) earns nothing @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1707,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                },
+                {
+                  "title": "3. Auto",
+                  "tests": [
+                    {
+                      "title": "CHK-POS-017: Auto $0 order (full redeem) earns no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).3. Auto.CHK-POS-017: Auto $0 order (full redeem) earns no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1705,
+                      "retries": 0
+                    },
+                    {
+                      "title": "CHK-POS-017: Auto $0 order (full redeem) earns no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).3. Auto.CHK-POS-017: Auto $0 order (full redeem) earns no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1401,
+                      "retries": 0
+                    },
+                    {
+                      "title": "CHK-POS-018: Auto $0 order + tip earns no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).3. Auto.CHK-POS-018: Auto $0 order + tip earns no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1400,
+                      "retries": 0
+                    },
+                    {
+                      "title": "CHK-POS-018: Auto $0 order + tip earns no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).3. Auto.CHK-POS-018: Auto $0 order + tip earns no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1103,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                }
+              ]
+            }
+          ],
+          "totals": {
+            "tests": 6,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 6,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-10-27T09-47-36-498Z",
+      "startedAt": "2026-10-27T09:47:36.498Z",
+      "finishedAt": "2026-10-27T09:48:00.739Z",
+      "durationMs": 24241,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "14",
+        "app": "volt-pos.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/2.POS/e2e_volt_pos_webdriverIO/tests/regression/checkout-type/checkout-type.spec.ts",
+          "specName": "checkout-type",
+          "startedAt": "2026-10-27T09:47:39.525Z",
+          "finishedAt": "2026-10-27T09:47:59.354Z",
+          "durationMs": 19829,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "Checkout Type — points on completion (VP-4591)",
+              "tests": [],
+              "suites": [
+                {
+                  "title": "3. Auto",
+                  "tests": [
+                    {
+                      "title": "CHK-POS-013: Auto ignores the amount — Cash earns the Point Bonus @regression @critical @write",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).3. Auto.CHK-POS-013: Auto ignores the amount — Cash earns the Point Bonus @regression @critical @write",
+                      "state": "passed",
+                      "durationMs": 14135,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                }
+              ]
+            }
+          ],
+          "totals": {
+            "tests": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-10-27T09-44-14-962Z",
+      "startedAt": "2026-10-27T09:44:14.962Z",
+      "finishedAt": "2026-10-27T09:44:53.864Z",
+      "durationMs": 38902,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "14",
+        "app": "volt-pos.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/2.POS/e2e_volt_pos_webdriverIO/tests/regression/checkout-type/checkout-type.spec.ts",
+          "specName": "checkout-type",
+          "startedAt": "2026-10-27T09:44:17.828Z",
+          "finishedAt": "2026-10-27T09:44:52.863Z",
+          "durationMs": 35035,
+          "retry": 1,
+          "suites": [],
+          "totals": {
+            "tests": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-10-27T09-43-07-021Z",
+      "startedAt": "2026-10-27T09:43:07.021Z",
+      "finishedAt": "2026-10-27T09:43:23.599Z",
+      "durationMs": 16578,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "14",
+        "app": "volt-pos.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 2,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 2,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/2.POS/e2e_volt_pos_webdriverIO/tests/regression/checkout-type/checkout-type.spec.ts",
+          "specName": "checkout-type",
+          "startedAt": "2026-10-27T09:43:09.611Z",
+          "finishedAt": "2026-10-27T09:43:23.074Z",
+          "durationMs": 13463,
+          "retry": 1,
+          "suites": [
+            {
+              "title": "Checkout Type — points on completion (VP-4591)",
+              "tests": [],
+              "suites": [
+                {
+                  "title": "4. Hybrid",
+                  "tests": [
+                    {
+                      "title": "CHK-POS-022: Hybrid same-day completion earns by Point Config, no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).4. Hybrid.CHK-POS-022: Hybrid same-day completion earns by Point Config, no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 1237,
+                      "retries": 0
+                    },
+                    {
+                      "title": "CHK-POS-022: Hybrid same-day completion earns by Point Config, no bonus @regression @write @payment",
+                      "fullTitle": "Checkout Type — points on completion (VP-4591).4. Hybrid.CHK-POS-022: Hybrid same-day completion earns by Point Config, no bonus @regression @write @payment",
+                      "state": "skipped",
+                      "durationMs": 891,
+                      "retries": 0
+                    }
+                  ],
+                  "suites": []
+                }
+              ]
+            }
+          ],
+          "totals": {
+            "tests": 2,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 2,
+            "passRate": 100
+          }
+        }
+      ]
+    },
+    {
+      "runId": "2026-10-27T09-42-16-495Z",
+      "startedAt": "2026-10-27T09:42:16.495Z",
+      "finishedAt": "2026-10-27T09:42:26.372Z",
+      "durationMs": 9877,
+      "env": {
+        "name": "dev",
+        "mode": "launch",
+        "merchant": "14",
+        "app": "volt-pos.exe",
+        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
+      },
+      "totals": {
+        "tests": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      },
+      "passed": true,
+      "specs": [
+        {
+          "cid": "0-0",
+          "file": "file:///D:/2.POS/e2e_volt_pos_webdriverIO/tests/regression/checkout-type/checkout-type.spec.ts",
+          "specName": "checkout-type",
+          "startedAt": "2026-10-27T09:42:25.979Z",
+          "finishedAt": "2026-10-27T09:42:25.983Z",
+          "durationMs": 4,
+          "retry": 1,
+          "suites": [],
+          "totals": {
+            "tests": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "passRate": 100
+          }
+        }
+      ]
+    },
     {
       "runId": "2026-10-27T07-01-39-618Z",
       "startedAt": "2026-10-27T07:01:39.618Z",
@@ -10028,334 +10437,6 @@
           "totals": {
             "tests": 0,
             "passed": 0,
-            "failed": 0,
-            "skipped": 0,
-            "passRate": 100
-          }
-        }
-      ]
-    },
-    {
-      "runId": "2026-10-22T05-01-46-070Z",
-      "startedAt": "2026-10-22T05:01:46.070Z",
-      "finishedAt": "2026-10-22T05:02:14.670Z",
-      "durationMs": 28600,
-      "env": {
-        "name": "dev",
-        "mode": "launch",
-        "merchant": "14",
-        "app": "volt-pos.exe",
-        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
-      },
-      "totals": {
-        "tests": 1,
-        "passed": 1,
-        "failed": 0,
-        "skipped": 0,
-        "passRate": 100
-      },
-      "passed": true,
-      "specs": [
-        {
-          "cid": "0-0",
-          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/_probe-bulk-missing.spec.ts",
-          "specName": "_probe-bulk-missing",
-          "startedAt": "2026-10-22T05:01:55.165Z",
-          "finishedAt": "2026-10-22T05:02:13.757Z",
-          "durationMs": 18592,
-          "retry": 1,
-          "suites": [
-            {
-              "title": "probe missing bulk",
-              "tests": [
-                {
-                  "title": "dumps pending list fully",
-                  "fullTitle": "probe missing bulk.dumps pending list fully",
-                  "state": "passed",
-                  "durationMs": 7626,
-                  "retries": 0
-                }
-              ],
-              "suites": []
-            }
-          ],
-          "totals": {
-            "tests": 1,
-            "passed": 1,
-            "failed": 0,
-            "skipped": 0,
-            "passRate": 100
-          }
-        }
-      ]
-    },
-    {
-      "runId": "2026-10-22T05-00-41-634Z",
-      "startedAt": "2026-10-22T05:00:41.634Z",
-      "finishedAt": "2026-10-22T05:01:31.477Z",
-      "durationMs": 49843,
-      "env": {
-        "name": "dev",
-        "mode": "launch",
-        "merchant": "14",
-        "app": "volt-pos.exe",
-        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
-      },
-      "totals": {
-        "tests": 1,
-        "passed": 1,
-        "failed": 0,
-        "skipped": 0,
-        "passRate": 100
-      },
-      "passed": true,
-      "specs": [
-        {
-          "cid": "0-0",
-          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/_probe-bulk-missing.spec.ts",
-          "specName": "_probe-bulk-missing",
-          "startedAt": "2026-10-22T05:00:51.200Z",
-          "finishedAt": "2026-10-22T05:01:30.476Z",
-          "durationMs": 39276,
-          "retry": 1,
-          "suites": [
-            {
-              "title": "probe missing bulk",
-              "tests": [
-                {
-                  "title": "scans routes for Bulk001/Bulk007",
-                  "fullTitle": "probe missing bulk.scans routes for Bulk001/Bulk007",
-                  "state": "passed",
-                  "durationMs": 11043,
-                  "retries": 0
-                }
-              ],
-              "suites": []
-            }
-          ],
-          "totals": {
-            "tests": 1,
-            "passed": 1,
-            "failed": 0,
-            "skipped": 0,
-            "passRate": 100
-          }
-        }
-      ]
-    },
-    {
-      "runId": "2026-10-22T04-58-26-813Z",
-      "startedAt": "2026-10-22T04:58:26.813Z",
-      "finishedAt": "2026-10-22T05:00:22.747Z",
-      "durationMs": 115934,
-      "env": {
-        "name": "dev",
-        "mode": "launch",
-        "merchant": "14",
-        "app": "volt-pos.exe",
-        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
-      },
-      "totals": {
-        "tests": 1,
-        "passed": 0,
-        "failed": 1,
-        "skipped": 0,
-        "passRate": 0
-      },
-      "passed": false,
-      "specs": [
-        {
-          "cid": "0-0",
-          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/web-checkin-bulk-to-pos.spec.ts",
-          "specName": "web-checkin-bulk-to-pos",
-          "startedAt": "2026-10-22T04:58:36.166Z",
-          "finishedAt": "2026-10-22T05:00:18.144Z",
-          "durationMs": 101978,
-          "retry": 1,
-          "suites": [
-            {
-              "title": "WEB CHECK-IN BULK → POS sync",
-              "tests": [
-                {
-                  "title": "shows all bulk check-ins as pending orders",
-                  "fullTitle": "WEB CHECK-IN BULK → POS sync.shows all bulk check-ins as pending orders",
-                  "state": "failed",
-                  "durationMs": 90343,
-                  "retries": 0,
-                  "error": "expect(received).toEqual(expected) // deep equality",
-                  "stack": "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 4\n\n- Array []\n+ Array [\n+   \"Bulk001 T04931\",\n+   \"Bulk007 T04931\",\n+ ]\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\order-flow\\web-checkin-bulk-to-pos.spec.ts:92:40)\n    at process.processTimers (node:internal/timers:538:9)"
-                }
-              ],
-              "suites": []
-            }
-          ],
-          "totals": {
-            "tests": 1,
-            "passed": 0,
-            "failed": 1,
-            "skipped": 0,
-            "passRate": 0
-          }
-        }
-      ]
-    },
-    {
-      "runId": "2026-10-22T04-54-03-685Z",
-      "startedAt": "2026-10-22T04:54:03.685Z",
-      "finishedAt": "2026-10-22T04:58:03.917Z",
-      "durationMs": 240232,
-      "env": {
-        "name": "dev",
-        "mode": "launch",
-        "merchant": "14",
-        "app": "volt-pos.exe",
-        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
-      },
-      "totals": {
-        "tests": 1,
-        "passed": 0,
-        "failed": 1,
-        "skipped": 0,
-        "passRate": 0
-      },
-      "passed": false,
-      "specs": [
-        {
-          "cid": "0-0",
-          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/web-checkin-bulk-to-pos.spec.ts",
-          "specName": "web-checkin-bulk-to-pos",
-          "startedAt": "2026-10-22T04:54:27.022Z",
-          "finishedAt": "2026-10-22T04:56:07.751Z",
-          "durationMs": 100729,
-          "retry": 2,
-          "suites": [
-            {
-              "title": "WEB CHECK-IN BULK → POS sync",
-              "tests": [
-                {
-                  "title": "shows all bulk check-ins as pending orders",
-                  "fullTitle": "WEB CHECK-IN BULK → POS sync.shows all bulk check-ins as pending orders",
-                  "state": "failed",
-                  "durationMs": 86929,
-                  "retries": 0,
-                  "error": "expect(received).toEqual(expected) // deep equality",
-                  "stack": "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  -  1\n+ Received  + 52\n\n- Array []\n+ Array [\n+   \"Bulk036 T04931\",\n+   \"Bulk037 T04931\",\n+   \"Bulk038 T04931\",\n+   \"Bulk039 T04931\",\n+   \"Bulk040 T04931\","
-                }
-              ],
-              "suites": []
-            }
-          ],
-          "totals": {
-            "tests": 1,
-            "passed": 0,
-            "failed": 1,
-            "skipped": 0,
-            "passRate": 0
-          }
-        }
-      ]
-    },
-    {
-      "runId": "2026-10-22T03-13-17-673Z",
-      "startedAt": "2026-10-22T03:13:17.673Z",
-      "finishedAt": "2026-10-22T03:13:35.695Z",
-      "durationMs": 18022,
-      "env": {
-        "name": "dev",
-        "mode": "launch",
-        "merchant": "14",
-        "app": "volt-pos.exe",
-        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
-      },
-      "totals": {
-        "tests": 1,
-        "passed": 1,
-        "failed": 0,
-        "skipped": 0,
-        "passRate": 100
-      },
-      "passed": true,
-      "specs": [
-        {
-          "cid": "0-0",
-          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/web-checkin-bulk-to-pos.spec.ts",
-          "specName": "web-checkin-bulk-to-pos",
-          "startedAt": "2026-10-22T03:13:26.343Z",
-          "finishedAt": "2026-10-22T03:13:35.152Z",
-          "durationMs": 8809,
-          "retry": 2,
-          "suites": [
-            {
-              "title": "WEB CHECK-IN BULK → POS sync",
-              "tests": [
-                {
-                  "title": "shows all bulk check-ins as pending orders",
-                  "fullTitle": "WEB CHECK-IN BULK → POS sync.shows all bulk check-ins as pending orders",
-                  "state": "passed",
-                  "durationMs": 1054,
-                  "retries": 0
-                }
-              ],
-              "suites": []
-            }
-          ],
-          "totals": {
-            "tests": 1,
-            "passed": 1,
-            "failed": 0,
-            "skipped": 0,
-            "passRate": 100
-          }
-        }
-      ]
-    },
-    {
-      "runId": "2026-10-20T04-18-20-462Z",
-      "startedAt": "2026-10-20T04:18:20.462Z",
-      "finishedAt": "2026-10-20T04:18:49.108Z",
-      "durationMs": 28646,
-      "env": {
-        "name": "dev",
-        "mode": "launch",
-        "merchant": "14",
-        "app": "volt-pos.exe",
-        "upstream": "https://volt-pos.v2.dev-fastboypay.com"
-      },
-      "totals": {
-        "tests": 1,
-        "passed": 1,
-        "failed": 0,
-        "skipped": 0,
-        "passRate": 100
-      },
-      "passed": true,
-      "specs": [
-        {
-          "cid": "0-0",
-          "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/order-flow/web-checkin-bulk-to-pos.spec.ts",
-          "specName": "web-checkin-bulk-to-pos",
-          "startedAt": "2026-10-20T04:18:33.603Z",
-          "finishedAt": "2026-10-20T04:18:48.400Z",
-          "durationMs": 14797,
-          "retry": 2,
-          "suites": [
-            {
-              "title": "WEB CHECK-IN BULK → POS sync",
-              "tests": [
-                {
-                  "title": "shows all bulk check-ins as pending orders",
-                  "fullTitle": "WEB CHECK-IN BULK → POS sync.shows all bulk check-ins as pending orders",
-                  "state": "passed",
-                  "durationMs": 2424,
-                  "retries": 0
-                }
-              ],
-              "suites": []
-            }
-          ],
-          "totals": {
-            "tests": 1,
-            "passed": 1,
             "failed": 0,
             "skipped": 0,
             "passRate": 100
