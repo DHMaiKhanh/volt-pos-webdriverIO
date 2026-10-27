@@ -38,6 +38,13 @@ export const Tag = {
   SLOW: '@slow',
   /** Quarantined. Runs, but never gates a merge. */
   FLAKY: '@flaky',
+  /**
+   * Red because of a confirmed APP bug, not a test bug. Still a real finding, so
+   * the spec stays in the tree — but a bulk run excludes it (`npm run test:bulk`)
+   * so 200+ specs don't each burn a full `MOCHA_TEST` timeout re-proving a bug we
+   * already filed. Drop the tag the moment the app fix lands.
+   */
+  BROKEN: '@broken',
 } as const;
 
 export type TagKey = keyof typeof Tag;
