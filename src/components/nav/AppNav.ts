@@ -2,6 +2,7 @@ import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { pathOf, Routes } from '../../constants/routes.js';
 import { appSidebarItem, CommonIds, headerMenuItem } from '../../constants/testids.js';
+import { SidebarVpIds } from '../../constants/testids.vp.js';
 import { logStep } from '../../helpers/steps.js';
 import { settle, waitUntilPath } from '../../helpers/wait.js';
 import { UiObject } from '../../support/UiObject.js';
@@ -146,6 +147,49 @@ export class AppNav extends UiObject {
     if (!(await this.isSidebarOpen())) return;
     await browser.keys(['Escape']);
     await this.waitGone(CommonIds.appSidebar, Timeouts.MEDIUM);
+  }
+
+  /** Is the drawer's "Reload" action rendered (VP-1873)? Opens the drawer to look. */
+  async isReloadShown(): Promise<boolean> {
+    await this.openSidebar();
+    return this.isVisible(SidebarVpIds.reloadBtn, Timeouts.SHORT);
+  }
+
+  /**
+   * Press the drawer's "Reload" action.
+   *
+   * The app re-initialises the WebView document in place (no confirm dialog),
+   * so the WebDriver session survives but every element handle goes stale.
+   * Returns whether a passcode/confirm dialog appeared within the first second,
+   * plus whether the "Reloading ..." loader was caught while polling — the loader
+   * can be shorter than one poll, so `sawLoader: false` is "not observed", not
+   * "absent".
+   */
+  async pressReload(): Promise<{ sawConfirm: boolean; sawLoader: boolean }> {
+    await this.openSidebar();
+    await logStep('Nav: sidebar → Reload');
+    await this.click(SidebarVpIds.reloadBtn);
+
+    let sawConfirm = false;
+    let sawLoader = false;
+    const deadline = Date.now() + 1_500;
+    while (Date.now() < deadline) {
+      try {
+        const probe = await browser.execute(function () {
+          const text = document.body ? document.body.innerText : '';
+          return {
+            loader: /Reloading|Đang tải lại/.test(text),
+            confirm: !!document.querySelector('[role="alertdialog"]'),
+          };
+        });
+        sawLoader = sawLoader || probe.loader;
+        sawConfirm = sawConfirm || probe.confirm;
+      } catch {
+        // The document is being replaced — expected mid-reload.
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return { sawConfirm, sawLoader };
   }
 
   /**

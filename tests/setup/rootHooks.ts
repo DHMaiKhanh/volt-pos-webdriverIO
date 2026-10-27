@@ -32,6 +32,7 @@ import { ensureLoggedIn, returnToHome } from '../../src/flows/index.js';
 import { installStepOverlay, logStep } from '../../src/helpers/steps.js';
 import { startUpdaterWatcher, stopUpdaterWatcher } from '../../src/helpers/updater.js';
 import { switchToMain } from '../../src/helpers/window.js';
+import { ensurePasscodeGrant } from '../../src/support/passcodeGrant.js';
 import { moduleLogger } from '../../src/utils/logger.js';
 
 const log = moduleLogger('rootHooks');
@@ -63,6 +64,13 @@ export const mochaHooks: Mocha.RootHookObject = {
     this.timeout(Timeouts.MOCHA_HOOK);
 
     await ensureLoggedIn();
+
+    // Re-seed the 30-minute passcode grant from a staff id a prior spec captured,
+    // so merchant 14's gated actions (Quick Pay, Delete Order, service price,
+    // income) skip the keypad for this file too. A no-op on the very first spec,
+    // before any gate has been unlocked through the UI once.
+    await ensurePasscodeGrant();
+
     await installStepOverlay();
 
     // The app's updater comparator is `|_current, _update| true`, so every

@@ -1,14 +1,23 @@
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { env } from '../../../configs/env/loadEnv.js';
 import { Routes } from '../../constants/routes.js';
-import { IncomeDailyIps, IncomeSummaryIds, summaryRow } from '../../constants/testids.incomes.js';
+import { IncomeSummaryIds, summaryRow } from '../../constants/testids.incomes.js';
+import {
+  IncomeSummaryExtraIds,
+  IncomeSummaryLabels,
+  SUMMARY_BLOCKS,
+  SUMMARY_LABELS,
+  type SummaryBlock,
+  type SummaryLabel,
+} from '../../constants/testids.income-summary.js';
+import { tableRowCell } from '../../constants/testids.reports-v4.js';
 import { goTo } from '../../helpers/navigate.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { logStep } from '../../helpers/steps.js';
-import { settle } from '../../helpers/wait.js';
 import { parseMoney } from '../../utils/money.js';
 import { passcodeDialog } from '../../components/modal/PasscodeDialog.js';
-import { BasePage } from '../BasePage.js';
+import { ReportBasePage } from './ReportBasePage.js';
+import { findTable, labelMoneyPairs, moneyCents, visibleLines } from './reportDom.js';
 
 const unixSeconds = (date: Date): number => Math.floor(date.getTime() / 1_000);
 
@@ -97,11 +106,29 @@ export type SummaryRowKey = keyof typeof SummaryRows;
  *   first. Summing those anyway is the most common wrong assertion on this
  *   screen and it fails in a way that looks like a backend bug.
  */
-export class IncomeSummaryPage extends BasePage {
+export class IncomeSummaryPage extends ReportBasePage {
   readonly name = 'Income Summary';
   readonly route = Routes.INCOME_SUMMARY;
 
-  protected readonly readyAnchor: Locator = IncomeSummaryIds.heading;
+  /**
+   * The summary table: it mounts with its header once the passcode guard is
+   * satisfied and the range query is wired (the heading paints behind the
+   * guard, so it proves nothing).
+   */
+  protected readonly readyAnchor: Locator = IncomeSummaryExtraIds.table;
+
+  /**
+   * Bare route — no search params — so the screen shows its OWN defaults
+   * (preset Today, group-by Day). Unlocks the owner passcode gate.
+   */
+  async openDefault(): Promise<this> {
+    await logStep(`Open ${this.name} (defaults)`);
+    await goTo(this.route);
+    await passcodeDialog.unlockForRun(env.OWNER_PASSCODE);
+    await this.waitForReady();
+    await this.waitForDataSettled();
+    return this;
+  }
 
   async open(date: Date = new Date(), groupBy: GroupBy = 'day'): Promise<this> {
     return this.openRange(date, date, groupBy);
@@ -122,19 +149,6 @@ export class IncomeSummaryPage extends BasePage {
     await this.waitForReady();
     await this.waitForDataSettled();
     return this;
-  }
-
-  /** Wait for the loading placeholders to clear — see `IncomeDailyPage.waitForDataSettled`. */
-  async waitForDataSettled(timeout: number = Timeouts.MEDIUM): Promise<void> {
-    const deadline = Date.now() + timeout;
-    while (Date.now() < deadline) {
-      if (!(await this.exists(IncomeDailyIps.skeleton, 300))) return;
-      // `exists` returns as soon as the FIRST candidate matches, so a skeleton
-      // that is present makes it cheap — without this the loop would spin flat
-      // out for the whole timeout hammering the driver.
-      await settle(200);
-    }
-    this.log.warn(`${this.name}: skeletons still visible after ${String(timeout)}ms.`);
   }
 
   /* --------------------------------------------------------------------- *
@@ -182,6 +196,155 @@ export class IncomeSummaryPage extends BasePage {
   async detailRowCount(): Promise<number> {
     return (await this.findAll(IncomeSummaryIds.detailRows, { timeout: Timeouts.SHORT })).length;
   }
+
+  /* --------------------------------------------------------------------- *
+   * Live-scan 2026-10-25 surface: table, detail panel blocks
+   * --------------------------------------------------------------------- */
+
+  async headingText(): Promise<string> {
+    return this.text(IncomeSummaryExtraIds.heading, { visible: true });
+  }
+
+  /** The summary table's header texts. */
+  async tableHeaders(): Promise<string[]> {
+    return (await findTable(IncomeSummaryLabels.totalPaymentHead))?.head ?? [];
+  }
+
+  /** Every period row as rendered: Date / Sale / Tip / Tax / Total Payment texts. */
+  async tableRows(): Promise<SummaryTableRow[]> {
+    const table = await findTable(IncomeSummaryLabels.totalPaymentHead);
+    return (table?.rows ?? [])
+      .filter((cells) => cells.length >= 5)
+      .map(([date, sale, tip, tax, totalPayment]) => ({
+        date: (date ?? '').replace(/\s+/g, ' '),
+        sale: sale ?? '',
+        tip: tip ?? '',
+        tax: tax ?? '',
+        totalPayment: totalPayment ?? '',
+      }));
+  }
+
+  /** Is the right panel on its "No detail to show" empty state? */
+  async isDetailEmpty(): Promise<boolean> {
+    return this.isVisible(IncomeSummaryExtraIds.noDetail, Timeouts.SHORT);
+  }
+
+  async hasPrintButton(): Promise<boolean> {
+    return this.isVisible(IncomeSummaryExtraIds.printButton, Timeouts.SHORT);
+  }
+
+  /**
+   * Click the N-th (1-based) period row and wait for the detail panel (its
+   * Print button) to replace the empty state. Expands Staff Payout's
+   * "Show more" so Pay 1 / Pay 2 are readable.
+   */
+  async openRowDetail(n = 1): Promise<this> {
+    await logStep(`${this.name}: open detail of row ${String(n)}`);
+    await this.click(tableRowCell(IncomeSummaryLabels.totalPaymentHead, n));
+    await this.find(IncomeSummaryExtraIds.printButton, { visible: true, timeout: Timeouts.MEDIUM });
+    await this.waitForDataSettled();
+    if (await this.isVisible(IncomeSummaryExtraIds.showMore, 1_000)) {
+      await this.click(IncomeSummaryExtraIds.showMore);
+      await this.waitForDataSettled();
+    }
+    return this;
+  }
+
+  /**
+   * The open detail panel, parsed into its blocks.
+   *
+   * Reads the visible text AFTER the summary table in document order (the panel
+   * renders after it), takes the line before "Print" as the period title, then
+   * splits on the block headings and pairs each label with the money line that
+   * follows it. Labels are mapped back to their English key so a Vietnamese
+   * till parses the same.
+   */
+  async readDetail(): Promise<SummaryDetail> {
+    const lines = await visibleLines({ afterTableWithHead: IncomeSummaryLabels.totalPaymentHead });
+    const printIndex = lines.findIndex((l) => (IncomeSummaryLabels.print as readonly string[]).includes(l));
+    const title = printIndex > 0 ? lines[printIndex - 1]! : '';
+
+    const blocks = Object.fromEntries(
+      (Object.keys(SUMMARY_BLOCKS) as SummaryBlock[]).map((b) => [b, [] as DetailEntry[]]),
+    ) as Record<SummaryBlock, DetailEntry[]>;
+
+    const headingOf = (line: string): SummaryBlock | null =>
+      (Object.keys(SUMMARY_BLOCKS) as SummaryBlock[]).find((b) =>
+        (SUMMARY_BLOCKS[b] as readonly string[]).includes(line),
+      ) ?? null;
+
+    let current: SummaryBlock | null = null;
+    let chunk: string[] = [];
+    const flush = (): void => {
+      if (current === null) return;
+      for (const { label, text } of labelMoneyPairs(chunk)) {
+        blocks[current].push({ label: toEnglishLabel(label), text, cents: moneyCents(text) });
+      }
+    };
+    for (const line of lines.slice(Math.max(printIndex + 1, 0))) {
+      const heading = headingOf(line);
+      if (heading !== null) {
+        flush();
+        current = heading;
+        chunk = [];
+      } else {
+        chunk.push(line);
+      }
+    }
+    flush();
+
+    const blocksPresent = (Object.keys(blocks) as SummaryBlock[]).filter((b) =>
+      lines.some((l) => (SUMMARY_BLOCKS[b] as readonly string[]).includes(l)),
+    );
+    return { title, blocks, blocksPresent };
+  }
+}
+
+/** One label/amount pair inside a detail block. `label` is the English key text. */
+export interface DetailEntry {
+  label: string;
+  text: string;
+  cents: number;
+}
+
+export interface SummaryDetail {
+  /** Period title above Print, e.g. `Oct 25, 2026`. */
+  title: string;
+  blocks: Record<SummaryBlock, DetailEntry[]>;
+  /** Block headings actually rendered. */
+  blocksPresent: SummaryBlock[];
+}
+
+export interface SummaryTableRow {
+  date: string;
+  sale: string;
+  tip: string;
+  tax: string;
+  totalPayment: string;
+}
+
+/** Map a rendered label (EN or VI) back to its English text. */
+function toEnglishLabel(rendered: string): string {
+  for (const [en, vi] of Object.values(SUMMARY_LABELS)) {
+    if (rendered === en || rendered === vi) return en;
+  }
+  return rendered;
+}
+
+/**
+ * The `occurrence`-th (0-based) value labelled `label` inside `block`, in cents,
+ * or `null` when absent. Occurrence matters: Payment Details lists Sale/Tip/Tax
+ * once per tender type.
+ */
+export function detailCents(
+  detail: SummaryDetail,
+  block: SummaryBlock,
+  label: SummaryLabel,
+  occurrence = 0,
+): number | null {
+  const en = SUMMARY_LABELS[label][0];
+  const hits = detail.blocks[block].filter((e) => e.label === en);
+  return hits[occurrence]?.cents ?? null;
 }
 
 export default new IncomeSummaryPage();

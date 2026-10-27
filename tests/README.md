@@ -46,6 +46,19 @@ and `--mochaOpts.grep` selects on it, which is why a tag is never hand-typed.
 | `regression/order-history/listing-and-detail.spec.ts` | `@regression`, `@write`                          |
 | `regression/settings/language-switch.spec.ts`         | `@regression`, `@write`, `@exclusive`            |
 
+### VP tickets ported from volt-qc
+
+Test-case sheets from `Volt-pos-Hung/volt-qc` (`VP-*.md`), one spec per ticket, TC ids kept.
+
+| Spec                                                            | Ticket  | Live result (2026-10-17, build 1.1.40)                                            |
+| --------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------- |
+| `regression/home/vp-1434-quick-pay-discount-reset.spec.ts`      | VP-1434 | 10/10 pass                                                                        |
+| `regression/checkout/vp-1432-cash-quick-option.spec.ts`         | VP-1432 | sheet = presets ADD; app REPLACES → TC-02..05 fail (`VP1432_PRESET=replace`: 5/5) |
+| `regression/order-history/vp-1433-customer-info-search.spec.ts` | VP-1433 | 10/10 pass                                                                        |
+| `regression/app/vp-1873-reload-app.spec.ts`                     | VP-1873 | 6 pass; TC-03 fails — no "Reloading ..." message is ever shown; 3 pending         |
+| `regression/settings/vp-2400-passcode-settings.spec.ts`         | VP-2400 | 7/7 pass (restores the merchant's gates); 5 pending (multi-till/merchant/staff)   |
+| `regression/home/vp-2465-service-name-display.spec.ts`          | VP-2465 | 5 pass; TC-01/02/07 fail — "..." shows on every card, even unclamped names        |
+
 ## The placement rule
 
 **A spec that creates data must never live under `tests/smoke/`.**

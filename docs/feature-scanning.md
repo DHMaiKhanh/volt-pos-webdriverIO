@@ -15,6 +15,19 @@ trong dự án WebdriverIO, thay cho cách làm cũ bằng Playwright.
 
 ---
 
+## Dùng bằng chat (không cần code)
+
+1. `npm run app:launch` (mở app + CDP 9222). Lần đầu: khởi động lại phiên Claude Code để nạp MCP `volt-app` từ `.mcp.json`.
+2. Nhắn: `/scan-feature checkout giảm giá` — hoặc nói tự nhiên "quét tính năng order history, tìm bug".
+3. Claude tự lái app (snapshot → click/gõ → so kỳ vọng), nghe lỗi JS/API (`cdp.mjs watch` hoặc `browser_console_messages`), rồi ghi:
+   - `reports/scans/<ngày>-<feature>/bugs.md` + screenshot (bug đã tái hiện 2 lần, mức độ, bước, kỳ vọng vs thực tế)
+   - `docs/screens/<screen>/<screen>-test-cases.md` (TC mới, append)
+4. Muốn thành code: `/cases-to-specs docs/screens/<screen>/<screen>-test-cases.md`.
+
+Tuỳ chọn trong câu lệnh: "chỉ đọc", "quét sâu", "có thanh toán thật" (mặc định KHÔNG charge thẻ/refund/settle).
+
+---
+
 ## 1. Bối cảnh: tại sao không dùng thẳng Playwright MCP
 
 |                                        | Playwright (web thuần)                        | Dự án này (Volt POS)                                              |

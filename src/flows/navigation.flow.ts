@@ -115,7 +115,12 @@ export async function returnToHome(): Promise<HomePage> {
         );
       }
 
+      // A dirty settings form blocks the router with a leave guard — possibly
+      // already up from the case that failed. Discard it on either side of the hop.
+      const inSettings = path.startsWith(Routes.SETTINGS);
+      if (inSettings) await settingsPage.confirmLeaveGuardIfShown();
       await appNav.goHome();
+      if (inSettings) await settingsPage.confirmLeaveGuardIfShown();
     }
 
     throw new Error(

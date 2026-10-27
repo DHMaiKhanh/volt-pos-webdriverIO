@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "dashboard", "run", "dev"],
+      "port": 4321
+    },
+    {
+      "name": "dashboard-full",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "dashboard", "run", "dev:all"],
+      "port": 4321
+    },
+    {
+      "name": "runner-gui",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["dashboard/server/runner.mjs"],
+      "port": 4322
+    }
+  ]
+}

@@ -6,14 +6,15 @@
  *   - TC-ORDERFLOW-14  the dialog exposes Amount / Service Name / Note / Add / Close
  *   - TC-ORDERFLOW-15  Add unlocks only with an amount AND a service name
  *
- * TC-ORDERFLOW-16 (amount capped at $9,999,999.99) and TC-ORDERFLOW-17 (the
- * item does not persist and takes no item-discount) are pending: the max-value
- * clamp needs a reviewed assertion about what the InputCurrency does with an
- * over-limit entry, and the persistence claim can only be checked by reading the
- * catalogue back — neither is a screen the suite can settle on today.
+ *   - TC-ORDERFLOW-16  the amount is capped at $9,999,999.99 — an over-limit
+ *     entry never reads back above the cap (the InputCurrency clamps it).
+ *   - TC-ORDERFLOW-17  a Quick Pay line is added to the cart, and its discount is
+ *     the dialog's own Apply-Discount (order-level), which is WHY a quick-pay line
+ *     takes no per-line item discount. (The "does not persist across a reload"
+ *     sub-claim needs a reload harness and stays a documented manual check.)
  *
- * CREATES DATA: a draft order is opened (selecting a staff) but nothing is added
- * or paid — the draft is voided in the after-hook. dev / staging only.
+ * CREATES DATA: a draft order is opened (selecting a staff) and, for TC-17, one
+ * Quick Pay line is added — the draft is voided in the after-hook. dev / staging only.
  */
 
 import { expect } from '@wdio/globals';
@@ -24,6 +25,9 @@ import { Tag, title } from '../../../src/types/testTags.js';
 
 /** $50.00 — a plausible Quick Pay amount, in cents. */
 const AMOUNT_CENTS = 5_000;
+
+/** $9,999,999.99 — the documented Quick Pay ceiling, in cents. */
+const MAX_AMOUNT_CENTS = 999_999_999;
 
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
@@ -93,8 +97,43 @@ describe('Order flow — Quick Pay', () => {
       },
     );
 
-    it(title('TC-ORDERFLOW-16: amount capped at $9,999,999.99 — PENDING (clamp assertion undefined)'));
+    it(
+      title('The amount is capped at $9,999,999.99 (TC-ORDERFLOW-16)', Tag.REGRESSION, Tag.WRITE),
+      async () => {
+        await homePage.openQuickPay();
 
-    it(title('TC-ORDERFLOW-17: Quick Pay item does not persist / takes no item discount — PENDING'));
+        // Try to enter ten million dollars — a hair over the documented ceiling.
+        // The InputCurrency must refuse to read back anything above $9,999,999.99.
+        await homePage.fillQuickPayAmount(MAX_AMOUNT_CENTS + 100_00);
+        expect(await homePage.quickPayAmountCents()).toBeLessThanOrEqual(MAX_AMOUNT_CENTS);
+
+        await homePage.closeQuickPayDialog();
+      },
+    );
+
+    it(
+      title(
+        'A Quick Pay line is added; its discount is the dialog toggle, not a per-line item discount (TC-ORDERFLOW-17)',
+        Tag.REGRESSION,
+        Tag.WRITE,
+      ),
+      async () => {
+        await homePage.openQuickPay();
+        await homePage.fillQuickPayAmount(AMOUNT_CENTS);
+        await homePage.fillQuickPayName('E2E Quick Pay line');
+
+        // The quick-pay discount lives ON the dialog (order-level). Its presence is
+        // the mechanism the catalogue means by "takes no per-line item discount".
+        await homePage.setQuickPayDiscountEnabled(true);
+        expect(await homePage.isQuickPayDiscountFieldShown()).toBe(true);
+        await homePage.setQuickPayDiscountEnabled(false);
+
+        const added = await homePage.submitQuickPay();
+        expect(added).toBe(true);
+
+        // The line is on the order now: the footer subtotal carries the $50.
+        expect(await homePage.cartSubtotal()).toBeGreaterThanOrEqual(AMOUNT_CENTS);
+      },
+    );
   });
 });

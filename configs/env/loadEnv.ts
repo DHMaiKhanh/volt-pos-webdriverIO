@@ -57,6 +57,41 @@ export interface AppEnv {
   STAFF_PASSCODE: string;
   STAFF_NAME: string;
 
+  // ── GoPOS WEB (create order/appointment from the browser) ──────────────────
+  /**
+   * The GoPOS web POS, used to CREATE an appointment/order from a real browser
+   * and then verify it syncs down to the Volt POS desktop app. This is the one
+   * surface the suite drives that is NOT the Tauri app, so it rides its own
+   * standalone lane (`configs/wdio/wdio.web.conf.ts`) with no tauri-driver.
+   *
+   * Login is two steps: type WEB_MERCHANT_ID → Log In → WEB_USERNAME +
+   * WEB_PASSWORD → Log In. NOTE WEB_MERCHANT_ID (14, "Fastboy Nails") is a
+   * different store from MERCHANT_ID above — a cross-surface spec only proves
+   * sync when both sides point at the same store.
+   */
+  WEB_URL: string;
+  WEB_MERCHANT_ID: string;
+  WEB_USERNAME: string;
+  WEB_PASSWORD: string;
+  /**
+   * The GAP shell that hosts the GoCheckin self-service kiosk
+   * (`gap.gocheckin.net`). The check-in cross-surface lane opens it, signs in as
+   * OWNER (reusing WEB_MERCHANT_ID / WEB_USERNAME / WEB_PASSWORD — same tenant),
+   * launches the GoCheckin mini app and runs the kiosk wizard. Its own standalone
+   * web lane, like WEB_URL, with no tauri-driver.
+   */
+  GAP_URL: string;
+  /**
+   * The appointment the web lane books. These live in env rather than in code
+   * because the customer fields are real PII — a name and phone that must not be
+   * committed to this public repo. Staff / service are the merchant's own
+   * catalogue labels and simply vary per store.
+   */
+  WEB_CUSTOMER_PHONE: string;
+  WEB_CUSTOMER_NAME: string;
+  WEB_STAFF: string;
+  WEB_SERVICE: string;
+
   // ── Safety rails ───────────────────────────────────────────────────────────
   /**
    * Whether specs may CREATE data (orders, payments, refunds).
@@ -196,6 +231,16 @@ export function loadEnv(force = false): AppEnv {
     OWNER_PASSCODE: process.env.OWNER_PASSCODE ?? '8888',
     STAFF_PASSCODE: process.env.STAFF_PASSCODE ?? '9999',
     STAFF_NAME: process.env.STAFF_NAME ?? '',
+
+    WEB_URL: process.env.WEB_URL ?? 'https://pos.gocheckin.net/login',
+    WEB_MERCHANT_ID: process.env.WEB_MERCHANT_ID ?? '14',
+    WEB_USERNAME: process.env.WEB_USERNAME ?? '',
+    WEB_PASSWORD: process.env.WEB_PASSWORD ?? '',
+    GAP_URL: process.env.GAP_URL ?? 'https://gap.gocheckin.net/home',
+    WEB_CUSTOMER_PHONE: process.env.WEB_CUSTOMER_PHONE ?? '',
+    WEB_CUSTOMER_NAME: process.env.WEB_CUSTOMER_NAME ?? '',
+    WEB_STAFF: process.env.WEB_STAFF ?? '',
+    WEB_SERVICE: process.env.WEB_SERVICE ?? '',
 
     WRITE_ALLOWED: writeAllowed,
     RESET_DB: envName === 'prod' ? false : toBool(process.env.RESET_DB, false),

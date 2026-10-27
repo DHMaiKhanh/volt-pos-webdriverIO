@@ -14,8 +14,17 @@ import { BasePage } from '../BasePage.js';
 export type TipUnit = 'amount' | 'percent';
 
 /**
- * `/settings/charge-fee` — the Charge & Fee screen: Tip Setting, Tax Setting and
- * Signature, under a single screen-level Save.
+ * `/settings/charge-fee` — the Charge & Fee screen.
+ *
+ * ## Build 1.1.56 moved half of it
+ *
+ * The screen now holds three cards — Tax Setting (Product Tax under the header
+ * Save; Service Tax read-only, synced from the Portal), Discount Setting (owner /
+ * staff promotion split, its own Save, blocked unless the two add up to 100) and
+ * Turn Settings. Tip Setting and Signature moved to Tipping Settings
+ * (`/settings/payment-transaction`) with their `#charge-fee-tip-*` ids intact, so
+ * the tip/signature methods below are still used — from that screen — by
+ * `settings-tip-options.spec.ts`.
  *
  * ## Nothing here persists unless Save is pressed
  *
@@ -46,12 +55,11 @@ export class ChargeFeePage extends BasePage {
   readonly route: string = Routes.SETTINGS_CHARGE_FEE;
 
   /**
-   * A tip-timing radio, not the heading: the heading is static chrome, while the
-   * radio renders from the loaded tip settings, so its presence means the
-   * screen's data arrived. `exists` (not visibility) is what `waitForReady` uses,
-   * so a structurally-present Radix radio qualifies.
+   * The Discount owner field, not the heading: it renders from the loaded
+   * discount split, so its presence means the screen's data arrived. (The old
+   * anchor, a tip-timing radio, moved to Tipping Settings in 1.1.56.)
    */
-  protected readonly readyAnchor: Locator = ChargeFeeIds.tipTimingAfter;
+  protected readonly readyAnchor: Locator = ChargeFeeIds.discountOwnerInput;
 
   /* --------------------------------------------------------------------- *
    * Sections
@@ -113,6 +121,31 @@ export class ChargeFeePage extends BasePage {
     return this.isAriaChecked(ChargeFeeIds.tipTypeAmount);
   }
 
+  isTipTimingBeforeChecked(): Promise<boolean> {
+    return this.isAriaChecked(ChargeFeeIds.tipTimingBefore);
+  }
+
+  isTipTypePercentChecked(): Promise<boolean> {
+    return this.isAriaChecked(ChargeFeeIds.tipTypePercent);
+  }
+
+  /** Which tip unit is selected right now. */
+  async currentTipUnit(): Promise<TipUnit> {
+    return (await this.isTipTypePercentChecked()) ? 'percent' : 'amount';
+  }
+
+  /** Is the Tip Setting card expanded? Addressed by title, not position. */
+  async isTipSectionExpanded(): Promise<boolean> {
+    const header = await this.find(ChargeFeeIds.tipSectionHeader);
+    return (await header.getAttribute('aria-expanded')) === 'true';
+  }
+
+  async toggleTipSection(): Promise<this> {
+    await this.click(ChargeFeeIds.tipSectionHeader);
+    await settle();
+    return this;
+  }
+
   /** Switch the Tip Amount unit. Changes the whole displayed option set — it is not a conversion. */
   async selectTipUnit(unit: TipUnit): Promise<this> {
     await this.click(unit === 'percent' ? ChargeFeeIds.tipTypePercent : ChargeFeeIds.tipTypeAmount);
@@ -123,6 +156,11 @@ export class ChargeFeePage extends BasePage {
   /** The tip-option table header row, as text — column titles. */
   readTableHeader(): Promise<string> {
     return this.text(ChargeFeeIds.tipTableHead, { timeout: Timeouts.MEDIUM });
+  }
+
+  /** Does a row flag a duplicate tip value? The header Save stays disabled while one does. */
+  hasDuplicateTipWarning(): Promise<boolean> {
+    return this.isVisible(ChargeFeeIds.tipDuplicateWarning, Timeouts.ANIMATION);
   }
 
   async tipRowCount(): Promise<number> {
@@ -165,16 +203,26 @@ export class ChargeFeePage extends BasePage {
     return this.isVisible(ChargeFeeIds.tipDialog);
   }
 
-  /** The amount field's current value, as rendered (e.g. `$0.00`). */
-  readAddTipAmount(): Promise<string> {
-    return this.value(ChargeFeeIds.tipDialogAmount);
+  /** The value field's current value, as rendered (e.g. `$0.00`, or `0` in % mode). */
+  async readAddTipAmount(): Promise<string> {
+    return this.value(await this.addTipValueField());
   }
 
-  /** Type into the dialog's Amount field. */
+  /** Type into the dialog's value field — Percentage in % mode, Amount in $ mode. */
   async typeAddTipAmount(text: string): Promise<this> {
-    await this.setValue(ChargeFeeIds.tipDialogAmount, text);
+    await this.setValue(await this.addTipValueField(), text);
     await settle();
     return this;
+  }
+
+  /**
+   * The dialog renders BOTH Amount and Percentage fields; which one defines the
+   * option follows the screen's tip unit.
+   */
+  private async addTipValueField(): Promise<Locator> {
+    return (await this.currentTipUnit()) === 'percent'
+      ? ChargeFeeIds.tipDialogPercent
+      : ChargeFeeIds.tipDialogAmount;
   }
 
   /** Is the dialog's Add button pressable? Disabled until an amount/percentage is entered. */
@@ -186,7 +234,14 @@ export class ChargeFeePage extends BasePage {
   /** Close the Add Tip Option dialog with Escape, adding nothing. */
   async closeAddTipDialog(): Promise<this> {
     await browser.keys(['Escape']);
-    await this.waitGone(ChargeFeeIds.tipDialog, Timeouts.SHORT);
+    // Escape normally closes it (after a fade); the header Close is the fallback.
+    const closed = await this.waitGone(ChargeFeeIds.tipDialog, Timeouts.SHORT)
+      .then(() => true)
+      .catch(() => false);
+    if (!closed) {
+      await this.click(ChargeFeeIds.tipDialogCloseBtn);
+      await this.waitGone(ChargeFeeIds.tipDialog, Timeouts.SHORT);
+    }
     return this;
   }
 
@@ -261,6 +316,63 @@ export class ChargeFeePage extends BasePage {
     await this.setValue(ChargeFeeIds.taxInput, value);
     await settle();
     return this;
+  }
+
+  /** Service Tax — read-only on the POS (configured on the Portal). */
+  readServiceTax(): Promise<string> {
+    return this.value(ChargeFeeIds.serviceTaxInput);
+  }
+
+  async isServiceTaxEditable(): Promise<boolean> {
+    return (await this.find(ChargeFeeIds.serviceTaxInput)).isEnabled();
+  }
+
+  /* --------------------------------------------------------------------- *
+   * 1.1.56 cards — Tax / Discount / Turn
+   * --------------------------------------------------------------------- */
+
+  /** The card titles in render order, e.g. `['Tax Setting', 'Discount Setting', 'Turn Settings']`. */
+  async cardTitles(): Promise<string[]> {
+    const titles = await this.findAll(ChargeFeeIds.cardTitles, { timeout: Timeouts.MEDIUM });
+    const texts: string[] = [];
+    for (const el of titles) {
+      if (await el.isDisplayed()) texts.push((await el.getText()).trim());
+    }
+    return [...new Set(texts)];
+  }
+
+  /** The owner / staff promotion split, as the fields show it (e.g. `{ owner: '60', staff: '40' }`). */
+  async readDiscountSplit(): Promise<{ owner: string; staff: string }> {
+    return {
+      owner: await this.value(ChargeFeeIds.discountOwnerInput),
+      staff: await this.value(ChargeFeeIds.discountStaffInput),
+    };
+  }
+
+  /** Replace the owner percentage. Leaves the card dirty — Save is never pressed here. */
+  async setDiscountOwner(value: string): Promise<this> {
+    await this.setValue(ChargeFeeIds.discountOwnerInput, value);
+    await settle();
+    return this;
+  }
+
+  /** Replace the staff percentage. */
+  async setDiscountStaff(value: string): Promise<this> {
+    await this.setValue(ChargeFeeIds.discountStaffInput, value);
+    await settle();
+    return this;
+  }
+
+  /** Is the Discount card's own Save pressable? Needs a change AND a 100% total. */
+  async isDiscountSaveEnabled(): Promise<boolean> {
+    return (await this.find(ChargeFeeIds.discountSaveBtn, { visible: true })).isEnabled();
+  }
+
+  /** Turn Settings switches: `service` = turns per service, `decimal` = keep decimals. */
+  isTurnSwitchOn(which: 'service' | 'decimal'): Promise<boolean> {
+    return this.isAriaChecked(
+      which === 'service' ? ChargeFeeIds.turnServiceBasedSwitch : ChargeFeeIds.turnDecimalSwitch,
+    );
   }
 
   /* --------------------------------------------------------------------- *

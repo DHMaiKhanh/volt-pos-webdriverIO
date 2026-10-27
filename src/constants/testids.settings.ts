@@ -177,6 +177,12 @@ export const ChargeFeeIds = {
   ),
 
   // --- Tip Setting ---
+  /** The Tip Setting card header (on Tipping Settings since 1.1.56). */
+  tipSectionHeader: locator(
+    'tip setting header',
+    'charge-fee-section-tip',
+    '//button[@aria-expanded][normalize-space()="Tip Setting" or normalize-space()="Cài đặt tiền boa"]',
+  ),
   /** The four tip-method checkboxes (Card / Cash / Gift Card / Other) — the only checkboxes here. */
   tipMethodCheckboxes: locator(
     'tip method checkboxes',
@@ -199,6 +205,12 @@ export const ChargeFeeIds = {
     buttonContainingAnyText('Add Tip Option', 'Thêm tuỳ chọn tiền boa'),
   ),
   tipTable: locator('tip option table', 'charge-fee-tip-table', 'table'),
+  /** Inline error on a tip row whose value repeats another — it also blocks Save. */
+  tipDuplicateWarning: locator(
+    'duplicate tip value warning',
+    'charge-fee-tip-duplicate',
+    '//tbody//*[contains(normalize-space(),"This tip value already exists")]',
+  ),
   tipTableHead: locator('tip option table head', 'charge-fee-tip-thead', 'table thead'),
   tipRows: locator(
     'tip option rows',
@@ -212,6 +224,11 @@ export const ChargeFeeIds = {
   tipDialogAmount: locator('tip dialog amount', 'charge-fee-tip-dialog-amount', '[name="amount"]'),
   tipDialogPercent: locator('tip dialog percent', 'charge-fee-tip-dialog-percent', '[name="percent"]'),
   tipDialogDesc: locator('tip dialog description', 'charge-fee-tip-dialog-desc', '[name="desc"]'),
+  tipDialogCloseBtn: locator(
+    'tip dialog close',
+    'charge-fee-tip-dialog-close',
+    '//*[@role="dialog"]//button[normalize-space()="Close" or normalize-space()="Đóng" or @aria-label="Close"]',
+  ),
   tipDialogAddBtn: locator(
     'tip dialog add',
     'charge-fee-tip-dialog-add',
@@ -232,7 +249,40 @@ export const ChargeFeeIds = {
   ),
 
   // --- Tax Setting ---
-  taxInput: locator('tax percentage input', 'charge-fee-tax-input', 'input[name="taxPercentage"]'),
+  taxInput: locator(
+    'tax percentage input',
+    'charge-fee-tax-input',
+    'input[name="taxPercentage"]',
+    // 1.1.56: the field has a generated id; reach it from its "Product Tax" label.
+    '//label[normalize-space()="Product Tax" or normalize-space()="Thuế sản phẩm"]/following::input[1]',
+  ),
+  /** Read-only: Service Tax is configured on the Portal and only synced down. */
+  serviceTaxInput: locator('service tax input', 'charge-fee-service-tax', '#charge-fee-service-tax'),
+
+  // --- 1.1.56 layout: Tax / Discount / Turn cards ---
+  /** The card titles, in render order. Tip and Signature moved to Tipping Settings. */
+  cardTitles: locator(
+    'charge & fee card titles',
+    'charge-fee-card-title',
+    textIsAnyOf(
+      'Tax Setting',
+      'Discount Setting',
+      'Turn Settings',
+      'Cài đặt thuế',
+      'Cài đặt giảm giá',
+      'Cài đặt lượt',
+    ),
+  ),
+  discountOwnerInput: locator('discount owner percent', 'discount-setting-owner', '#discount-setting-owner'),
+  discountStaffInput: locator('discount staff percent', 'discount-setting-staff', '#discount-setting-staff'),
+  /** The Discount card's own Save — the second Save on the page. */
+  discountSaveBtn: locator(
+    'discount setting save',
+    'discount-setting-save',
+    '//*[@id="discount-setting-staff"]/following::button[normalize-space()="Save" or normalize-space()="Lưu"][1]',
+  ),
+  turnServiceBasedSwitch: locator('turn service-based switch', 'turn-service-based', '#turn-service-based'),
+  turnDecimalSwitch: locator('turn decimal switch', 'turn-decimal', '#turn-decimal'),
 
   // --- Signature ---
   /**
@@ -250,11 +300,13 @@ export const ChargeFeeIds = {
     'signature timing before',
     'charge-fee-signature-timing-before',
     '#charge-fee-signature-timing-before',
+    '#tipping-signature-timing-before',
   ),
   signatureTimingAfter: locator(
     'signature timing after',
     'charge-fee-signature-timing-after',
     '#charge-fee-signature-timing-after',
+    '#tipping-signature-timing-after',
   ),
 } satisfies Record<string, Locator>;
 
@@ -276,8 +328,30 @@ export const chargeFeeDeleteTipOption = (row: number): Locator =>
     `(//tbody/tr[${String(row)}]//button)[last()]`,
   );
 
+/* ------------------------------------------------------------------------- *
+ * Leave guard — any settings form with unsaved changes
+ * ------------------------------------------------------------------------- */
+
+/**
+ * The router blocker a dirty settings form raises on navigation. Two wordings
+ * ship on 1.1.56: "Are you sure want to leave?" · Cancel / Confirm (Receipt,
+ * Employees) and "Discard changes and leave?" · Continue Editing / Discard &
+ * Leave (Tipping, Charge & Fee). Both are the same alert dialog.
+ */
+export const SettingsLeaveGuardIds = {
+  dialog: locator('settings leave guard', 'settings-leave-guard', byRole('alertdialog')),
+  confirm: locator(
+    'settings leave guard confirm',
+    'settings-leave-guard-confirm',
+    `//*[@role="alertdialog"]//button[${[...both(Actions.confirm), 'Discard & Leave', 'Discard and Leave']
+      .map((text) => `normalize-space()="${text}"`)
+      .join(' or ')}]`,
+  ),
+} satisfies Record<string, Locator>;
+
 /** Registered with the audit script by `src/constants/testids.ts`. */
 export const SETTINGS_LOCATOR_GROUPS: Record<string, Record<string, Locator>> = {
+  SettingsLeaveGuardIds,
   // `BusinessInfoIds` holds a factory alongside its locators, so it is filtered
   // to the plain entries — the audit script enumerates values and a function
   // would arrive as a locator with no `testId`.

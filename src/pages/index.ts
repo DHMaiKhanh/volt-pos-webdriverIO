@@ -111,3 +111,11 @@ export type { PayPeriod, PayPeriodType } from './settings/BusinessInfoPage.js';
 /** `/appointment` — the booking calendar and its create/edit dialog. */
 export { default as appointmentPage, AppointmentPage } from './pos/AppointmentPage.js';
 export type { AppointmentDraft } from './pos/AppointmentPage.js';
+
+/** `/settings/accessibility` — Passcode Setting gates (VP-2400) and the other accessibility toggles. */
+export {
+  default as accessibilitySettingsPage,
+  AccessibilitySettingsPage,
+  PASSCODE_GATES,
+} from './settings/AccessibilitySettingsPage.js';
+export type { PasscodeGate, PasscodeGateState } from './settings/AccessibilitySettingsPage.js';

@@ -5,7 +5,18 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/**', 'reports/**', 'logs/**', '.tmp/**', '.drivers/**', 'allure-*/**'],
+    ignores: [
+      'node_modules/**',
+      'reports/**',
+      'logs/**',
+      '.tmp/**',
+      '.drivers/**',
+      'allure-*/**',
+      // The dashboard's Node run-control scripts are plain ESM in their own
+      // subpackage, outside any tsconfig the project service knows — they are
+      // linted (and type-checked) by the dashboard package itself, not the root.
+      'dashboard/server/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -74,10 +85,10 @@ export default tseslint.config(
     },
   },
   {
-    // This config file itself, and any other plain JS. `projectService` only
-    // knows the files tsconfig.json includes, so type-aware rules cannot run
-    // here — leaving them on fails the lint with a parsing error rather than a
-    // finding.
+    // This config file itself, and any other plain JS/ESM script (e.g. the
+    // dashboard's Node run-control server). `projectService` only knows the files
+    // tsconfig.json includes, so type-aware rules cannot run here — leaving them on
+    // fails the lint with a parsing error rather than a finding.
     files: ['**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],
   },

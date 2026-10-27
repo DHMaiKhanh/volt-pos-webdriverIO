@@ -11,7 +11,7 @@
  * quietly passed off as translated.
  */
 
-import { Home, Payroll, Turn, both } from './labels.js';
+import { Actions, Home, Payroll, Turn, both } from './labels.js';
 import {
   buttonWithAnyText,
   byRole,
@@ -29,12 +29,18 @@ export const PayrollIds = {
   timeTrackingHeading: locator(
     'time tracking heading',
     'time-tracking-heading',
+    `//h3[${both(Payroll.timeTracking)
+      .map((t) => `normalize-space()="${t}"`)
+      .join(' or ')}]`,
     textIsAnyOf(...both(Payroll.timeTracking)),
   ),
 
   staffPayrollHeading: locator(
     'staff payroll heading',
     'staff-payroll-heading',
+    `//*[@data-slot="income-header-title"][${both(Payroll.staffPayroll)
+      .map((t) => `normalize-space()="${t}"`)
+      .join(' or ')}]`,
     textIsAnyOf(...both(Payroll.staffPayroll)),
   ),
 
@@ -68,7 +74,201 @@ export const PayrollIds = {
     'payroll-empty',
     textIsAnyOf('No staff clocked in for this day', 'Không có nhân viên chấm công trong ngày này'),
   ),
+
+  /**
+   * The title of ANY route passcode guard — `global.enterStaffCodeToAccess`
+   * ("Enter staff code to access {{permission}}"). Prefix match because the
+   * permission name is interpolated; the reader compares the suffix.
+   */
+  gateTitle: locator(
+    'passcode gate title',
+    'passcode-guard-dialog-title',
+    `//*[@role="dialog"]//*[starts-with(normalize-space(),"Enter staff code to access") or starts-with(normalize-space(),"Nhập mã nhân viên để truy cập")][not(.//*[starts-with(normalize-space(),"Enter staff code") or starts-with(normalize-space(),"Nhập mã nhân viên")])]`,
+  ),
 } satisfies Record<string, Locator>;
+
+/* ------------------------------------------------------------------------- *
+ * Time Tracking — the management screen (/time-tracking)
+ * ------------------------------------------------------------------------- */
+
+const exactAny = (texts: readonly string[]): string =>
+  texts.map((text) => `normalize-space()="${text}"`).join(' or ');
+
+const TT_TITLE = exactAny(both(Payroll.timeTracking));
+const ADD_DIALOG_TITLE = exactAny(['Add New Time Keeping', 'Thêm chấm công mới']);
+const EDIT_DIALOG_TITLE = exactAny(['Edit Time Keeping', 'Sửa chấm công']);
+
+/**
+ * Time Tracking (`routes/_app/time-tracking`), live DOM build 1.1.56.
+ *
+ * No `data-testid` survives on this screen. What does: the `<h3>` title, the
+ * `#selected-date-range` id, the `Search staff` placeholder, the shadcn
+ * `data-slot` attributes on dialogs / form parts, the form's literal
+ * `id="time-tracking-form"` (the header submit button references it through
+ * `form=`), and the row action buttons' hardcoded `aria-label="Edit"` /
+ * `aria-label="Delete"` (English in BOTH bundles — they are not translated).
+ */
+export const TimeTrackingIds = {
+  heading: locator(
+    'time tracking heading',
+    'time-tracking-heading',
+    `//h3[${TT_TITLE}]`,
+    textIsAnyOf(...both(Payroll.timeTracking)),
+  ),
+
+  /** The preset select ("Today", "This Week", ...) — the screen's only combobox outside a dialog. */
+  presetSelect: locator(
+    'time tracking preset select',
+    'time-tracking-preset',
+    `//h3[${TT_TITLE}]/following-sibling::*//button[@role="combobox"]`,
+    'button[role="combobox"]',
+  ),
+
+  dateRange: locator('time tracking date range', 'time-tracking-date-range', '#selected-date-range'),
+
+  /**
+   * The icon-only `ButtonPlus` beside the search box. It has no name at all,
+   * so the lucide `plus` glyph is the handle, then "the header button that is
+   * neither the preset select nor the date trigger".
+   */
+  addButton: locator(
+    'add time keeping button',
+    'time-tracking-add-btn',
+    `//h3[${TT_TITLE}]/following-sibling::*//button[.//*[local-name()="svg"][contains(@class,"lucide-plus")]]`,
+    `(//h3[${TT_TITLE}]/following-sibling::*//button[not(@role) and not(@id)])[last()]`,
+  ),
+
+  table: locator('time tracking table', 'time-tracking-table', 'table', byRole('table')),
+
+  emptyTitle: locator(
+    'no time tracking records',
+    'time-tracking-empty',
+    textIsAnyOf('No time tracking records', 'Không có bản ghi chấm công'),
+  ),
+
+  /** The second empty-state line: date-range wording, or the no-match-for-search wording. */
+  emptyHint: locator(
+    'time tracking empty hint',
+    'time-tracking-empty-hint',
+    `//*[${exactAny(['No time tracking records', 'Không có bản ghi chấm công'])}]/following-sibling::*[1]`,
+  ),
+
+  addDialog: locator(
+    'add time keeping dialog',
+    'time-tracking-add-dialog',
+    `//*[@role="dialog"][.//*[@data-slot="dialog-title"][${ADD_DIALOG_TITLE}]]`,
+    `//*[@role="dialog"][.//*[${ADD_DIALOG_TITLE}]]`,
+  ),
+
+  editDialog: locator(
+    'edit time keeping dialog',
+    'time-tracking-update-dialog',
+    `//*[@role="dialog"][.//*[@data-slot="dialog-title"][${EDIT_DIALOG_TITLE}]]`,
+    `//*[@role="dialog"][.//*[${EDIT_DIALOG_TITLE}]]`,
+  ),
+
+  /** "Add" / "Save" in the dialog header — a submit button bound to the form by id. */
+  dialogSubmit: locator(
+    'time keeping submit',
+    'time-tracking-form-submit',
+    'button[type="submit"][form="time-tracking-form"]',
+  ),
+
+  /** `DialogHeaderClose` — an X with an sr-only "Close". */
+  dialogClose: locator(
+    'time keeping dialog close',
+    'time-tracking-form-close',
+    `//*[@role="dialog"]//*[@data-slot="dialog-header"]//button[.//*[${exactAny(both(Actions.close))}]]`,
+    `//*[@role="dialog"]//button[.//span[contains(@class,"sr-only")][${exactAny(both(Actions.close))}]]`,
+  ),
+
+  /** Add only: the searchable staff picker trigger (a `role=combobox` button). */
+  staffCombobox: locator(
+    'time keeping staff picker',
+    'time-tracking-form-staff',
+    '#time-tracking-form button[role="combobox"]',
+  ),
+
+  /** Edit only: the staff rendered as a DISABLED button inside the first form item. */
+  staffReadonly: locator(
+    'time keeping staff (read-only)',
+    'time-tracking-form-staff-readonly',
+    '#time-tracking-form [data-slot="form-item"]:first-child button[disabled]',
+    `//form[@id="time-tracking-form"]//button[@disabled][1]`,
+  ),
+
+  staffSearch: locator(
+    'staff picker search',
+    'time-tracking-form-staff-search',
+    '#time-tracking-form [data-slot="command-input"]',
+    '[data-slot="command-input"]',
+  ),
+
+  staffOptions: locator(
+    'staff picker options',
+    'time-tracking-form-staff-option-',
+    '#time-tracking-form [data-slot="command-item"]',
+    '[data-slot="command-item"]',
+  ),
+
+  /** Any inline validation message inside the form (`FormMessage`). */
+  formMessages: locator(
+    'time keeping form messages',
+    'time-tracking-form-message',
+    '#time-tracking-form [data-slot="form-message"]',
+  ),
+
+  noteInput: locator(
+    'time keeping note',
+    'time-tracking-form-note',
+    '#time-tracking-form input[maxlength="255"]',
+    inputWithAnyPlaceholder('Optional note', 'Ghi chú (không bắt buộc)'),
+  ),
+
+  deleteDialog: locator('delete time keeping dialog', 'time-tracking-delete-dialog', byRole('alertdialog')),
+
+  deleteDescription: locator(
+    'delete time keeping description',
+    'time-tracking-delete-description',
+    '[role="alertdialog"] [data-slot="alert-dialog-description"]',
+  ),
+
+  deleteConfirm: locator(
+    'delete time keeping confirm',
+    'time-tracking-delete-confirm',
+    `//*[@role="alertdialog"]//button[${exactAny(['Delete', 'Xoá', 'Xóa'])}]`,
+  ),
+
+  deleteCancel: locator(
+    'delete time keeping cancel',
+    'time-tracking-delete-cancel',
+    `//*[@role="alertdialog"]//button[${exactAny(both(Actions.cancel))} or normalize-space()="Hủy"]`,
+  ),
+
+  /** Sonner toasts. Transient (≈4 s), so read immediately after the action. */
+  toast: locator('toast', 'app-toast', '[data-sonner-toast]', '[data-sonner-toaster] li'),
+} satisfies Record<string, Locator>;
+
+/**
+ * The first table row whose Note cell contains `marker`.
+ *
+ * `contains` rather than equality: the edit step appends to the marker and the
+ * cleanup has to find the record either way.
+ */
+export const timeTrackingRowByNote = (marker: string): Locator =>
+  locator(
+    `time tracking row "${marker}"`,
+    'time-tracking-row-',
+    `(//tbody/tr[./td[contains(normalize-space(),"${marker}")]])[1]`,
+  );
+
+/** The Edit / Delete icon button on the first row whose note contains `marker`. */
+export const timeTrackingRowAction = (marker: string, action: 'Edit' | 'Delete'): Locator =>
+  locator(
+    `time tracking ${action.toLowerCase()} for "${marker}"`,
+    `time-tracking-row-${action.toLowerCase()}-`,
+    `(//tbody/tr[./td[contains(normalize-space(),"${marker}")]])[1]//button[@aria-label="${action}"]`,
+  );
 
 /* ------------------------------------------------------------------------- *
  * Turn board — a DIALOG, not a route
@@ -169,5 +369,6 @@ export const TurnIds = {
 /** Registered with the audit script by `src/constants/testids.ts`. */
 export const PAYROLL_LOCATOR_GROUPS: Record<string, Record<string, Locator>> = {
   PayrollIds,
+  TimeTrackingIds,
   TurnIds,
 };

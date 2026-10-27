@@ -21,3 +21,6 @@ configs/env/.env.local
 
 .DS_Store
 Thumbs.db
+
+# Playwright MCP debug artifacts
+.playwright-mcp/

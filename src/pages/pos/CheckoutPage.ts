@@ -258,6 +258,28 @@ export class CheckoutPage extends BasePage {
     return this.enterAmount(tenderedCents);
   }
 
+  /**
+   * The cash quick-select labels, top to bottom, as rendered (VP-1432 expects
+   * `$5 $10 $50 $100`). Read from the visible buttons whose whole label is a
+   * dollar amount, ordered by their on-screen position.
+   */
+  async cashPresetLabels(): Promise<string[]> {
+    return browser.execute(function () {
+      const buttons = Array.from(document.querySelectorAll('button, [role="button"]'));
+      return buttons
+        .filter(function (b) {
+          const r = b.getBoundingClientRect();
+          return /^\$\d+$/.test((b.textContent || '').trim()) && r.width > 0 && r.height > 0;
+        })
+        .sort(function (a, b) {
+          return a.getBoundingClientRect().top - b.getBoundingClientRect().top;
+        })
+        .map(function (b) {
+          return (b.textContent || '').trim();
+        });
+    });
+  }
+
   /** What the big Enter Amount display currently shows, in cents. */
   enteredAmountCents(): Promise<number> {
     return this.centsOf(CheckoutIds.enterAmountInput);
@@ -435,6 +457,37 @@ export class CheckoutPage extends BasePage {
       );
     }
     await this.click(CheckoutIds.backBtn);
+    return this;
+  }
+
+  /* --------------------------------------------------------------------- *
+   * Re-open (checkout reached with `?editOrderId`)
+   * --------------------------------------------------------------------- */
+
+  /**
+   * Is the green action "Re-Open Done"?
+   *
+   * The app swaps Complete Payment for it while a reopened order owes nothing
+   * (remaining = 0, no entered amount) — i.e. the reopen changed no money.
+   */
+  isReopenDoneShown(timeout: number = Timeouts.SHORT): Promise<boolean> {
+    return this.isVisible(CheckoutIds.reopenDoneBtn, timeout);
+  }
+
+  /** Press "Re-Open Done": cancels the reopen and puts the order back to Successful. */
+  async pressReopenDone(): Promise<this> {
+    await this.click(CheckoutIds.reopenDoneBtn, { timeout: Timeouts.MEDIUM });
+    return this;
+  }
+
+  /** Is the header's "Edit Order" link present (checkout of a reopened order)? */
+  isEditOrderLinkShown(timeout: number = Timeouts.SHORT): Promise<boolean> {
+    return this.isVisible(CheckoutIds.editOrderLink, timeout);
+  }
+
+  /** Follow the header's "Edit Order" link to `/home?editOrderId=…`. */
+  async pressEditOrder(): Promise<this> {
+    await this.click(CheckoutIds.editOrderLink, { timeout: Timeouts.MEDIUM });
     return this;
   }
 
