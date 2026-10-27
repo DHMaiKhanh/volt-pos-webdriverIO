@@ -41,3 +41,54 @@ export function appendCheckinBulk(handoff: CheckinHandoff): void {
   fs.mkdirSync(Paths.TMP, { recursive: true });
   fs.writeFileSync(CHECKIN_BULK_FILE, JSON.stringify(all, null, 2), 'utf8');
 }
+
+/**
+ * Checkout Type lane (VP-4591, `npm run web:checkout-type-checkin`).
+ *
+ * Every Checkout Type case completes an order that came from a GoCheckin
+ * kiosk check-in — an order created on POS has no check-in until it completes,
+ * so it is not the flow the feature is about. One customer can hold only ONE
+ * active check-in, so the web lane checks in a separate fresh customer per case
+ * and records `case id → customer` here; the app lane opens that customer's
+ * pending order. Each entry is written as soon as its check-in commits, so a run
+ * that dies part-way still leaves the cases it reached usable.
+ */
+export const CHECKOUT_TYPE_CHECKINS_FILE = path.join(Paths.TMP, 'checkout-type-checkins.json');
+
+/**
+ * The cases whose order comes from a kiosk check-in — every automated case in
+ * tests/regression/checkout-type/checkout-type.spec.ts except CHK-POS-033,
+ * which exists to test an order created on POS.
+ */
+export const CHECKOUT_TYPE_GCI_CASES = [
+  'CHK-POS-001',
+  'CHK-POS-002',
+  'CHK-POS-006',
+  'CHK-POS-007',
+  'CHK-POS-009',
+  'CHK-POS-010',
+  'CHK-POS-011',
+  'CHK-POS-012',
+  'CHK-POS-013',
+  'CHK-POS-014',
+  'CHK-POS-015',
+  'CHK-POS-017',
+  'CHK-POS-018',
+  'CHK-POS-021',
+  'CHK-POS-022',
+  'CHK-POS-023',
+] as const;
+
+export type CheckoutTypeCheckins = Record<string, CheckinHandoff>;
+
+export function readCheckoutTypeCheckins(): CheckoutTypeCheckins {
+  if (!fs.existsSync(CHECKOUT_TYPE_CHECKINS_FILE)) return {};
+  return JSON.parse(fs.readFileSync(CHECKOUT_TYPE_CHECKINS_FILE, 'utf8')) as CheckoutTypeCheckins;
+}
+
+export function recordCheckoutTypeCheckin(caseId: string, handoff: CheckinHandoff): void {
+  const all = readCheckoutTypeCheckins();
+  all[caseId] = handoff;
+  fs.mkdirSync(Paths.TMP, { recursive: true });
+  fs.writeFileSync(CHECKOUT_TYPE_CHECKINS_FILE, JSON.stringify(all, null, 2), 'utf8');
+}

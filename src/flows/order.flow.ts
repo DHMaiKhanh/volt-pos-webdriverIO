@@ -2,7 +2,7 @@ import { assertWritesAllowed } from '../../configs/env/loadEnv.js';
 import { Timeouts } from '../../configs/constants/timeouts.js';
 import { Routes } from '../constants/routes.js';
 import { step } from '../helpers/steps.js';
-import { homePage } from '../pages/index.js';
+import { homePage, orderPendingPage } from '../pages/index.js';
 import type { ServiceRef, StaffRef } from '../types/models.js';
 
 /**
@@ -23,6 +23,11 @@ export interface CreateOrderInput {
   staff?: StaffRef;
   /** What to sell. Omitted, the first tile in the service panel is used. */
   service?: ServiceRef;
+  /**
+   * Attach an EXISTING customer by phone (digits only) — Done takes the first
+   * match. Omitted, the order is a walk-in, which earns no loyalty points.
+   */
+  customerPhone?: string;
 }
 
 export interface CreatedOrder {
@@ -69,7 +74,47 @@ export async function createOrder(input: CreateOrderInput = {}): Promise<Created
     await homePage.waitForReady(Timeouts.MEDIUM);
 
     await addStaff(input.staff);
+    if (input.customerPhone !== undefined) await attachCustomer(input.customerPhone);
     await addService(input.service);
+
+    const checkout = await homePage.pressPay();
+    return { orderId: await checkout.orderId() };
+  });
+}
+
+export interface OpenPendingOrderInput {
+  /** The order code as Pending Orders prints it (`OD261027-00003444`); a leading `#` is tolerated. */
+  orderCode: string;
+  /** Who the line is booked to. Omitted, the first staff tile. */
+  staff?: StaffRef;
+  /** What to sell. Omitted, the first service tile. */
+  service?: ServiceRef;
+  /** A reward to redeem (Promo & Rewards) after the line is booked, by its label. */
+  reward?: string;
+}
+
+/**
+ * Take an EXISTING pending order to checkout — typically the one a GoCheckin
+ * kiosk check-in created, which arrives with a customer and an active check-in
+ * but no lines (the service picked on the kiosk is not carried over).
+ *
+ * Opens the order from Pending Orders, books one staff + one service on it on
+ * the till, presses Pay, and returns the order's UUID off the checkout URL —
+ * the same contract as {@link createOrder}, so every `checkout.flow.ts` call
+ * works after it.
+ */
+export async function openPendingOrder(input: OpenPendingOrderInput): Promise<CreatedOrder> {
+  assertWritesAllowed('add lines to a pending order');
+
+  return step(`Open pending order ${input.orderCode}`, async () => {
+    await orderPendingPage.open();
+    await orderPendingPage.search(input.orderCode.replace(/^#/, ''));
+    await orderPendingPage.openOrder(input.orderCode);
+    await homePage.waitForReady(Timeouts.MEDIUM);
+
+    await addStaff(input.staff);
+    await addService(input.service);
+    if (input.reward !== undefined) await homePage.applyReward(input.reward);
 
     const checkout = await homePage.pressPay();
     return { orderId: await checkout.orderId() };
@@ -106,6 +151,22 @@ async function addService(service?: ServiceRef): Promise<void> {
   requireId(service.id, 'service', service.name);
   if (service.name !== '') await homePage.searchService(service.name);
   await homePage.addService(service.id);
+}
+
+/**
+ * Attach a known customer. A number that matches nobody opens the quick-add
+ * form instead — that is a fixture problem, so it fails here rather than
+ * letting the order go through as a walk-in that silently earns nothing.
+ */
+async function attachCustomer(phone: string): Promise<void> {
+  await homePage.attachCustomerByPhone(phone);
+  if (await homePage.isNewCustomerFormShown()) {
+    await homePage.dismissNewCustomerForm();
+    throw new Error(
+      `createOrder(): phone ${phone} matches no customer on this merchant — the quick-add form opened. ` +
+        `Point the fixture (e.g. LOYALTY_CUSTOMER_PHONE) at an existing customer.`,
+    );
+  }
 }
 
 /**
