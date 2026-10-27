@@ -44,7 +44,56 @@ export default class DashboardReporter extends WDIOReporter {
     return true;
   }
 
+  override onRunnerStart(runner: RunnerStats): void {
+    emitLive({ t: 'spec-start', file: runner.specs[0] ?? '' });
+  }
+
+  // Live per-test events for the GUI runner (dashboard/server/runner.mjs). Only
+  // emitted when the GUI launched the run — it sets GUI_LIVE_FILE — so a plain
+  // terminal run pays nothing.
+  override onTestPass(test: TestStats): void {
+    this.emitTest(test, 'passed');
+  }
+
+  override onTestFail(test: TestStats): void {
+    this.emitTest(test, 'failed');
+  }
+
+  override onTestSkip(test: TestStats): void {
+    this.emitTest(test, 'skipped');
+  }
+
+  override onHookEnd(hook: HookStats): void {
+    const err = hook.error ?? hook.errors?.[0];
+    if (hook.state !== 'failed' && !err) return;
+    emitLive({
+      t: 'test',
+      file: this.specs[0] ?? '',
+      title: hook.title,
+      fullTitle: hook.title,
+      state: 'failed',
+      durationMs: hook.duration ?? 0,
+      hook: true,
+      error: firstLine(err?.message) || 'Hook failed',
+    });
+  }
+
+  private emitTest(test: TestStats, state: TestState): void {
+    const err = test.error ?? test.errors?.[0];
+    emitLive({
+      t: 'test',
+      file: this.specs[0] ?? '',
+      title: test.title,
+      fullTitle: test.fullTitle,
+      state,
+      durationMs: test.duration ?? 0,
+      mochaRetries: test.retries ?? 0,
+      ...(state === 'failed' ? { error: firstLine(err?.message) || 'Test failed' } : {}),
+    });
+  }
+
   override onRunnerEnd(runner: RunnerStats): void {
+    emitLive({ t: 'spec-end', file: runner.specs[0] ?? '', failures: runner.failures ?? 0 });
     try {
       this.persist(runner);
     } catch (error) {
@@ -139,6 +188,17 @@ export default class DashboardReporter extends WDIOReporter {
       error: firstLine(err?.message) || 'Test failed',
       stack: trimStack(err?.stack),
     };
+  }
+}
+
+/** Append one JSON line to the GUI runner's live-event file, if a GUI run set one. */
+function emitLive(event: Record<string, unknown>): void {
+  const file = process.env.GUI_LIVE_FILE;
+  if (!file) return;
+  try {
+    fs.appendFileSync(file, `${JSON.stringify({ ...event, at: Date.now() })}\n`);
+  } catch {
+    // Live view is a convenience — never fail a spec over it.
   }
 }
 

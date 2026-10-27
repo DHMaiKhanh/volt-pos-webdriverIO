@@ -599,3 +599,117 @@ input[type='search']::placeholder {
   color: var(--muted);
   font-weight: 500;
 }
+
+/* ── Run control panel ──────────────────────────────────────────────────── */
+.runpanel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.lane-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.btn.primary {
+  border-color: var(--series);
+  color: #fff;
+  background: var(--series);
+}
+.btn.primary:hover {
+  background: var(--series);
+  filter: brightness(1.07);
+  color: #fff;
+}
+.btn.danger {
+  border-color: var(--fail);
+  color: var(--fail-text);
+  background: var(--fail-wash);
+}
+.btn.danger:hover {
+  background: var(--fail-wash);
+  filter: brightness(1.05);
+  color: var(--fail-text);
+}
+.btn.stop {
+  border-color: var(--fail);
+  background: var(--fail);
+  color: #fff;
+}
+.btn.stop:hover {
+  background: var(--fail);
+  filter: brightness(1.07);
+  color: #fff;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.run-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 13px;
+}
+.run-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.run-tally b {
+  font-weight: 700;
+}
+.run-error {
+  margin: 12px 0 0;
+  padding: 9px 12px;
+  background: var(--fail-wash);
+  color: var(--fail-text);
+  border: 1px solid var(--fail);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--baseline);
+  border-top-color: var(--series);
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.log-wrap {
+  margin-top: 14px;
+}
+.log-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.log {
+  max-height: 340px;
+  overflow: auto;
+  background: var(--ink);
+  color: #dfe3e8;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+:root[data-theme='light'] .log,
+:root:where(:not([data-theme='dark'])) .log {
+  background: #15171a;
+}

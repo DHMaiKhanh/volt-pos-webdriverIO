@@ -46,3 +46,10 @@ export { ToastMessage, toastMessage } from './toast/ToastMessage.js';
  */
 export { TurnBoardDialog, turnBoardDialog } from './modal/TurnBoardDialog.js';
 export type { TurnRow, TurnSort } from './modal/TurnBoardDialog.js';
+
+/**
+ * The header's global Customer & Order search. A component, not a page: the
+ * dialog is app-wide chrome reached from the header on any screen, with no route
+ * of its own.
+ */
+export { GlobalSearchDialog, globalSearch } from './modal/GlobalSearchDialog.js';

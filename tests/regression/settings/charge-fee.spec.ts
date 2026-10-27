@@ -1,19 +1,26 @@
 /**
- * Charge & Fee (`/settings/charge-fee`) — Tip Setting, Tax Setting, Signature.
+ * Charge & Fee (`/settings/charge-fee`) — Tax, Discount and Turn settings.
  *
- * Covers TC-CHF-01..26 from docs/screens/charge-fee/charge-fee-test-cases.md.
+ * Covers the TC-CHF cases of docs/screens/charge-fee/charge-fee-test-cases.md
+ * that still live on this screen: TC-CHF-01, 02, 18..20 and 26.
+ *
+ * ## Build 1.1.56 split the screen
+ *
+ * Tip Setting and Signature moved to Tipping Settings
+ * (`/settings/payment-transaction`). Their cases — TC-CHF-03..17 and 21..25 —
+ * run there, in `settings-tip-options.spec.ts`, against the same
+ * `#charge-fee-tip-*` controls. What is left here is three cards: Tax Setting
+ * (Product Tax, under the header Save; Service Tax read-only, synced from the
+ * Portal), Discount Setting (owner / staff promotion split, its own Save) and
+ * Turn Settings. The 1.1.56-only cards get "(1.1.56 probe)" cases below; Turn
+ * Settings are exercised in depth by `home/turn-board-2.spec.ts`.
  *
  * ## Why this file is safe to run yet mutates controls
  *
- * The whole screen is dirty-tracked behind ONE screen-level Save. Nothing here
- * ever presses Save (nor confirms a Delete or an Add), so no change reaches the
- * merchant — the tip/tax/signature config is global to every order, and these
- * tests only make the screen dirty and read it back. Each mutating case reverts
- * itself (the doc's own design), and the `after` hook restores defaults as a
- * belt-and-braces so leaving the screen raises no unsaved-changes guard.
- *
- * Tagged `@regression` only: with no Save there is no upstream write and no
- * global state left changed for a neighbouring spec to trip over.
+ * Nothing here presses a Save. Each mutating case makes a card dirty, reads the
+ * Save gate back and reverts the value, so the tax / discount config — global to
+ * every order — never changes. The `after` hook restores both as a backstop, so
+ * leaving the screen raises no unsaved-changes guard.
  */
 
 import { expect } from '@wdio/globals';
@@ -23,7 +30,7 @@ import { Tag, title } from '../../../src/types/testTags.js';
 
 describe('Settings — Charge & Fee', () => {
   let initialTax = '';
-  let initialTipAmounts: string[] = [];
+  let initialSplit = { owner: '', staff: '' };
 
   before(async () => {
     await goToSettings();
@@ -31,174 +38,33 @@ describe('Settings — Charge & Fee', () => {
     await chargeFeePage.waitForReady();
 
     initialTax = await chargeFeePage.readTax();
-    initialTipAmounts = await chargeFeePage.tipAmountCells();
+    initialSplit = await chargeFeePage.readDiscountSplit();
   });
 
   after(async () => {
-    // Belt-and-braces: undo any dirty state a failed case left behind, so the
-    // screen is clean when the next file navigates away. Skips itself if a prior
-    // failure already recovered off the screen.
+    // Belt-and-braces: undo any dirty state a failed case left behind. Skips
+    // itself if a prior failure already recovered off the screen.
     if (!(await chargeFeePage.isActive())) return;
-    if (!(await chargeFeePage.isTipTypeAmountChecked())) await chargeFeePage.selectTipUnit('amount');
     if (initialTax !== '' && (await chargeFeePage.readTax()) !== initialTax) {
       await chargeFeePage.setTax(initialTax);
     }
-    if (await chargeFeePage.isSignatureOn()) await chargeFeePage.toggleSignature();
+    const split = await chargeFeePage.readDiscountSplit();
+    if (split.owner !== initialSplit.owner) await chargeFeePage.setDiscountOwner(initialSplit.owner);
+    if (split.staff !== initialSplit.staff) await chargeFeePage.setDiscountStaff(initialSplit.staff);
   });
 
   /* ------------------------------------------------------------------ *
    * Layout & defaults
    * ------------------------------------------------------------------ */
 
-  it(title('Screen renders three expanded sections (TC-CHF-01)', Tag.REGRESSION), async () => {
+  it(title('Screen renders the Tax / Discount / Turn cards (TC-CHF-01)', Tag.REGRESSION), async () => {
     expect(await chargeFeePage.isHeadingShown()).toBe(true);
-    expect(await chargeFeePage.sectionCount()).toBe(3);
-    expect(await chargeFeePage.isSectionExpanded(1)).toBe(true);
-    expect(await chargeFeePage.isSectionExpanded(2)).toBe(true);
-    expect(await chargeFeePage.isSectionExpanded(3)).toBe(true);
+    expect(await chargeFeePage.cardTitles()).toEqual(['Tax Setting', 'Discount Setting', 'Turn Settings']);
   });
 
   it(title('Save is disabled with no changes (TC-CHF-02)', Tag.REGRESSION), async () => {
     expect(await chargeFeePage.isSaveEnabled()).toBe(false);
-  });
-
-  it(title('Tip Method offers exactly four options (TC-CHF-03)', Tag.REGRESSION), async () => {
-    expect(await chargeFeePage.tipMethodCount()).toBe(4);
-  });
-
-  it(title('Tip Timing defaults to After Payment (TC-CHF-04)', Tag.REGRESSION), async () => {
-    expect(await chargeFeePage.isTipTimingAfterChecked()).toBe(true);
-  });
-
-  it(title('Tip Amount defaults to the $ unit (TC-CHF-05)', Tag.REGRESSION), async () => {
-    expect(await chargeFeePage.isTipTypeAmountChecked()).toBe(true);
-  });
-
-  it(title('The tip-option table has its columns (TC-CHF-06)', Tag.REGRESSION), async () => {
-    const header = await chargeFeePage.readTableHeader();
-    expect(header).toContain('Tip Amount');
-    expect(header).toContain('Tip Suggestion');
-    expect(header).toContain('Status');
-    expect(header).toContain('Action');
-  });
-
-  it(title('Each option row carries a switch, Edit and Delete (TC-CHF-07)', Tag.REGRESSION), async () => {
-    expect(await chargeFeePage.tipRowCount()).toBeGreaterThan(0);
-    expect(await chargeFeePage.hasRowControls(1)).toBe(true);
-  });
-
-  /* ------------------------------------------------------------------ *
-   * Tip unit ($ ↔ %) — mutate then revert
-   * ------------------------------------------------------------------ */
-
-  it(title('Switching to % swaps the header and the data set (TC-CHF-08)', Tag.REGRESSION), async () => {
-    await chargeFeePage.selectTipUnit('percent');
-
-    // A different data set, not a conversion of the $ values.
-    expect(await chargeFeePage.tipAmountCells()).not.toEqual(initialTipAmounts);
-    expect(await chargeFeePage.readTableHeader()).toContain('%');
-    expect(await chargeFeePage.isSaveEnabled()).toBe(true);
-  });
-
-  it(
-    title('Switching back to $ restores the data and clears dirty (TC-CHF-09)', Tag.REGRESSION),
-    async () => {
-      await chargeFeePage.selectTipUnit('amount');
-
-      expect(await chargeFeePage.tipAmountCells()).toEqual(initialTipAmounts);
-      expect(await chargeFeePage.readTableHeader()).toContain('$');
-      // Dirty is tracked by VALUE — back to the original set means Save disabled again.
-      expect(await chargeFeePage.isSaveEnabled()).toBe(false);
-    },
-  );
-
-  /* ------------------------------------------------------------------ *
-   * Add Tip Option dialog
-   * ------------------------------------------------------------------ */
-
-  it(title('Add Tip Option opens a dialog with Add disabled (TC-CHF-10)', Tag.REGRESSION), async () => {
-    await chargeFeePage.openAddTipDialog();
-
-    expect(await chargeFeePage.isAddTipDialogShown()).toBe(true);
-    expect(await chargeFeePage.readAddTipAmount()).toContain('0.00');
-    expect(await chargeFeePage.isAddTipAddEnabled()).toBe(false);
-
-    await chargeFeePage.closeAddTipDialog();
-  });
-
-  it(title('Entering an amount enables Add (TC-CHF-11)', Tag.REGRESSION), async () => {
-    await chargeFeePage.openAddTipDialog();
-    const before = await chargeFeePage.readAddTipAmount();
-
-    await chargeFeePage.typeAddTipAmount('7');
-
-    expect(await chargeFeePage.readAddTipAmount()).not.toBe(before);
-    expect(await chargeFeePage.isAddTipAddEnabled()).toBe(true);
-
-    await chargeFeePage.closeAddTipDialog();
-  });
-
-  it(title('Escape closes the dialog and adds no row (TC-CHF-12)', Tag.REGRESSION), async () => {
-    const rowsBefore = await chargeFeePage.tipRowCount();
-
-    await chargeFeePage.openAddTipDialog();
-    await chargeFeePage.typeAddTipAmount('7');
-    await chargeFeePage.closeAddTipDialog();
-
-    expect(await chargeFeePage.isAddTipDialogShown()).toBe(false);
-    expect(await chargeFeePage.tipRowCount()).toBe(rowsBefore);
-  });
-
-  /* ------------------------------------------------------------------ *
-   * Delete confirmation
-   * ------------------------------------------------------------------ */
-
-  it(title('Delete asks for confirmation (TC-CHF-13)', Tag.REGRESSION), async () => {
-    const rows = await chargeFeePage.tipRowCount();
-
-    await chargeFeePage.openDeleteConfirm(rows);
-    expect(await chargeFeePage.isDeleteConfirmShown()).toBe(true);
-
-    await chargeFeePage.cancelDelete();
-  });
-
-  it(title('Cancel keeps every row (TC-CHF-14)', Tag.REGRESSION), async () => {
-    const rowsBefore = await chargeFeePage.tipRowCount();
-
-    await chargeFeePage.openDeleteConfirm(rowsBefore);
-    await chargeFeePage.cancelDelete();
-
-    expect(await chargeFeePage.isDeleteConfirmShown()).toBe(false);
-    expect(await chargeFeePage.tipRowCount()).toBe(rowsBefore);
-  });
-
-  /* ------------------------------------------------------------------ *
-   * Inline edit
-   * ------------------------------------------------------------------ */
-
-  it(title('Edit turns the row into inline inputs (TC-CHF-15)', Tag.REGRESSION), async () => {
-    await chargeFeePage.startInlineEdit(1);
-    expect(await chargeFeePage.isRowEditing(1)).toBe(true);
-    await chargeFeePage.stopInlineEdit(1);
-  });
-
-  it(title('Escape does NOT leave inline-edit mode (TC-CHF-16)', Tag.REGRESSION), async () => {
-    await chargeFeePage.startInlineEdit(1);
-
-    await chargeFeePage.pressEscape();
-    // The app quirk: unlike every dialog, inline edit ignores Escape.
-    expect(await chargeFeePage.isRowEditing(1)).toBe(true);
-
-    await chargeFeePage.stopInlineEdit(1);
-  });
-
-  it(title('Clicking Edit again exits inline-edit (TC-CHF-17)', Tag.REGRESSION), async () => {
-    await chargeFeePage.startInlineEdit(1);
-    await chargeFeePage.stopInlineEdit(1);
-
-    expect(await chargeFeePage.isRowEditing(1)).toBe(false);
-    // Nothing was changed, so the screen is not dirty.
-    expect(await chargeFeePage.isSaveEnabled()).toBe(false);
+    expect(await chargeFeePage.isDiscountSaveEnabled()).toBe(false);
   });
 
   /* ------------------------------------------------------------------ *
@@ -206,7 +72,7 @@ describe('Settings — Charge & Fee', () => {
    * ------------------------------------------------------------------ */
 
   it(title('Tax shows the current percentage (TC-CHF-18)', Tag.REGRESSION), async () => {
-    expect(initialTax).toMatch(/^\d+$/);
+    expect(initialTax).toMatch(/^\d+(\.\d+)?$/);
     expect(await chargeFeePage.readTax()).toBe(initialTax);
   });
 
@@ -224,54 +90,52 @@ describe('Settings — Charge & Fee', () => {
     expect(await chargeFeePage.isSaveEnabled()).toBe(false);
   });
 
-  /* ------------------------------------------------------------------ *
-   * Signature — mutate then revert
-   * ------------------------------------------------------------------ */
-
-  it(title('Signature switch defaults to OFF (TC-CHF-21)', Tag.REGRESSION), async () => {
-    expect(await chargeFeePage.isSignatureOn()).toBe(false);
-  });
-
-  it(title('Signature Timing stays enabled while signing is OFF (TC-CHF-22)', Tag.REGRESSION), async () => {
-    // Documented quirk: the timing radios are NOT disabled even though the
-    // signature switch is off — worth confirming, not asserting it "should" be off.
-    expect(await chargeFeePage.isSignatureOn()).toBe(false);
-    expect(await chargeFeePage.isSignatureTimingEnabled()).toBe(true);
-  });
-
-  it(title('Turning Signature on makes the screen dirty (TC-CHF-23)', Tag.REGRESSION), async () => {
-    await chargeFeePage.toggleSignature();
-    expect(await chargeFeePage.isSignatureOn()).toBe(true);
-    expect(await chargeFeePage.isSaveEnabled()).toBe(true);
-
-    // Cleanup: back to OFF.
-    await chargeFeePage.toggleSignature();
-    expect(await chargeFeePage.isSignatureOn()).toBe(false);
+  it(title('Service Tax is shown read-only (1.1.56 probe)', Tag.REGRESSION), async () => {
+    expect(await chargeFeePage.readServiceTax()).toMatch(/^\d+(\.\d+)?$/);
+    expect(await chargeFeePage.isServiceTaxEditable()).toBe(false);
   });
 
   /* ------------------------------------------------------------------ *
-   * Collapse / expand
+   * Discount Setting — mutate then revert
    * ------------------------------------------------------------------ */
 
-  it(title('Collapsing a section hides its body (TC-CHF-24)', Tag.REGRESSION), async () => {
-    if (!(await chargeFeePage.isSectionExpanded(1))) await chargeFeePage.toggleSection(1);
-
-    await chargeFeePage.toggleSection(1);
-    expect(await chargeFeePage.isSectionExpanded(1)).toBe(false);
-    // The body hides but stays in the DOM — assert on visibility, not count.
-    expect(await chargeFeePage.isTipTableVisible()).toBe(false);
-
-    // Restore expanded for the next case.
-    await chargeFeePage.toggleSection(1);
+  it(title('The owner / staff split adds up to 100 (1.1.56 probe)', Tag.REGRESSION), () => {
+    expect(Number(initialSplit.owner) + Number(initialSplit.staff)).toBe(100);
   });
 
-  it(title('Re-opening a section shows its body again (TC-CHF-25)', Tag.REGRESSION), async () => {
-    await chargeFeePage.toggleSection(1); // collapse
-    await chargeFeePage.toggleSection(1); // expand
+  it(
+    title('A split that does not total 100 blocks the Discount Save (1.1.56 probe)', Tag.REGRESSION),
+    async () => {
+      const owner = Number(initialSplit.owner);
+      const broken = String(owner === 100 ? 99 : owner + 1);
 
-    expect(await chargeFeePage.isSectionExpanded(1)).toBe(true);
-    expect(await chargeFeePage.isTipTableVisible()).toBe(true);
-    expect(await chargeFeePage.tipRowCount()).toBeGreaterThan(0);
+      await chargeFeePage.setDiscountOwner(broken);
+      expect(await chargeFeePage.isDiscountSaveEnabled()).toBe(false);
+
+      await chargeFeePage.setDiscountOwner(initialSplit.owner);
+      expect(await chargeFeePage.isDiscountSaveEnabled()).toBe(false);
+    },
+  );
+
+  it(
+    title('A changed split that totals 100 enables the Discount Save (1.1.56 probe)', Tag.REGRESSION),
+    async () => {
+      const owner = Number(initialSplit.owner);
+      const nextOwner = owner === 100 ? 90 : owner + 10 > 100 ? owner - 10 : owner + 10;
+
+      await chargeFeePage.setDiscountOwner(String(nextOwner));
+      await chargeFeePage.setDiscountStaff(String(100 - nextOwner));
+      expect(await chargeFeePage.isDiscountSaveEnabled()).toBe(true);
+
+      await chargeFeePage.setDiscountOwner(initialSplit.owner);
+      await chargeFeePage.setDiscountStaff(initialSplit.staff);
+      expect(await chargeFeePage.isDiscountSaveEnabled()).toBe(false);
+    },
+  );
+
+  it(title('Turn Settings render both switches (1.1.56 probe)', Tag.REGRESSION), async () => {
+    expect(typeof (await chargeFeePage.isTurnSwitchOn('service'))).toBe('boolean');
+    expect(typeof (await chargeFeePage.isTurnSwitchOn('decimal'))).toBe('boolean');
   });
 
   /* ------------------------------------------------------------------ *
@@ -279,10 +143,9 @@ describe('Settings — Charge & Fee', () => {
    * ------------------------------------------------------------------ */
 
   it(title('Everything is back to its original state (TC-CHF-26)', Tag.REGRESSION), async () => {
-    expect(await chargeFeePage.isTipTypeAmountChecked()).toBe(true);
     expect(await chargeFeePage.readTax()).toBe(initialTax);
-    expect(await chargeFeePage.isSignatureOn()).toBe(false);
-    expect(await chargeFeePage.tipAmountCells()).toEqual(initialTipAmounts);
+    expect(await chargeFeePage.readDiscountSplit()).toEqual(initialSplit);
     expect(await chargeFeePage.isSaveEnabled()).toBe(false);
+    expect(await chargeFeePage.isDiscountSaveEnabled()).toBe(false);
   });
 });

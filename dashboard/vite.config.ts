@@ -9,5 +9,14 @@ export default defineConfig({
   server: {
     port: 4321,
     open: true,
+    // Forward the run-control API to the runner server (dashboard/server/runner.mjs).
+    // `npm run dev:all` starts both; the proxy is why the UI can POST /api/runner/start
+    // without caring which port the runner listens on.
+    proxy: {
+      '/api': {
+        target: `http://127.0.0.1:${process.env.RUNNER_PORT ?? 4322}`,
+        changeOrigin: true,
+      },
+    },
   },
 });

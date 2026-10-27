@@ -19,6 +19,30 @@ npm test              # or test:regression, test:smoke, test:spec …
 Each run adds one record (newest first, last 50 kept). `npm run clean` does **not**
 wipe the history — it lives under `dashboard/`, not `reports/`.
 
+## Desktop test runner (chọn tính năng & chạy)
+
+```bash
+npm run runner:gui          # from the repo root — or double-click VoltTestRunner.cmd
+```
+
+Opens a desktop window (Microsoft Edge app mode, no Electron) served by
+`server/runner.mjs` on http://127.0.0.1:4322:
+
+- **Left** — feature tree built from `tests/**/*.spec.ts` (feature → spec → test),
+  search (`/`), tag chips (`@regression`, `@smoke`, `@critical`…), "chỉ test lỗi",
+  tri-state checkboxes, ▶ to run one spec or one test.
+- **Top** — ENV (dev / staging / prod = smoke only), live status, ETA from history,
+  _Test lỗi lần trước_, Run / Stop.
+- **Tabs** — Dashboard (last run), **Kết quả** (live donut, screen map per feature,
+  failure inbox with flaky detection + per-test rerun), Chạy & Console (raw log),
+  Lịch sử, Lên lịch (daily schedules, fired by the server), Thông báo (Windows toast
+  - sound when a run ends).
+
+A selection becomes `.tmp/wdio.gui.conf.ts` (env config + `specs` + `mochaOpts.grep`),
+so no command-line length limit. Live per-test results come from
+`DashboardReporter` appending JSON lines to the file in `GUI_LIVE_FILE`. After UI
+changes run `npm run runner:gui:build` to rebuild `dist/`.
+
 ## Viewing it
 
 From the **test project root**:

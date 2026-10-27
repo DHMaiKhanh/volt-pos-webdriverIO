@@ -404,3 +404,47 @@ nguồn dữ liệu GraphQL (`reportStoreDailyIncomeList` / `storeDailyIncomeLiv
 - **Timezone merchant** (Asia/Ho_Chi_Minh, UTC+7): ngày được gom theo giờ merchant, không theo giờ máy chạy.
 - **Live vs Settled:** hôm nay đọc bản _live_ (chưa chốt, tax gộp vào Sale, chưa tách per-order); ngày quá khứ đọc bản _settled_ (đầy đủ, bất biến) → các test công thức nên dùng ngày settled.
 - Nhãn so sánh "% vs …" phụ thuộc **preset** đang chọn (xem VP-1048-income-summary).
+
+# PHẦN D — Test case quét live 2026-10-25 (build 1.1.56, merchant 14)
+
+> Bảng dưới theo định dạng chuẩn của `tc-manifest` (ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Loại | Ưu tiên | Nguồn) để `/cases-to-specs` đọc được. Phần A–C ở trên giữ nguyên.
+
+## D. Feature overview
+
+Màn `/incomes/income-summary` (menu ☰ → Income Summary, cần passcode chủ tiệm):
+
+- Bộ lọc preset (combobox, mặc định **Today**) với 10 preset như Batch History, cộng nút khoảng ngày.
+- 3 tab group-by: **Day** (mặc định) | **Week** | **Month**.
+- Tile **Total Income `<ngày>`**: số tiền, % thay đổi, dòng "vs. Same day last week". Kèm chart (Gross Income, Net Income, Total tip).
+- Bảng **Date | Sale | Tip | Tax | Total Payment**, mỗi dòng là một kỳ theo group-by.
+- Panel phải mặc định "No detail to show / Select a period from the table to view income details."
+  Bấm một dòng thì panel hiện: tiêu đề ngày, nút **Print**, và các khối sau.
+  - **Payment Details**: Cash / Card / Others (mỗi loại có Sale, Refund, Tip, Tax), Amount Collected,
+    Gift Card Redemption, Total Payment.
+  - **Sale Details**: Total Sale (Service, Product, Gift Card Sale), Total Refund, Subtotal, Total Discount,
+    Service Fee, Cash Discount, Net Total, Tip, Tax Collected, Total Payment.
+  - **Supply Fee**: Total supply fee = Staff Supply Share + Salon Supply Share.
+  - **Staff Payout**: Total Service, Staff Supply Share, Staff Commission, Tip, Clean Up Fee, Discount Charge,
+    Card Charge Commission/Tip, Staff Salary, Total Staff Payout, Pay 1, Pay 2. Có nút "Show less/more".
+  - **Salon Earnings**: …, Net Earnings, Total Earnings, Tax Collected.
+
+## D. Test cases
+
+| ID           | Tiêu đề                                                                           | Tiền điều kiện | Các bước                                                                          | Kết quả mong đợi                                                                                                   | Loại       | Ưu tiên | Nguồn                                     |
+| ------------ | --------------------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- | ------- | ----------------------------------------- |
+| TC-INCSUM-01 | Mở màn qua passcode                                                               | —              | Vào `/incomes/income-summary`, nhập passcode chủ tiệm                             | Heading "Income Summary", bảng có header Date/Sale/Tip/Tax/Total Payment                                           | Functional | High    | ✅                                        |
+| TC-INCSUM-02 | Preset mặc định Today                                                             | —              | Mở màn                                                                            | Combobox "Today", nút ngày = hôm nay                                                                               | Functional | Medium  | ✅                                        |
+| TC-INCSUM-03 | Đủ 10 preset                                                                      | —              | Mở combobox                                                                       | 10 option (Today … Last Year)                                                                                      | Functional | Low     | ✅                                        |
+| TC-INCSUM-04 | Tab Day/Week/Month                                                                | —              | Đọc tab                                                                           | Đủ 3 tab, Day active mặc định; bấm Week/Month thì tab đó active                                                    | Functional | Medium  | ✅                                        |
+| TC-INCSUM-05 | Panel mặc định                                                                    | —              | Mở màn                                                                            | "No detail to show"                                                                                                | UI         | Low     | ✅                                        |
+| TC-INCSUM-06 | Mỗi dòng: Total Payment = Sale + Tip + Tax ± phí                                  | Có ≥ 1 dòng    | Đọc từng dòng                                                                     | Mọi ô parse được thành tiền; Total Payment ≥ Sale                                                                  | Data       | Medium  | ⚠️                                        |
+| TC-INCSUM-07 | Bấm dòng mở chi tiết                                                              | Có ≥ 1 dòng    | Bấm dòng đầu                                                                      | Hiện tiêu đề ngày, nút Print, các khối Payment Details / Sale Details / Supply Fee / Staff Payout / Salon Earnings | Functional | High    | ✅                                        |
+| TC-INCSUM-08 | Payment Details: Total Payment khớp cột bảng                                      | Đã mở chi tiết | So "Total Payment" trong Payment Details với ô Total Payment của dòng đã chọn     | Bằng nhau                                                                                                          | Data       | High    | ✅ (7/7 ngày khớp)                        |
+| TC-INCSUM-09 | Payment Details: Total Payment = Amount Collected + Gift Card Redemption          | Đã mở chi tiết | Cộng 2 giá trị                                                                    | Bằng Total Payment                                                                                                 | Data       | High    | ⚠️ (Oct 19/20/22 lệch, xem BUG-INCSUM-02) |
+| TC-INCSUM-10 | Sale Details: Net Total = Subtotal − Total Discount + Service Fee − Cash Discount | Đã mở chi tiết | Tính lại                                                                          | Khớp tới cent                                                                                                      | Data       | High    | ✅                                        |
+| TC-INCSUM-11 | Sale Details Total Payment = Payment Details Total Payment                        | Đã mở chi tiết | So 2 giá trị cùng nhãn "Total Payment"                                            | **Lệch ở 6/7 ngày** (vd. $155.50 so với $155.46) — BUG-INCSUM-01                                                   | Data       | High    | ⚠️                                        |
+| TC-INCSUM-12 | Supply Fee: tổng = Staff Share + Salon Share                                      | Đã mở chi tiết | Cộng                                                                              | Khớp                                                                                                               | Data       | Medium  | ✅                                        |
+| TC-INCSUM-13 | Staff Payout: Pay 1 + Pay 2 = Total Staff Payout                                  | Đã mở chi tiết | Cộng                                                                              | Khớp                                                                                                               | Data       | High    | ✅ ($310.34 + $315.60 = $625.94)          |
+| TC-INCSUM-14 | Đổi preset Last 7 Days                                                            | —              | Chọn Last 7 Days                                                                  | Bảng có 1–7 dòng theo ngày, giảm dần hoặc tăng dần nhất quán                                                       | Functional | Medium  | ✅                                        |
+| TC-INCSUM-15 | V1 khớp V4 cùng ngày                                                              | —              | So dòng Today giữa `/incomes/income-summary` và `/report-pages/v4/income-summary` | Sale, Tip, Tax, Total Payment bằng nhau                                                                            | Data       | High    | ✅                                        |
+| TC-INCSUM-16 | Print                                                                             | Đã mở chi tiết | Bấm Print                                                                         | In ra máy in                                                                                                       | Functional | Low     | 🧱 (cần máy in)                           |

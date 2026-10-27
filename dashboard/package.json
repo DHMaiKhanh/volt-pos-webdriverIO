@@ -6,8 +6,12 @@
   "description": "React dashboard for Volt POS E2E run history. Reads the JSON the WDIO DashboardReporter writes after every run.",
   "scripts": {
     "dev": "vite",
+    "server": "node server/runner.mjs",
+    "dev:all": "node server/dev.mjs",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "gui": "node server/desktop.mjs",
+    "gui:build": "node server/desktop.mjs --build"
   },
   "dependencies": {
     "react": "^18.3.1",

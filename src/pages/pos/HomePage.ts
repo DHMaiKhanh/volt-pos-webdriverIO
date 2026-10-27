@@ -13,6 +13,12 @@ import {
   staffGroupTab,
   staffItem,
 } from '../../constants/testids.js';
+import {
+  CustomerEntryIds,
+  QuickPayFieldIds,
+  QuickPayIds,
+  ServiceCardParts,
+} from '../../constants/testids.vp.js';
 import { byRole, locator, textIsAnyOf } from '../../helpers/selectors.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { logStep } from '../../helpers/steps.js';
@@ -73,6 +79,29 @@ const SELECT_STAFF_FIRST: Locator = locator(
   textIsAnyOf('Select Staff First', 'Vui lòng chọn nhân viên trước'),
   byRole('alertdialog'),
 );
+
+/** One service card as measured by {@link HomePage.serviceCardLayouts} (VP-2465). */
+export interface ServiceCardLayout {
+  name: string;
+  price: string;
+  /** The name's content is taller than its 2-line box, i.e. it is clamped. */
+  truncated: boolean;
+  /** How many text lines the name box shows (max-height / line-height). */
+  visibleLines: number;
+  /** The `...` line under the name is rendered visibly. */
+  ellipsisVisible: boolean;
+  cardHeight: number;
+  /** The name box reaches into the price box. */
+  overlapsPrice: boolean;
+}
+
+/** Radix toggles report state as aria-checked / aria-pressed / data-state. */
+async function isToggledOn(el: WebdriverIO.Element): Promise<boolean> {
+  const aria = (await el.getAttribute('aria-checked')) ?? (await el.getAttribute('aria-pressed'));
+  if (aria === 'true' || aria === 'false') return aria === 'true';
+  const state = await el.getAttribute('data-state');
+  return state === 'checked' || state === 'on';
+}
 
 /** Optional fields of the Quick Pay dialog. */
 export interface QuickPayItem {
@@ -220,6 +249,10 @@ export class HomePage extends BasePage {
 
     await tile.waitForClickable({ timeout: Timeouts.SHORT });
     await tile.click();
+    // Selecting a staff opens the draft order and renders the cart footer. Let
+    // that land before the next step reads or adds to a cart that is still being
+    // created (merchant 14 syncs the new order slower than the click returns).
+    await settle();
     return this;
   }
 
@@ -289,8 +322,25 @@ export class HomePage extends BasePage {
       );
     }
 
+    // The footer subtotal before the click. Selling a priced tile must raise it;
+    // waiting for that is what lets the next line of a spec read the cart
+    // immediately. Without it a slower merchant's sync lands AFTER the read and
+    // the test sees the empty-cart $0.00 (the TC-03/21 "subtotal > 0" flake).
+    const before = await this.cartSubtotal().catch(() => 0);
+
     await tile.waitForClickable({ timeout: Timeouts.SHORT });
     await tile.click();
+    await settle();
+    await browser
+      .waitUntil(async () => (await this.cartSubtotal().catch(() => 0)) > before, {
+        timeout: Timeouts.MEDIUM,
+        interval: 200,
+        timeoutMsg: `service tile #${index + 1} did not raise the cart subtotal above ${before} cents`,
+      })
+      .catch(() => {
+        // A genuinely flexible-priced ($0) tile never moves the subtotal — don't
+        // mask that; the spec's own assertion will report the real cart state.
+      });
     return this;
   }
 
@@ -309,6 +359,12 @@ export class HomePage extends BasePage {
   async openQuickPay(): Promise<this> {
     await logStep('Home: open Quick Pay');
     await this.click(HomeIds.serviceCategoryQuickPay);
+    // Merchant 14 gates Quick Pay behind a staff passcode (VP-3115): the tile
+    // opens "Enter staff code to access Quick Pay" — a keypad — BEFORE the Quick
+    // Pay dialog. Clear it (ticking "don't require for 30 min", which also seeds
+    // the grant so later gated actions in the run don't prompt). A no-op on a till
+    // without the gate, and a no-op when "Select Staff First" came up instead.
+    await passcodeDialog.unlockForRun(env.STAFF_PASSCODE);
     return this;
   }
 
@@ -351,6 +407,11 @@ export class HomePage extends BasePage {
     }
 
     await logStep(`Home: enter customer phone ${phone}`);
+    // The keypad mounts only after the order panel's customer slot is tapped.
+    if (!(await this.isVisible(homeCustomerKeypadKey(phone.charAt(0)), Timeouts.ANIMATION))) {
+      await this.click(CustomerEntryIds.trigger);
+      await this.find(homeCustomerKeypadKey(phone.charAt(0)), { visible: true, timeout: Timeouts.MEDIUM });
+    }
     for (const digit of phone) {
       await this.click(homeCustomerKeypadKey(digit));
     }
@@ -406,6 +467,19 @@ export class HomePage extends BasePage {
   async dismissNewCustomerForm(): Promise<this> {
     await browser.keys(['Escape']);
     await this.waitGone(HomeIds.createCustomerNameInput, Timeouts.SHORT);
+    return this;
+  }
+
+  /**
+   * Fill the quick-add form's name and Save — attaching a brand-new customer
+   * whose phone was typed on the keypad. Requires the form to be open.
+   */
+  async saveNewCustomer(name: string): Promise<this> {
+    await logStep(`Home: create customer "${name}"`);
+    await this.setValue(HomeIds.createCustomerNameInput, name);
+    await this.click(HomeIds.createCustomerSaveBtn);
+    await this.waitGone(HomeIds.createCustomerNameInput, Timeouts.MEDIUM);
+    await settle();
     return this;
   }
 
@@ -679,6 +753,185 @@ export class HomePage extends BasePage {
     return this;
   }
 
+  /* --- Quick Pay: Apply Discount & Reset amount (VP-1434) -------------- */
+
+  /** The Quick Pay amount field as rendered, e.g. `$20.00` or `0.00`. */
+  quickPayAmountValue(): Promise<string> {
+    return this.value(QuickPayFieldIds.amount);
+  }
+
+  /** The Quick Pay amount in cents (`''` / `0.00` read as 0). */
+  async quickPayAmountCents(): Promise<MoneyCents> {
+    const raw = (await this.quickPayAmountValue()).trim();
+    return raw === '' ? 0 : parseMoney(raw);
+  }
+
+  quickPayNameValue(): Promise<string> {
+    return this.value(QuickPayFieldIds.name);
+  }
+
+  quickPayNoteValue(): Promise<string> {
+    return this.value(QuickPayFieldIds.note);
+  }
+
+  /** Type a note into the open Quick Pay dialog. */
+  async fillQuickPayNote(note: string): Promise<this> {
+    await this.setValue(QuickPayFieldIds.note, note);
+    return this;
+  }
+
+  /** Is the Apply-Discount switch on? Radix exposes it as aria-checked or data-state. */
+  async isQuickPayDiscountOn(): Promise<boolean> {
+    return isToggledOn(await this.find(QuickPayIds.discountSwitch, { visible: true }));
+  }
+
+  /** Put the Apply-Discount switch in the wanted position (no-op when already there). */
+  async setQuickPayDiscountEnabled(on: boolean): Promise<this> {
+    if ((await this.isQuickPayDiscountOn()) !== on) {
+      await this.click(QuickPayIds.discountSwitch);
+      await settle();
+    }
+    return this;
+  }
+
+  /** Are the discount field and its %/$ pair on screen? They exist only while the switch is on. */
+  async isQuickPayDiscountFieldShown(): Promise<boolean> {
+    return (
+      (await this.isVisible(QuickPayIds.discountModePercent, Timeouts.ANIMATION)) &&
+      (await this.isVisible(QuickPayIds.discountModeFixed, Timeouts.ANIMATION))
+    );
+  }
+
+  /** Which discount mode is selected: `%`, `$`, or `null` when neither reads as pressed. */
+  async quickPayDiscountMode(): Promise<'%' | '$' | null> {
+    if (await isToggledOn(await this.find(QuickPayIds.discountModePercent, { visible: true }))) return '%';
+    if (await isToggledOn(await this.find(QuickPayIds.discountModeFixed, { visible: true }))) return '$';
+    return null;
+  }
+
+  /** Pick `%` or `$` for the discount. */
+  async chooseQuickPayDiscountMode(mode: '%' | '$'): Promise<this> {
+    await this.click(mode === '%' ? QuickPayIds.discountModePercent : QuickPayIds.discountModeFixed);
+    await settle();
+    return this;
+  }
+
+  /**
+   * Type a discount value. `%` mode takes a whole number ("50"); `$` mode is an
+   * `InputCurrency`, so it is handed a decimal ("5.00") exactly like the amount.
+   */
+  async setQuickPayDiscountValue(value: string): Promise<this> {
+    await this.setValue(QuickPayIds.discountInput, value);
+    await settle();
+    return this;
+  }
+
+  /** Switch on, pick a mode, type the value — the full Apply-Discount gesture. */
+  async applyQuickPayDiscount(mode: '%' | '$', value: string): Promise<this> {
+    await this.setQuickPayDiscountEnabled(true);
+    await this.chooseQuickPayDiscountMode(mode);
+    return this.setQuickPayDiscountValue(value);
+  }
+
+  /** What the discount field shows right now (`50`, `$5.00`, `100`, …). */
+  quickPayDiscountValue(): Promise<string> {
+    return this.value(QuickPayIds.discountInput);
+  }
+
+  /** Is the "Discount amount must be greater than 0" message up? */
+  isQuickPayDiscountErrorShown(): Promise<boolean> {
+    return this.isVisible(QuickPayIds.discountError, Timeouts.ANIMATION);
+  }
+
+  /** Is the (×) reset control rendered? The app hides it while the amount is $0.00. */
+  isQuickPayResetShown(): Promise<boolean> {
+    return this.isVisible(QuickPayIds.resetAmountBtn, Timeouts.ANIMATION);
+  }
+
+  /** Press the (×) beside the amount. */
+  async resetQuickPayAmount(): Promise<this> {
+    await this.click(QuickPayIds.resetAmountBtn);
+    await settle();
+    return this;
+  }
+
+  /**
+   * Press Add on the Quick Pay dialog and report whether the dialog closed.
+   *
+   * `false` is a legitimate outcome — a blocked discount keeps the dialog open —
+   * so this does not throw when the dialog stays.
+   */
+  async submitQuickPay(timeout: number = Timeouts.MEDIUM): Promise<boolean> {
+    await this.click(HomeIds.quickPayAddBtn);
+    try {
+      await this.waitGone(QuickPayFieldIds.amount, timeout);
+      await settle();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /* --- Service card layout (VP-2465) ----------------------------------- */
+
+  /**
+   * Measure every MOUNTED service card: its name, whether the name is clamped,
+   * whether the `...` line is visible, and whether the name box overlaps the
+   * price. Geometry is read in one `execute` so all cards come from one frame.
+   */
+  async serviceCardLayouts(): Promise<ServiceCardLayout[]> {
+    await this.find(HomeIds.serviceItems, { visible: true, timeout: Timeouts.MEDIUM });
+    return browser.execute(function (parts: { name: string; ellipsis: string; price: string }) {
+      return Array.from(document.querySelectorAll('li.cursor-pointer'))
+        .map(function (card) {
+          const name = card.querySelector(parts.name);
+          if (!name) return null;
+          const ell = card.querySelector(parts.ellipsis);
+          const price = card.querySelector(parts.price);
+          const ellStyle = ell ? window.getComputedStyle(ell) : null;
+          const nameBox = name.getBoundingClientRect();
+          const priceBox = price ? price.getBoundingClientRect() : nameBox;
+          const lineHeight = parseFloat(window.getComputedStyle(name).lineHeight) || 28;
+          return {
+            name: (name.textContent || '').trim(),
+            price: price ? (price.textContent || '').trim() : '',
+            truncated: name.scrollHeight > name.clientHeight + 2,
+            visibleLines: Math.round(name.clientHeight / lineHeight),
+            ellipsisVisible:
+              !!ell &&
+              (ell.textContent || '').trim() === '...' &&
+              ellStyle !== null &&
+              ellStyle.display !== 'none' &&
+              ellStyle.visibility !== 'hidden' &&
+              Number(ellStyle.opacity) > 0 &&
+              ell.getBoundingClientRect().height > 0,
+            cardHeight: Math.round(card.getBoundingClientRect().height),
+            overlapsPrice: nameBox.bottom > priceBox.top + 1,
+          };
+        })
+        .filter(function (x) {
+          return x !== null;
+        });
+    }, ServiceCardParts);
+  }
+
+  /** Add the mounted service card whose name is exactly `name`. */
+  async addServiceByName(name: string): Promise<this> {
+    await logStep(`Home: add service "${name}"`);
+    const card = await this.find(
+      locator(
+        `service card "${name}"`,
+        `service-item-name-${name}`,
+        `//li[contains(@class,"cursor-pointer")][.//span[normalize-space(.)="${name}"]]`,
+      ),
+      { visible: true },
+    );
+    await card.waitForClickable({ timeout: Timeouts.MEDIUM });
+    await card.click();
+    await settle();
+    return this;
+  }
+
   /**
    * Is the "Select Staff First" prompt up?
    *
@@ -728,6 +981,25 @@ export class HomePage extends BasePage {
    */
   async cartTotal(): Promise<MoneyCents> {
     return this.readAmount(HomeIds.cartTotal, true);
+  }
+
+  /**
+   * The price shown on each cart service line, in cents, in render order.
+   *
+   * Reads the LAST `$` amount of each `orderServiceRows` line — a line can also
+   * show a struck-through original price or a discount before the final figure.
+   * Used to check that the lines add up to the footer Subtotal (VP-4405 §4).
+   */
+  async cartLinePricesCents(): Promise<MoneyCents[]> {
+    const rows = await this.findAll(HomeIds.orderServiceRows, { timeout: Timeouts.MEDIUM });
+    const prices: MoneyCents[] = [];
+    for (const row of rows) {
+      const raw = (await row.getText()) || String(await row.getProperty('textContent'));
+      const amounts = raw.match(/-?\$\s?[\d,]+\.\d{2}/g);
+      const last = amounts?.at(-1);
+      if (last !== undefined) prices.push(parseMoney(last));
+    }
+    return prices;
   }
 
   /** Every footer row at once, with the optional ones defaulted to `0`. */
@@ -814,11 +1086,12 @@ export class HomePage extends BasePage {
    * screen behind it.
    */
   private async confirmDestructiveAction(): Promise<void> {
-    // A permission-guarded till (merchant 20258) fronts a destructive action
+    // A permission-guarded till (merchant 14 / 20258) fronts a destructive action
     // with the PASSCODE guard FIRST: the Remove click opens "Enter staff code
-    // to access Delete Order" — a keypad, not an alert-dialog. Enter the staff
-    // code when that guard is up; on a till without the guard this is a no-op.
-    await passcodeDialog.enterIfPresent(env.STAFF_PASSCODE);
+    // to access Delete Order" — a keypad, not an alert-dialog. unlockForRun enters
+    // the staff code AND ticks "don't require for 30 min", capturing the grant so
+    // the rest of the run's gated actions skip the dialog. No-op without the guard.
+    await passcodeDialog.unlockForRun(env.STAFF_PASSCODE);
 
     // The shared ConfirmDialog ("Delete Order — Are you sure?", Cancel / Delete)
     // then follows in BOTH cases, so always confirm it too.

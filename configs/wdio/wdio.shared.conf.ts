@@ -45,7 +45,10 @@ export const shared: WebdriverIO.Config = {
   path: '/',
 
   specs: [spec('**', '*.spec.ts')],
-  exclude: [],
+  // `_manual/` holds only it.skip stubs (TCs that need a 2nd POS, Portal, a
+  // printer…). Each spec file costs a full app boot, so a lane may drop them
+  // with SKIP_MANUAL=1; the coverage report still lists them.
+  exclude: process.env.SKIP_MANUAL === '1' ? [spec('regression', 'volt-qc', '_manual', '*.spec.ts')] : [],
 
   suites: {
     /** Read-only. The ONLY suite permitted against a production build. */
@@ -56,6 +59,8 @@ export const shared: WebdriverIO.Config = {
     checkout: [spec('regression', 'checkout', '**', '*.spec.ts')],
     orderHistory: [spec('regression', 'order-history', '**', '*.spec.ts')],
     settings: [spec('regression', 'settings', '**', '*.spec.ts')],
+    /** Ports of the volt-qc catalogue (docs/qc/volt-qc/). Coverage: `npm run coverage:volt-qc`. */
+    voltQc: [spec('regression', 'volt-qc', '**', '*.spec.ts')],
   },
 
   /**

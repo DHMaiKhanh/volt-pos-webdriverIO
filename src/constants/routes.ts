@@ -30,6 +30,11 @@ export const Routes = {
 
   INCOMES: '/incomes',
   INCOME_DAILY: '/incomes/income-daily',
+  /** Where the 1.1.x sidebar's report entries point (V4 report pages). */
+  REPORT_V4_DAILY: '/report-pages/v4/daily-sale-report',
+  REPORT_V4_SUMMARY: '/report-pages/v4/income-summary',
+  REPORT_V4_STAFF_INCOME: '/report-pages/v4/staff-income',
+  REPORT_V4_STAFF_PAYROLL: '/report-pages/v4/staff-payroll',
   INCOME_STAFF: '/incomes/income-staff',
   INCOME_SUMMARY: '/incomes/income-summary',
   STAFF_PAYROLL: '/incomes/staff-payroll',

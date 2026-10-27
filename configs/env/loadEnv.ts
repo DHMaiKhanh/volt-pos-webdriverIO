@@ -74,6 +74,14 @@ export interface AppEnv {
   WEB_USERNAME: string;
   WEB_PASSWORD: string;
   /**
+   * The GAP shell that hosts the GoCheckin self-service kiosk
+   * (`gap.gocheckin.net`). The check-in cross-surface lane opens it, signs in as
+   * OWNER (reusing WEB_MERCHANT_ID / WEB_USERNAME / WEB_PASSWORD — same tenant),
+   * launches the GoCheckin mini app and runs the kiosk wizard. Its own standalone
+   * web lane, like WEB_URL, with no tauri-driver.
+   */
+  GAP_URL: string;
+  /**
    * The appointment the web lane books. These live in env rather than in code
    * because the customer fields are real PII — a name and phone that must not be
    * committed to this public repo. Staff / service are the merchant's own
@@ -228,6 +236,7 @@ export function loadEnv(force = false): AppEnv {
     WEB_MERCHANT_ID: process.env.WEB_MERCHANT_ID ?? '14',
     WEB_USERNAME: process.env.WEB_USERNAME ?? '',
     WEB_PASSWORD: process.env.WEB_PASSWORD ?? '',
+    GAP_URL: process.env.GAP_URL ?? 'https://gap.gocheckin.net/home',
     WEB_CUSTOMER_PHONE: process.env.WEB_CUSTOMER_PHONE ?? '',
     WEB_CUSTOMER_NAME: process.env.WEB_CUSTOMER_NAME ?? '',
     WEB_STAFF: process.env.WEB_STAFF ?? '',

@@ -58,7 +58,8 @@ export const config: WebdriverIO.Config = {
   framework: 'mocha',
   mochaOpts: {
     ui: 'bdd',
-    timeout: Timeouts.MOCHA_TEST,
+    // Long batch lanes (web:checkin-bulk) loop inside one test; they raise this via env.
+    timeout: Number(process.env.MOCHA_TIMEOUT) || Timeouts.MOCHA_TEST,
   },
 
   // A flaky web round trip earns one retry on dev, same as the app lanes.

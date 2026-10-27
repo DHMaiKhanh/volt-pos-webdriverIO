@@ -88,6 +88,7 @@ import { INCOME_LOCATOR_GROUPS } from './testids.incomes.js';
 import { ORDER_FLOW_LOCATOR_GROUPS } from './testids.orders.js';
 import { PAYROLL_LOCATOR_GROUPS } from './testids.payroll.js';
 import { SETTINGS_LOCATOR_GROUPS } from './testids.settings.js';
+import { VP_LOCATOR_GROUPS } from './testids.vp.js';
 
 /* ------------------------------------------------------------------------- *
  * Shared chrome
@@ -371,6 +372,11 @@ export const HomeIds = {
   serviceCategoryQuickPay: locator(
     'quick pay category tile',
     'home-service-category-quick-pay',
+    // Merchant 14 pins BOTH Quick Pay and Gift Card as title-only centered tiles,
+    // so `div.cursor-pointer.items-center.justify-center` matched two and `find()`
+    // could return Gift Card. Pin it by its own label; the CSS stays as a last
+    // resort for a merchant that only pins Quick Pay.
+    '//div[contains(@class,"cursor-pointer")][contains(normalize-space(.),"Quick Pay") or contains(normalize-space(.),"Thanh toán nhanh")]',
     'div.cursor-pointer.items-center.justify-center',
   ),
   serviceCategories: locator(
@@ -851,6 +857,32 @@ export const CheckoutIds = {
    * so the selector stays unique on any given render.
    */
   completePaymentBtn: locator('complete payment button', 'checkout-complete-payment-btn', 'button.bg-green'),
+  /**
+   * Re-open variants of the green action (`list-action-detail.tsx`). "Re-Open Done"
+   * renders while a reopened order owes nothing and has no entered amount — it
+   * CANCELS the reopen (order back to Successful, no edit allowance spent).
+   * "Complete Done" finishes a reopen whose edit was already fully tendered.
+   */
+  reopenDoneBtn: locator(
+    're-open done button',
+    'checkout-reopen-done-btn',
+    buttonWithAnyText('Re-Open Done'),
+  ),
+  completeDoneBtn: locator(
+    'complete done button',
+    'checkout-complete-done-btn',
+    buttonContainingAnyText('Complete Done'),
+  ),
+  /**
+   * `header-re-open-order.tsx` — on a checkout reached with `?editOrderId`, the
+   * header carries an "Edit Order" link button that routes to `/home?editOrderId`.
+   */
+  editOrderLink: locator(
+    're-open edit order link',
+    'checkout-edit-order-link',
+    '//header//button[normalize-space()="Edit Order"]',
+    buttonWithAnyText('Edit Order'),
+  ),
   tipBtn: locator('checkout tip button', 'checkout-tip-btn', 'button[class*="bg-[#2ED5FF]"]'),
   printBtn: locator('checkout print button', 'checkout-print-btn', 'button.bg-primary'),
   cashDrawerBtn: locator('cash drawer button', 'checkout-cash-drawer-btn', 'button[class*="bg-[#DB4B91]"]'),
@@ -1262,7 +1294,20 @@ export const OrderHistoryDetailIds = {
   actionReceipt: locator('receipt button', 'oh-action-receipt', 'button.w-40.bg-dark-sky-blue-100'),
   /** CONFIRMED under the shipped `order-*` spelling. */
   actionRefund: locator('refund button', 'order-action-refund', '[data-testid="oh-action-refund"]'),
-  actionReopen: locator('re-open order button', 'oh-action-reopen', 'button.bg-persian-indigo-100'),
+  /**
+   * `order-history-detail-confirm-reopen-dialog.tsx` — icon plus `global.reopenOrder`
+   * ("Re-Open Order"), or `global.continueReopen` ("Continue Re-open") while the order
+   * is already `re_open`. Text-first: the colour token moved from
+   * `bg-persian-indigo-100` to `bg-persian-indigo-solid`, which is what made ROP-01
+   * report "no Re-Open" on a perfectly reopenable order.
+   */
+  actionReopen: locator(
+    're-open order button',
+    'oh-action-reopen',
+    buttonContainingAnyText('Re-Open Order', 'Continue Re-open', 'Mở lại'),
+    'button.bg-persian-indigo-solid',
+    'button.bg-persian-indigo-100',
+  ),
   actionCancel: locator(
     'cancel order button',
     'oh-action-cancel',
@@ -1714,6 +1759,7 @@ export const ALL_LOCATOR_GROUPS: Record<string, Record<string, Locator>> = {
   ...ORDER_FLOW_LOCATOR_GROUPS,
   ...PAYROLL_LOCATOR_GROUPS,
   ...SETTINGS_LOCATOR_GROUPS,
+  ...VP_LOCATOR_GROUPS,
   CommonIds,
   SplashIds,
   LoginIds,
