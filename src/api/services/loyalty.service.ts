@@ -9,7 +9,7 @@ import { gql, type GraphQLClient } from '../GraphQLClient.js';
 /**
  * Loyalty points — the oracle for the Checkout Type specs (VP-4591).
  *
- * Three reads, each transcribed from a query the app itself sends:
+ * Four reads, the first three transcribed from a query the app itself sends:
  *
  * - the merchant's `merchant_point_payment_config` row
  *   (`src/hooks/point-payment-config.gql.ts`, PR #3031);
@@ -17,10 +17,12 @@ import { gql, type GraphQLClient } from '../GraphQLClient.js';
  *   upstream lookup the Promo & Rewards dialog runs
  *   (`-customer/-share/customer.gql.ts`), so it reads GoCheckin, not a local copy;
  * - an order's tenders, lines and `pointBonus` stamp, which is what the
- *   completion computed its award from.
+ *   completion computed its award from;
+ * - the pending order a GoCheckin kiosk check-in created for a phone (order +
+ *   check-in status), which is where every Checkout Type case starts.
  *
  * Read-only, like every service here. The setting is changed on the Portal by a
- * person, never by a spec — see docs/screens/checkout-type/checkout-type-test-cases.md §7.
+ * person, never by a spec — see docs/screens/checkout-type/checkout-type-test-cases.md §9.
  */
 
 const POINT_PAYMENT_CONFIG = `
@@ -70,6 +72,48 @@ const ORDER_POINT_STATE = `
     }
   }
 `;
+
+/**
+ * Recent pending orders with their customer and check-in — filtered client-side,
+ * because the order row does not carry the phone (only the customer relation does).
+ */
+const PENDING_CHECKINS = `
+  query pendingCheckinOrders {
+    orderList(where: { status: { eq: "pending" } }, orderBy: [{ createdAt: desc }], limit: 100) {
+      id
+      orderCode
+      customerCheckinId
+      customer {
+        phone
+      }
+      customerCheckin {
+        id
+        status
+        checkinAt
+      }
+    }
+  }
+`;
+
+/** A pending order a GoCheckin kiosk check-in created, as POS synced it down. */
+export interface CheckedInOrder {
+  id: string;
+  /** Bare code, e.g. `OD261027-00003444` — what the Pending Orders cards print. */
+  orderCode: string;
+  customerCheckinId: string;
+  checkinStatus: string | null;
+  checkinAt: string | null;
+}
+
+interface PendingCheckinResponse {
+  orderList: Array<{
+    id: string;
+    orderCode: string;
+    customerCheckinId: string | null;
+    customer: { phone: string | null } | null;
+    customerCheckin: { id: string; status: string | null; checkinAt: string | null } | null;
+  }>;
+}
 
 export interface LivePointSetting extends PointPaymentSetting {
   /** The stored JSON, verbatim — null when the merchant has no row at all. */
@@ -135,7 +179,8 @@ export class LoyaltyService {
       throw new Error(
         `customerInfo(${phone}) returned no currentPoint` +
           (data.customerInfo?.message ? ` (${data.customerInfo.message})` : '') +
-          `. Check LOYALTY_CUSTOMER_PHONE is a customer of this merchant and the till is online.`,
+          `. Check the phone is a customer of this merchant (kiosk check-in synced, or ` +
+          `LOYALTY_CUSTOMER_PHONE for CHK-POS-033) and the till is online.`,
       );
     }
     return points;
@@ -150,5 +195,33 @@ export class LoyaltyService {
     if (!row) return null;
     const { orderItemListById, orderTransactionListById, ...rest } = row;
     return { ...rest, items: orderItemListById ?? [], transactions: orderTransactionListById ?? [] };
+  }
+
+  /**
+   * The newest pending order of `phone` that already carries an ACTIVE check-in
+   * — the order a GoCheckin kiosk check-in creates. Null until it has synced.
+   *
+   * An order created on POS has `customerCheckinId = null` while pending, so it
+   * never matches: that is the point.
+   */
+  async checkedInPendingOrder(phone: string): Promise<CheckedInOrder | null> {
+    const digits = phone.replace(/\D/g, '');
+    const data = await this.client.query<PendingCheckinResponse>(PENDING_CHECKINS, {
+      operationName: 'pendingCheckinOrders',
+    });
+    const row = data.orderList.find(
+      (o) =>
+        (o.customer?.phone ?? '').replace(/\D/g, '') === digits &&
+        o.customerCheckinId !== null &&
+        o.customerCheckin?.status === 'active',
+    );
+    if (!row?.customerCheckinId) return null;
+    return {
+      id: row.id,
+      orderCode: row.orderCode,
+      customerCheckinId: row.customerCheckinId,
+      checkinStatus: row.customerCheckin?.status ?? null,
+      checkinAt: row.customerCheckin?.checkinAt ?? null,
+    };
   }
 }

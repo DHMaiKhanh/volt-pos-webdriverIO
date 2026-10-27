@@ -2,7 +2,7 @@ import { assertWritesAllowed } from '../../configs/env/loadEnv.js';
 import { Timeouts } from '../../configs/constants/timeouts.js';
 import { Routes } from '../constants/routes.js';
 import { step } from '../helpers/steps.js';
-import { homePage } from '../pages/index.js';
+import { homePage, orderPendingPage } from '../pages/index.js';
 import type { ServiceRef, StaffRef } from '../types/models.js';
 
 /**
@@ -76,6 +76,45 @@ export async function createOrder(input: CreateOrderInput = {}): Promise<Created
     await addStaff(input.staff);
     if (input.customerPhone !== undefined) await attachCustomer(input.customerPhone);
     await addService(input.service);
+
+    const checkout = await homePage.pressPay();
+    return { orderId: await checkout.orderId() };
+  });
+}
+
+export interface OpenPendingOrderInput {
+  /** The order code as Pending Orders prints it (`OD261027-00003444`); a leading `#` is tolerated. */
+  orderCode: string;
+  /** Who the line is booked to. Omitted, the first staff tile. */
+  staff?: StaffRef;
+  /** What to sell. Omitted, the first service tile. */
+  service?: ServiceRef;
+  /** A reward to redeem (Promo & Rewards) after the line is booked, by its label. */
+  reward?: string;
+}
+
+/**
+ * Take an EXISTING pending order to checkout — typically the one a GoCheckin
+ * kiosk check-in created, which arrives with a customer and an active check-in
+ * but no lines (the service picked on the kiosk is not carried over).
+ *
+ * Opens the order from Pending Orders, books one staff + one service on it on
+ * the till, presses Pay, and returns the order's UUID off the checkout URL —
+ * the same contract as {@link createOrder}, so every `checkout.flow.ts` call
+ * works after it.
+ */
+export async function openPendingOrder(input: OpenPendingOrderInput): Promise<CreatedOrder> {
+  assertWritesAllowed('add lines to a pending order');
+
+  return step(`Open pending order ${input.orderCode}`, async () => {
+    await orderPendingPage.open();
+    await orderPendingPage.search(input.orderCode.replace(/^#/, ''));
+    await orderPendingPage.openOrder(input.orderCode);
+    await homePage.waitForReady(Timeouts.MEDIUM);
+
+    await addStaff(input.staff);
+    await addService(input.service);
+    if (input.reward !== undefined) await homePage.applyReward(input.reward);
 
     const checkout = await homePage.pressPay();
     return { orderId: await checkout.orderId() };

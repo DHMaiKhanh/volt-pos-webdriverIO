@@ -48,4 +48,4 @@ export { StaffService } from './services/staff.service.js';
 export { OrderService } from './services/order.service.js';
 export type { OrderRow } from './services/order.service.js';
 export { LoyaltyService } from './services/loyalty.service.js';
-export type { LivePointSetting, OrderPointState } from './services/loyalty.service.js';
+export type { CheckedInOrder, LivePointSetting, OrderPointState } from './services/loyalty.service.js';

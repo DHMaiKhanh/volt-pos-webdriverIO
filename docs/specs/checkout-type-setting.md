@@ -4,10 +4,12 @@ source: https://linear.app/fastboy/issue/VP-4591/pos-checkout-type-setting-windo
 linear_id: 97990216-8342-43fd-b329-3e4ae4982143
 team: VOLT
 updated: 2026-10-20T04:53:25.216Z
+qa-notes-updated: 2026-10-27
 related:
   - VP-4554 (API) — volt-pos-api#1487
   - VP-4590 (Portal)
   - volt-pos#3031 (POS, branch feat/VP-4591-pos-checkout-type)
+  - VP-5151 (Bug — check-in còn active trên POS sau complete)
 ---
 
 # Checkout Type Setting — POS (Windows + Android P8D)
@@ -15,7 +17,8 @@ related:
 > 📌 **Source of truth: Linear** — [VP-4591](https://linear.app/fastboy/issue/VP-4591/pos-checkout-type-setting-windows-android),
 > project [Checkout Type Setting](https://linear.app/fastboy/project/checkout-type-setting-a7d574c39869).
 > File này là snapshot (2026-10-22) của ticket + phần đọc code PR volt-pos#3031, dùng khi viết test.
-> Test case: [checkout-type-test-cases.md](../screens/checkout-type/checkout-type-test-cases.md).
+> Test case: [checkout-type-test-cases.md](../screens/checkout-type/checkout-type-test-cases.md) ·
+> Kết quả re-test mới nhất: [vp-4591-retest-2026-10-27.md](../screens/checkout-type/vp-4591-retest-2026-10-27.md).
 
 ## 1. Mục đích
 
@@ -93,11 +96,32 @@ Quy tắc chung:
   Order bị huỷ cuối ngày rồi Restore và complete → không cộng thêm (quy tắc 5).
 - **Refund / Cancel** sau checkout: không revert điểm, không gửi điểm âm (quy tắc 9).
 
+### 4.1 Hành vi thực tế đã quan sát (QA, POS Windows 1.1.57 → 1.1.65, DEV tiệm #14)
+
+| Nguồn order                                                                   | Check-in lúc order còn pending                                                                             | Hệ quả                                                                                                                                                                                                          |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Check-in trên GAP kiosk** (gap.gocheckin.net → GoCheckin, iframe `/iframe`) | Có ngay: order pending mang badge **Checked-in**, `customerCheckinId` có giá trị, check-in `active`        | Đúng luồng Hybrid: job cuối ngày thấy check-in để tự checkout. Complete trong ngày → check-in `finished`.                                                                                                       |
+| **Quick Checkout trên POS**                                                   | **Không có** (`customerCheckinId = null`); check-in chỉ được tạo **lúc complete** (checkinAt = checkoutAt) | Job Hybrid cuối ngày không có gì để checkout → order tạo trên POS để qua đêm **không** được +10 (CHK-POS-024 fail 26/10). Trái câu "mọi order đều có check-in, kể cả order tạo trên POS" — chờ PO/dev xác nhận. |
+
+- Service khách chọn trên kiosk **không** được đưa vào order — phải thêm trên POS.
+- 1 khách chỉ có 1 check-in active; kiosk báo "đã check-in" nếu còn check-in active.
+- Merge: order bị merge chuyển `merged`, check-in của nó đóng (`completed` → `finished`), khách của order đó không nhận điểm.
+- **VP-5151:** 1 lần gặp check-in vẫn `active` trên POS sau khi order complete, trong khi server ghi `checkoutAt` sớm hơn lúc complete (OD261027-00003433, sau thao tác Tip → trả Cash $0).
+
+### 4.2 Quy ước khi test
+
+Order dùng để test **phải tạo từ check-in GAP kiosk** (xem "Điều kiện chung" trong
+[checkout-type-test-cases.md](../screens/checkout-type/checkout-type-test-cases.md)). Chỉ CHK-POS-033 dùng Quick Checkout
+vì chính nó kiểm tra order tạo trên POS. Automation dùng 2 lane: lane web check-in trên kiosk → lane app mở order
+pending có `customerCheckinId` rồi complete (test case §9).
+
 ## 5. Hybrid — order còn mở khi check-in được tự checkout cuối ngày
 
 - API (volt-pos-api#1487, đã merge) tự checkout check-in **khi tạo report doanh thu store hằng ngày** (không có timer 23:59).
   API **không xoá, không archive** order — order `pending` giữ nguyên.
 - POS complete order đó sau thời điểm này → GCI trả `FAIL` → không cộng điểm, **không báo lỗi**, không hiện số điểm.
+- Job chạy cùng lúc tạo report ngày (~06:30 sáng giờ VN / ~23:30 UTC trên DEV), không trigger tay được. Chỉ áp cho
+  check-in còn `active` lúc đó → cần order pending từ GAP kiosk (§4.1). Bộ order qua đêm: test case §8.
 
 ## 6. Merge order
 

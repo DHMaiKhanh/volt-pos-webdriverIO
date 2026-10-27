@@ -90,6 +90,19 @@ import { PAYROLL_LOCATOR_GROUPS } from './testids.payroll.js';
 import { SETTINGS_LOCATOR_GROUPS } from './testids.settings.js';
 import { VP_LOCATOR_GROUPS } from './testids.vp.js';
 
+/** XPath root: the open Promo & Rewards dialog (`t("global.promoRewards")` is also its title). */
+const PROMO_DIALOG =
+  '//*[@role="dialog"][.//*[normalize-space()="Promo & Rewards" or normalize-space()="Khuyến mãi & Phần thưởng"]]';
+
+/**
+ * XPath root: the cashier tip keypad dialog. Keyed on "Enter Amount" AND an
+ * Add button, because the checkout screen behind it prints "Enter Amount" too
+ * (just not inside a dialog).
+ */
+const CASHIER_TIP_DIALOG =
+  '//*[@role="dialog"][.//*[normalize-space()="Enter Amount" or normalize-space()="Nhập số tiền"]]' +
+  '[.//button[normalize-space()="Add" or normalize-space()="Thêm"]]';
+
 /* ------------------------------------------------------------------------- *
  * Shared chrome
  * ------------------------------------------------------------------------- */
@@ -583,6 +596,12 @@ export const HomeIds = {
     'home-cart-promo-confirm-btn',
     buttonWithAnyText('Confirm', 'Xác nhận'),
   ),
+  /** `order-promo-rewards-dialog.tsx` footer — `t("actions.apply")`, disabled until something changed. */
+  cartPromoApplyBtn: locator(
+    'promo apply button',
+    'home-cart-promo-apply-btn',
+    `${PROMO_DIALOG}//button[normalize-space()="Apply" or normalize-space()="Áp dụng"]`,
+  ),
   cartNoteBtn: locator(
     'order note button',
     'home-cart-note-btn',
@@ -884,6 +903,17 @@ export const CheckoutIds = {
     buttonWithAnyText('Edit Order'),
   ),
   tipBtn: locator('checkout tip button', 'checkout-tip-btn', 'button[class*="bg-[#2ED5FF]"]'),
+  /**
+   * The keypad the Tip button opens (`-shared/cashier-tip-keypad-dialog.tsx`):
+   * cashier-local, it never reaches the customer display. The tip it adds lands
+   * on the Card tender only — Cash / Other keep showing their own due.
+   */
+  cashierTipDialog: locator('cashier tip dialog', 'checkout-cashier-tip-dialog', CASHIER_TIP_DIALOG),
+  cashierTipAddBtn: locator(
+    'cashier tip add button',
+    'checkout-cashier-tip-add-btn',
+    `${CASHIER_TIP_DIALOG}//button[normalize-space()="Add" or normalize-space()="Thêm"]`,
+  ),
   printBtn: locator('checkout print button', 'checkout-print-btn', 'button.bg-primary'),
   cashDrawerBtn: locator('cash drawer button', 'checkout-cash-drawer-btn', 'button[class*="bg-[#DB4B91]"]'),
 
@@ -1596,6 +1626,29 @@ export const customerSuggestionItem = (customerId: string): Locator =>
 /** Per-line remove button inside the order panel. */
 export const removeServiceBtn = (orderItemId: string): Locator =>
   locator(`remove service ${orderItemId}`, `home-order-remove-service-btn-${orderItemId}`);
+
+/**
+ * One reward row in the Promo & Rewards dialog, by its `redeem.content` label.
+ * The row is a `<label htmlFor={redeem.id}>`, so clicking it ticks the radio.
+ */
+export const promoRewardOption = (content: string): Locator =>
+  locator(
+    `promo reward "${content}"`,
+    `home-cart-promo-reward-${content}`,
+    `${PROMO_DIALOG}//label[.//span[normalize-space()="${content}"]]`,
+  );
+
+/**
+ * Cashier tip keypad key (`components/tip/custom-tip-keypad.tsx`): a digit,
+ * `'00'`, or a `$20`-style preset label. Scoped to the dialog because the
+ * checkout keypad behind it carries the same digit labels.
+ */
+export const cashierTipKeypadKey = (key: string): Locator =>
+  locator(
+    `cashier tip keypad ${key}`,
+    `checkout-cashier-tip-keypad-${key}`,
+    `${CASHIER_TIP_DIALOG}//button[normalize-space()="${key}"]`,
+  );
 
 /**
  * Checkout keypad key. `value` is a digit (`'7'`), `'C'`, `'back'`, or a preset
