@@ -75,3 +75,33 @@ song song trên nhiều máy/thiết bị**, mỗi máy một app + một mercha
 
 Hạ tầng cần: nhiều máy (hoặc VM) + nhiều account merchant test. Khi có, đây là
 bước kế tiếp để đạt mốc < 1h.
+
+## Vì sao KHÔNG bỏ được thời gian "mở app" mỗi spec (đã điều tra)
+
+Ở launch mode, mỗi spec file trả giá ~15s warm boot (kill app cũ → tauri-driver
+start → launch app → `afterSession` kill). 208 file ≈ **~50 phút** chỉ để mở lại
+cùng một app. Hai hướng bỏ cái này đều đã thử và **đều bị chặn bởi chính app**:
+
+| Hướng                                                            | Cơ chế                                              | Kết quả đo được                                                                              |
+| ---------------------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Attach** (`wdio.bulk-attach.conf.ts`, `npm run bulk:attached`) | Mở app 1 lần + CDP, mọi spec attach vào             | App **tự restart ~6s sau khi mở** → CDP 9222 chết vĩnh viễn → mọi spec fail `ECONNRESET`     |
+| **Grouping** (nhiều spec/1 worker)                               | `specs: [[fileA, fileB…]]` → 1 app boot cho cả nhóm | 1 boot đúng như kỳ vọng, nhưng `tauri-driver exited code 1` **~30s sau boot** → cả nhóm fail |
+
+**Thủ phạm chung: forced-updater.** App dùng `default_version_comparator(|_,_| true)`
+nên mọi phản hồi update đều là "mới hơn"; khi phản hồi mang `deprecated: true`, app
+restart/route `/force-update`, **mất cờ `--remote-debugging-port`** và giết tiến
+trình tauri-driver đang giữ session. Launch mode per-file sống sót vì mỗi spec chỉ
+dùng app trong thời gian ngắn rồi mở lại app tươi (tự hồi); giữ app lâu hơn (attach/
+group) thì dính restart.
+
+`AUTO_DISMISS_UPDATER` chỉ tắt **toast**, không chặn restart. Updater nằm **chung
+host với toàn bộ backend** (`volt-pos.v2.dev-fastboypay.com`) nên chặn bằng hosts =
+chết luôn login + sync (xem `docs/troubleshooting.md` phần "hard-blocking the
+updater endpoint").
+
+**Kết luận:** per-spec boot là cái giá của việc app tự-restart + cần isolation. Bỏ
+nó chỉ khả thi nếu **vô hiệu forced-update** bằng **reverse-proxy local** 404 riêng
+`/auto_update/*` và forward phần còn lại (cần MITM TLS — hạ tầng nặng). Khi nào
+dựng được proxy đó, grouping (gom theo thư mục, giữ self-heal giữa nhóm) sẽ cắt
+~45 phút. Hiện tại: giữ launch mode per-file (bền, tự hồi) + các tối ưu của
+`test:bulk`.
