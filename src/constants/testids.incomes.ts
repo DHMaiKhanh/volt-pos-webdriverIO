@@ -40,10 +40,11 @@
  * first match in EVERY branch, so it also picks up the percentage badge.
  */
 
-import { Actions, Money, Nav, Payroll, Settings, both } from './labels.js';
+import { Actions, Home, Money, Nav, Payroll, Settings, both } from './labels.js';
 import {
   buttonWithAnyText,
   cardWithTitle,
+  inputWithAnyPlaceholder,
   locator,
   rowAmount,
   textIsAnyOf,
@@ -260,25 +261,219 @@ export const IncomeSummaryIds = {
  * Staff Income — /incomes/income-staff
  * ------------------------------------------------------------------------- */
 
+/**
+ * The two halves of `IncomeLayout` as raw CSS, for the one-round-trip readers
+ * (`browser.execute`) that cannot take a `Locator`.
+ *
+ * `data-slot` is written by `incomes/-components/income-layout.tsx` and is NOT
+ * a testid, so build 1.1.x — which strips `data-testid` — keeps it. Scoping
+ * matters on both staff screens: once a staff member is selected the RIGHT
+ * panel mounts a second `<table>` (the order list / daily breakdown), and an
+ * unscoped `table` or `tbody tr` then reads whichever comes first.
+ */
+export const INCOME_PANEL_CSS = {
+  left: '[data-slot="income-layout-left"]',
+  right: '[data-slot="income-layout-right"]',
+} as const;
+
+/**
+ * The six summary cards above the staff list — shared verbatim by Staff Income
+ * and Staff Payroll (`income-staff-summary.tsx`, reused by the payroll list).
+ *
+ * Each card is `<div><span>label</span><span>value</span></div>`. The VI values
+ * are the app's own `locales/vi/common.json` entries (note `totalStaffIncome`
+ * is "Tổng thu nhập", NOT "Tổng thu nhập nhân viên"); the older transcriptions
+ * are kept as extra spellings so a till on a previous bundle still matches.
+ */
+export const INCOME_STATS = {
+  totalStaff: ['Total staff', 'Tổng nhân viên'],
+  totalOrders: ['Total orders', 'Tổng đơn hàng', 'Tổng đơn'],
+  totalSubtotal: ['Total subtotal', 'Tổng tạm tính'],
+  totalSupplyFee: ['Total supply fee', 'Tổng phí vật tư'],
+  totalTip: ['Total tip', 'Tổng tiền boa'],
+  totalStaffIncome: ['Total staff income', 'Tổng thu nhập', 'Tổng thu nhập nhân viên'],
+} as const satisfies Record<string, readonly string[]>;
+
+export type IncomeStat = keyof typeof INCOME_STATS;
+
+const exactAny = (texts: readonly string[]): string =>
+  texts.map((text) => `normalize-space()="${text}"`).join(' or ');
+
+/** The VALUE span of one summary card. Left panel first; unscoped as a fallback. */
+export const incomeStatValue = (stat: IncomeStat): Locator =>
+  locator(
+    `${INCOME_STATS[stat][0]} value`,
+    `income-stat-${stat}`,
+    `//*[@data-slot="income-layout-left"]//span[${exactAny(INCOME_STATS[stat])}]/following-sibling::span[1]`,
+    `//span[${exactAny(INCOME_STATS[stat])}]/following-sibling::*[1]`,
+  );
+
+/** One staff-list row by 0-based display index (names repeat on the payroll roster). */
+export const incomeListRowAt = (index: number): Locator =>
+  locator(
+    `staff list row #${String(index)}`,
+    `income-staff-row-${String(index)}`,
+    `(//*[@data-slot="income-layout-left"]//tbody/tr)[${String(index + 1)}]`,
+    `(//tbody/tr)[${String(index + 1)}]`,
+  );
+
+/**
+ * One option of an open Radix select (date preset / payroll period).
+ *
+ * Exact first; `contains` second because `PresetOptionItem` may render a check
+ * icon whose markup adds nothing to the text but a future label suffix would.
+ */
+export const selectOptionWithText = (...texts: string[]): Locator =>
+  locator(
+    `select option "${texts[0] ?? ''}"`,
+    `select-option-${(texts[0] ?? '').toLowerCase().replace(/\s+/g, '-')}`,
+    `//*[@role="option"][${exactAny(texts)}]`,
+    `//*[@role="option"][${texts.map((t) => `contains(normalize-space(),"${t}")`).join(' or ')}]`,
+  );
+
+/**
+ * The right-hand detail panel shared by Staff Income and Staff Payroll.
+ *
+ * Both render the same header (`<h2>` nickname + `(<range>)` + Print), the same
+ * "Thank you, <name>!" footer and the same empty prompt, so they share one
+ * group instead of two copies drifting apart.
+ */
+export const IncomeDetailIds = {
+  panel: locator('income detail panel', 'income-detail-panel', INCOME_PANEL_CSS.right),
+
+  staffName: locator('detail staff name', 'income-detail-staff-name', `${INCOME_PANEL_CSS.right} h2`),
+
+  /** `(<MM/DD/YYYY>)` or `(<from> - <to>)` — the sibling right after the name. */
+  dateRange: locator(
+    'detail date range',
+    'income-detail-date-range',
+    `//*[@data-slot="income-layout-right"]//h2/following-sibling::*[1]`,
+  ),
+
+  printButton: locator(
+    'detail print button',
+    'income-detail-print-btn',
+    `//*[@data-slot="income-layout-right"]//button[.//span[${exactAny(both(Actions.print))}]]`,
+    `//*[@data-slot="income-layout-right"]//button[${exactAny(both(Actions.print))}]`,
+  ),
+
+  thankYou: locator(
+    'detail thank-you footer',
+    'income-detail-thank-you',
+    `//*[@data-slot="income-layout-right"]//p[starts-with(normalize-space(),"Thank you,") or starts-with(normalize-space(),"Cảm ơn,")]`,
+  ),
+
+  noDetail: locator(
+    'no detail to show',
+    'income-detail-empty',
+    `//*[@data-slot="income-layout-right"]//*[${exactAny(['No detail to show', 'Không có chi tiết để hiển thị'])}]`,
+    textIsAnyOf('No detail to show', 'Không có chi tiết để hiển thị'),
+  ),
+
+  noDetailHint: locator(
+    'no detail hint',
+    'income-detail-empty-hint',
+    `//*[@data-slot="income-layout-right"]//*[${exactAny([
+      'Select staff to preview income details or print reports.',
+      'Chọn nhân viên để xem chi tiết thu nhập hoặc in báo cáo.',
+    ])}]`,
+  ),
+
+  /** Payroll only: a selected staff member with no payroll rows renders `global.noData`. */
+  noData: locator(
+    'detail no data',
+    'income-detail-no-data',
+    `//*[@data-slot="income-layout-right"]//*[${exactAny(['No Data', 'Không có dữ liệu'])}]`,
+  ),
+
+  /** The order list (income) / per-day breakdown (payroll commission) inside the panel. */
+  table: locator('detail table', 'income-detail-table', `${INCOME_PANEL_CSS.right} table`),
+
+  skeleton: locator(
+    'detail skeleton',
+    'income-detail-skeleton',
+    `${INCOME_PANEL_CSS.right} [data-slot="skeleton"]`,
+    `${INCOME_PANEL_CSS.right} .animate-pulse`,
+  ),
+
+  /** `failedLoadStaffIncome` — the list's error branch, used to prove "not an error state". */
+  loadError: locator(
+    'staff income load error',
+    'income-staff-load-error',
+    textIsAnyOf('Failed to load staff income data!', 'Không tải được dữ liệu thu nhập nhân viên!'),
+  ),
+} satisfies Record<string, Locator>;
+
 export const IncomeStaffIds = {
+  /**
+   * `IncomeLayoutHeaderTitle` is a `div[data-slot=income-header-title]`, not a
+   * heading element (the live DOM's `headings` list does not contain it), and
+   * it only mounts once the passcode guard is satisfied. The slot form comes
+   * first so the sidebar's "Staff Income" link can never answer for it.
+   */
   heading: locator(
     'staff income heading',
     'income-staff-heading',
+    `//*[@data-slot="income-header-title"][${exactAny(['Staff Income', 'Thu nhập nhân viên'])}]`,
     textIsAnyOf('Staff Income', 'Thu nhập nhân viên'),
   ),
 
-  /** The staff list. Rows link into the per-staff detail. */
-  staffTable: locator('staff income table', 'income-staff-table', 'table', '[role="table"]'),
-  staffRows: locator('staff income rows', 'income-staff-row-', 'tbody tr'),
+  /** The staff list. Rows open the per-staff detail on the right. */
+  staffTable: locator(
+    'staff income table',
+    'income-staff-table',
+    `${INCOME_PANEL_CSS.left} table`,
+    'table',
+    '[role="table"]',
+  ),
+  staffRows: locator(
+    'staff income rows',
+    'income-staff-row-',
+    `${INCOME_PANEL_CSS.left} tbody tr`,
+    'tbody tr',
+  ),
 
+  /**
+   * NOT rendered by installed build 1.1.56 (live DOM 2026-10-25 has no input on
+   * this screen) although develop's `income-staff-list.tsx` renders one. Kept
+   * so the spec can tell "absent" from "broken".
+   */
   searchStaff: locator(
     'staff search input',
     'income-staff-search',
+    inputWithAnyPlaceholder(...both(Home.searchStaff)),
     '[placeholder*="staff" i]',
     '[placeholder*="nhân viên" i]',
   ),
 
-  detailPanel: locator('staff income detail', 'income-staff-detail', '[data-slot="income-layout-right"]'),
+  /** The preset Radix select — the only `role=combobox` in the left panel. */
+  presetSelect: locator(
+    'date preset select',
+    'income-staff-preset',
+    `${INCOME_PANEL_CSS.left} button[role="combobox"]`,
+    'button[role="combobox"]',
+  ),
+
+  /** The date-range trigger. A literal DOM id (`date-range-picker`), survives the testid strip. */
+  dateRange: locator('selected date range', 'income-staff-date-range', '#selected-date-range'),
+
+  /** "Show staff with no income" — off by default, which hides zero-income rows. */
+  noIncomeSwitch: locator(
+    'show staff with no income switch',
+    'income-staff-no-income-switch',
+    `${INCOME_PANEL_CSS.left} button[role="switch"]`,
+    '#report-filter-includeNoIncome',
+  ),
+
+  /** `DataTable`'s empty branch replaces the whole `<table>` with this slot. */
+  emptyList: locator(
+    'staff list empty state',
+    'income-staff-empty',
+    `//*[@data-slot="table-empty-content"][.//*[${exactAny(['No results found.', 'Không tìm thấy kết quả.'])}]]`,
+    textIsAnyOf('No results found.', 'Không tìm thấy kết quả.'),
+  ),
+
+  detailPanel: locator('staff income detail', 'income-staff-detail', INCOME_PANEL_CSS.right),
 } satisfies Record<string, Locator>;
 
 /* ------------------------------------------------------------------------- *
@@ -289,11 +484,40 @@ export const StaffPayrollIds = {
   heading: locator(
     'staff payroll heading',
     'staff-payroll-heading',
+    `//*[@data-slot="income-header-title"][${exactAny(both(Payroll.staffPayroll))}]`,
     textIsAnyOf(...both(Payroll.staffPayroll)),
   ),
 
-  payrollTable: locator('payroll table', 'staff-payroll-table', 'table', '[role="table"]'),
-  payrollRows: locator('payroll rows', 'staff-payroll-row-', 'tbody tr'),
+  payrollTable: locator(
+    'payroll table',
+    'staff-payroll-table',
+    `${INCOME_PANEL_CSS.left} table`,
+    'table',
+    '[role="table"]',
+  ),
+  payrollRows: locator('payroll rows', 'staff-payroll-row-', `${INCOME_PANEL_CSS.left} tbody tr`, 'tbody tr'),
+
+  /** `global.searchStaff` — present on payroll in 1.1.56 (live DOM 2026-10-25). */
+  searchStaff: locator(
+    'payroll staff search',
+    'staff-payroll-search',
+    inputWithAnyPlaceholder(...both(Home.searchStaff)),
+  ),
+
+  /**
+   * The pay-period Radix select (`staff-payroll-period-select.tsx`). Its value
+   * reads e.g. "Current Period (Oct 23, 2026 - Oct 25, 2026)"; choosing another
+   * writes `periodId` to the URL.
+   */
+  periodSelect: locator(
+    'pay period select',
+    'staff-payroll-period-select',
+    `${INCOME_PANEL_CSS.left} button[role="combobox"]`,
+    'button[role="combobox"]',
+  ),
+
+  /** Every option of the OPEN period select. */
+  periodOptions: locator('pay period options', 'staff-payroll-period-option-', '[role="option"]'),
 
   /** Row links carry the staff id in the href — the only structural handle on a row. */
   staffLinks: locator('payroll staff links', 'staff-payroll-link-', 'a[href*="/settings/staffs/"]'),
@@ -334,6 +558,7 @@ export const INCOME_LOCATOR_GROUPS: Record<string, Record<string, Locator>> = {
   IncomeDailyIps,
   IncomeSummaryIds,
   IncomeStaffIds,
+  IncomeDetailIds,
   StaffPayrollIds,
   IncomeNavIds,
 };

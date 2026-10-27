@@ -1,6 +1,7 @@
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { Routes } from '../../constants/routes.js';
 import { SettingsIds, settingsLanguageOption, settingsNavItem } from '../../constants/testids.js';
+import { SettingsLeaveGuardIds } from '../../constants/testids.settings.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { waitUntilPath } from '../../helpers/wait.js';
 import { BasePage } from '../BasePage.js';
@@ -90,6 +91,35 @@ export class SettingsPage extends BasePage {
       message: `Settings never opened ${section} (${path})`,
     });
     return this;
+  }
+
+  /**
+   * Like {@link openSection}, but drops any unsaved change on the way out.
+   *
+   * A dirty form raises the leave guard instead of navigating; this confirms it.
+   * Specs that ASSERT the guard must keep using `openSection` and handle it.
+   */
+  async openSectionDiscarding(section: SettingsSectionName): Promise<this> {
+    const path = SettingsSection[section];
+    await this.click(settingsNavItem(path));
+    await this.confirmLeaveGuardIfShown();
+    await waitUntilPath((current) => current.startsWith(path), {
+      timeout: Timeouts.NAVIGATION,
+      message: `Settings never opened ${section} (${path})`,
+    });
+    return this;
+  }
+
+  /**
+   * Confirm the unsaved-changes guard if a navigation raised it, discarding the
+   * change. Returns whether it was up. Used by recovery paths too, so a failed
+   * case that left a form dirty cannot strand the till under the dialog.
+   */
+  async confirmLeaveGuardIfShown(): Promise<boolean> {
+    if (!(await this.isVisible(SettingsLeaveGuardIds.dialog, Timeouts.SHORT))) return false;
+    await this.click(SettingsLeaveGuardIds.confirm);
+    await this.waitGone(SettingsLeaveGuardIds.dialog, Timeouts.SHORT);
+    return true;
   }
 
   /** Is a sidebar entry on screen? Some entries are permission-gated on a staff login. */

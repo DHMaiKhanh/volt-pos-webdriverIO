@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './theme.css';
+import './gui.css';
 
 // Apply the saved theme before first paint so there is no light→dark flash.
 const saved = localStorage.getItem('volt-dashboard-theme');

@@ -3,6 +3,15 @@ import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { env } from '../../../configs/env/loadEnv.js';
 import { Routes } from '../../constants/routes.js';
 import { BusinessInfoIds, payPeriodRadio } from '../../constants/testids.settings.js';
+import {
+  BusinessExtraIds,
+  WEEKDAYS,
+  businessCombobox,
+  businessDaySwitch,
+  businessField,
+  businessSectionTitle,
+  type Weekday,
+} from '../../constants/testids.settings-business-extra.js';
 import { goTo } from '../../helpers/navigate.js';
 import { locator, type Locator } from '../../helpers/selectors.js';
 import { logStep } from '../../helpers/steps.js';
@@ -176,6 +185,120 @@ export class BusinessInfoPage extends BasePage {
       await browser.keys(['Escape']);
     }
   }
+
+  /* --------------------------------------------------------------------- *
+   * Read-only inspection (settings-business.spec.ts, TC-BIZ-*)
+   *
+   * Nothing below types, toggles or saves. The screen is merchant-GLOBAL
+   * config, so the spec verifies it purely by reading.
+   * --------------------------------------------------------------------- */
+
+  /**
+   * Wait for the FORM, not just the heading — for a caller that arrived through
+   * the settings rail rather than {@link open}. The pay-period radios render from
+   * the loaded merchant settings, so their presence means the data arrived.
+   */
+  async waitForForm(): Promise<this> {
+    await this.waitForReady(Timeouts.MEDIUM);
+    await this.find(BusinessInfoIds.payPeriodGroup, { visible: true, timeout: Timeouts.MEDIUM });
+    return this;
+  }
+
+  /** Which of the given `[en, vi]` section titles are NOT on screen. Empty = all present. */
+  async missingSections(sections: readonly (readonly [string, string])[]): Promise<string[]> {
+    const missing: string[] = [];
+    for (const [en, vi] of sections) {
+      if (!(await this.isVisible(businessSectionTitle(en, vi), Timeouts.SHORT))) missing.push(en);
+    }
+    return missing;
+  }
+
+  /** Is the field with this react-hook-form `name` rendered? */
+  hasField(name: string): Promise<boolean> {
+    return this.exists(businessField(name), Timeouts.SHORT);
+  }
+
+  /** Is the field with this `name` disabled (read-only)? Throws when it is not rendered. */
+  async isFieldDisabledByName(name: string): Promise<boolean> {
+    const el = await this.find(businessField(name), { timeout: Timeouts.SHORT });
+    return !(await el.isEnabled());
+  }
+
+  /** Is the Country / State combobox rendered? */
+  hasCombobox(en: string, vi: string): Promise<boolean> {
+    return this.exists(businessCombobox(en, vi), Timeouts.SHORT);
+  }
+
+  /** Is the header Edit button visible AND enabled? Never clicks it. */
+  async isEditAvailable(): Promise<boolean> {
+    const el = await this.find(BusinessExtraIds.editButton, { visible: true, timeout: Timeouts.SHORT }).catch(
+      () => null,
+    );
+    if (el === null) return false;
+    return el.isEnabled();
+  }
+
+  /** Is this weekday's switch rendered? */
+  hasDaySwitch(day: Weekday): Promise<boolean> {
+    return this.exists(businessDaySwitch(day), Timeouts.SHORT);
+  }
+
+  /**
+   * Every weekday row: whether the switch is ON, and the inputs next to it.
+   *
+   * Read in one round trip. A day row has no container id, so the row is the
+   * nearest ancestor of the `#<weekday>` switch that also holds an input — an
+   * open day holds two `type="time"` pickers, a closed day one disabled input
+   * whose value is "Closed" / "Đóng cửa".
+   */
+  async workHourRows(): Promise<WorkHourRow[]> {
+    await this.find(businessDaySwitch('monday'), { timeout: Timeouts.MEDIUM });
+    return browser.execute((days: readonly string[]) => {
+      return days.map((day) => {
+        const sw = document.getElementById(day);
+        let row: HTMLElement | null = sw;
+        for (let i = 0; i < 6 && row && !row.querySelector('input'); i += 1) row = row.parentElement;
+        const inputs = row ? Array.from(row.querySelectorAll('input')) : [];
+        return {
+          day,
+          on: sw?.getAttribute('aria-checked') === 'true' || sw?.getAttribute('data-state') === 'checked',
+          inputs: inputs.map((input) => ({ type: input.type, value: input.value, disabled: input.disabled })),
+        };
+      });
+    }, WEEKDAYS);
+  }
+
+  /**
+   * Which of these English labels are VISIBLE as a whole text node in `<main>`,
+   * ignoring the settings rail (its links are navigation, scanned elsewhere).
+   * Used with the till in Vietnamese: anything returned is a leftover.
+   */
+  async visibleExactLabels(labels: readonly string[]): Promise<string[]> {
+    await this.find(BusinessExtraIds.main, { timeout: Timeouts.SHORT });
+    return browser.execute((wanted: readonly string[]) => {
+      const root = document.querySelector('main') ?? document.body;
+      const found = new Set<string>();
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const text = (node.textContent ?? '').replace(/\s+/g, ' ').trim();
+        if (!wanted.includes(text)) continue;
+        const parent = node.parentElement;
+        if (!parent || parent.closest('a[href^="/settings/"]')) continue;
+        const style = window.getComputedStyle(parent);
+        if (style.display === 'none' || style.visibility === 'hidden') continue;
+        if (parent.getClientRects().length === 0) continue;
+        found.add(text);
+      }
+      return Array.from(found);
+    }, labels);
+  }
+}
+
+/** One weekday row as {@link BusinessInfoPage.workHourRows} reads it. */
+export interface WorkHourRow {
+  day: string;
+  on: boolean;
+  inputs: { type: string; value: string; disabled: boolean }[];
 }
 
 export default new BusinessInfoPage();

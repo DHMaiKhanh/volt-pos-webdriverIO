@@ -426,6 +426,27 @@ export class OrderHistoryDetailPage extends BasePage {
     return this;
   }
 
+  /**
+   * The Re-Open action's label: `Re-Open Order`, or `Continue Re-open` while the
+   * order is already `re_open` (a reopen was confirmed and then walked away from).
+   */
+  async readReopenButtonLabel(): Promise<string> {
+    return (await this.text(OrderHistoryDetailIds.actionReopen, { timeout: Timeouts.MEDIUM })).trim();
+  }
+
+  /**
+   * Press Confirm in the re-open dialog and return as soon as the click lands.
+   *
+   * The `reopen_order` passcode guard may come up next (merchant config), so the
+   * flow layer answers it and then waits for checkout — see `reopenOrder()` in
+   * `reopen-flow.helpers.ts`. {@link confirmReopen} is the variant for a till
+   * with no guard on re-open.
+   */
+  async pressReopenConfirm(): Promise<this> {
+    await this.click(OrderHistoryDetailIds.reopenConfirmBtn);
+    return this;
+  }
+
   /** Is the re-open confirmation dialog on screen? */
   isReopenDialogShown(): Promise<boolean> {
     return this.isVisible(OrderHistoryDetailIds.reopenDialog);

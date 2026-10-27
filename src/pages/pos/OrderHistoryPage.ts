@@ -1,4 +1,5 @@
 import { browser } from '@wdio/globals';
+import { Key } from 'webdriverio';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import {
   OrderHistoryIds,
@@ -6,6 +7,7 @@ import {
   orderHistoryPaymentFilter,
   orderHistoryStatusFilter,
 } from '../../constants/testids.js';
+import { OrderHistoryVpIds } from '../../constants/testids.vp.js';
 import { Routes } from '../../constants/routes.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { settle } from '../../helpers/wait.js';
@@ -131,7 +133,14 @@ export class OrderHistoryPage extends BasePage {
 
   /** Empty the search box and wait for the unfiltered list to come back. */
   async clearSearch(): Promise<this> {
-    await this.setValue(OrderHistoryIds.searchInput, '');
+    // `setValue('')` empties the DOM value without an `input` event on this build,
+    // so React keeps the old term and the list stays filtered. Select-all +
+    // Backspace is what a cashier does and fires the change the query listens to.
+    const box = await this.find(OrderHistoryIds.searchInput, { visible: true });
+    await box.click();
+    await browser.keys([Key.Ctrl, 'a']);
+    await browser.keys(['Backspace']);
+    if (((await box.getValue()) ?? '') !== '') await this.setValue(OrderHistoryIds.searchInput, '');
     await settle(Timeouts.DEBOUNCE);
     return this;
   }
@@ -155,6 +164,58 @@ export class OrderHistoryPage extends BasePage {
     for (const row of rows) {
       const id = orderIdFromHref(await row.getAttribute('href'));
       if (id) ids.push(id);
+    }
+    return ids;
+  }
+
+  /** The search box's current text. */
+  searchValue(): Promise<string> {
+    return this.value(OrderHistoryIds.searchInput);
+  }
+
+  /** "No Orders Found" + "Your search did not return any results." (VP-1433 TC-09). */
+  async isEmptySearchStateShown(): Promise<boolean> {
+    return (
+      (await this.isVisible(OrderHistoryVpIds.emptyTitle, Timeouts.MEDIUM)) &&
+      (await this.isVisible(OrderHistoryVpIds.emptySubtitle, Timeouts.SHORT))
+    );
+  }
+
+  /** "Select an order to view details." in the right pane. */
+  isDetailPlaceholderShown(): Promise<boolean> {
+    return this.isVisible(OrderHistoryVpIds.detailPlaceholder, Timeouts.MEDIUM);
+  }
+
+  /** Rendered rows, as data, in list order. */
+  async renderedRows(): Promise<OrderRowSummary[]> {
+    const rows: OrderRowSummary[] = [];
+    for (const id of await this.renderedOrderIds()) {
+      if (await this.exists(orderHistoryItem(id), Timeouts.SHORT)) rows.push(await this.readRowSummary(id));
+    }
+    return rows;
+  }
+
+  /**
+   * Search and wait until the rendered rows satisfy `predicate` (the list is
+   * debounced and re-queried, so the first read after typing may be stale).
+   */
+  async searchUntil(
+    keyword: string,
+    predicate: (ids: string[]) => boolean,
+    timeout: number = Timeouts.MEDIUM,
+  ): Promise<string[]> {
+    await this.search(keyword);
+    let ids: string[] = [];
+    try {
+      await browser.waitUntil(
+        async () => {
+          ids = await this.renderedOrderIds();
+          return predicate(ids);
+        },
+        { timeout, interval: 400 },
+      );
+    } catch {
+      // Fall through with the last read; the spec asserts on it.
     }
     return ids;
   }

@@ -115,6 +115,9 @@ export const TENDERS_WITHOUT_HARDWARE: readonly PaymentMethod[] = PAYMENT_METHOD
  */
 const GIFT_CARD_BY_MERCHANT: Readonly<Record<string, string>> = {
   '20258': '973047331197',
+  // Same code is issued and funded in merchant 14 too (~$29.4k on 2026-10-26, read
+  // from the app's gift_card table), so the redemption specs run on that till as well.
+  '14': '973047331197',
 };
 
 /**

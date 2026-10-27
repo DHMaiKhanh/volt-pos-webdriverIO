@@ -1,64 +1,48 @@
 {
-  "runId": "2026-10-13T11-26-10-735Z",
-  "startedAt": "2026-10-13T11:26:10.735Z",
-  "finishedAt": "2026-10-13T11:28:35.712Z",
-  "durationMs": 144977,
+  "runId": "2026-10-27T07-01-39-618Z",
+  "startedAt": "2026-10-27T07:01:39.618Z",
+  "finishedAt": "2026-10-27T07:04:32.088Z",
+  "durationMs": 172470,
   "env": {
     "name": "dev",
     "mode": "launch",
-    "merchant": "20258",
+    "merchant": "14",
     "app": "volt-pos.exe",
     "upstream": "https://volt-pos.v2.dev-fastboypay.com"
   },
   "totals": {
-    "tests": 4,
-    "passed": 3,
+    "tests": 8,
+    "passed": 7,
     "failed": 1,
     "skipped": 0,
-    "passRate": 75
+    "passRate": 87.5
   },
   "passed": false,
   "specs": [
     {
       "cid": "0-0",
-      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/_recovery/payment-methods-settle.spec.ts",
-      "specName": "payment-methods-settle",
-      "startedAt": "2026-10-13T11:26:14.286Z",
-      "finishedAt": "2026-10-13T11:27:21.518Z",
-      "durationMs": 67232,
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/smoke/app-launch.spec.ts",
+      "specName": "app-launch",
+      "startedAt": "2026-10-27T07:01:46.908Z",
+      "finishedAt": "2026-10-27T07:02:01.782Z",
+      "durationMs": 14874,
       "retry": 2,
       "suites": [
         {
-          "title": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258",
+          "title": "App launch",
           "tests": [
             {
-              "title": "Card — chỉ quét: Complete Payment disabled (không settle khi thiếu terminal + handoff)",
-              "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Card — chỉ quét: Complete Payment disabled (không settle khi thiếu terminal + handoff)",
-              "state": "failed",
-              "durationMs": 2396,
-              "retries": 0,
-              "error": "expect(received).toBe(expected) // Object.is equality",
-              "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: false\nReceived: true\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\_recovery\\payment-methods-settle.spec.ts:93:59)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
-            },
-            {
-              "title": "Cash — settle exact -> /payment-success",
-              "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Cash — settle exact -> /payment-success",
+              "title": "The app boots past the splash screen into a titled window @smoke",
+              "fullTitle": "App launch.The app boots past the splash screen into a titled window @smoke",
               "state": "passed",
-              "durationMs": 11267,
+              "durationMs": 263,
               "retries": 0
             },
             {
-              "title": "Gift Card — redeem the standing card -> /payment-success",
-              "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Gift Card — redeem the standing card -> /payment-success",
+              "title": "Both the staff window and the customer display are open @smoke @dual-window",
+              "fullTitle": "App launch.Both the staff window and the customer display are open @smoke @dual-window",
               "state": "passed",
-              "durationMs": 22037,
-              "retries": 0
-            },
-            {
-              "title": "Other (Zelle) — settle -> /payment-success",
-              "fullTitle": "Thanh toán — 4 phương thức (Card / Cash / Gift Card / Other) — tiệm 20258.Other (Zelle) — settle -> /payment-success",
-              "state": "passed",
-              "durationMs": 12338,
+              "durationMs": 434,
               "retries": 0
             }
           ],
@@ -66,11 +50,127 @@
         }
       ],
       "totals": {
-        "tests": 4,
-        "passed": 3,
+        "tests": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      }
+    },
+    {
+      "cid": "0-1",
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/smoke/authentication.spec.ts",
+      "specName": "authentication",
+      "startedAt": "2026-10-27T07:02:09.509Z",
+      "finishedAt": "2026-10-27T07:02:20.508Z",
+      "durationMs": 10999,
+      "retry": 2,
+      "suites": [
+        {
+          "title": "Authentication",
+          "tests": [
+            {
+              "title": "The session lands on the till, not on the login screen @smoke @critical",
+              "fullTitle": "Authentication.The session lands on the till, not on the login screen @smoke @critical",
+              "state": "passed",
+              "durationMs": 178,
+              "retries": 0
+            },
+            {
+              "title": "The authenticated staff directory renders @smoke @critical",
+              "fullTitle": "Authentication.The authenticated staff directory renders @smoke @critical",
+              "state": "passed",
+              "durationMs": 288,
+              "retries": 0
+            }
+          ],
+          "suites": []
+        }
+      ],
+      "totals": {
+        "tests": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
+      }
+    },
+    {
+      "cid": "0-2",
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/smoke/home-screen.spec.ts",
+      "specName": "home-screen",
+      "startedAt": "2026-10-27T07:02:28.034Z",
+      "finishedAt": "2026-10-27T07:03:05.104Z",
+      "durationMs": 37070,
+      "retry": 2,
+      "suites": [
+        {
+          "title": "Home screen",
+          "tests": [
+            {
+              "title": "The staff and service panels are populated @smoke",
+              "fullTitle": "Home screen.The staff and service panels are populated @smoke",
+              "state": "passed",
+              "durationMs": 230,
+              "retries": 0
+            },
+            {
+              "title": "Every cart footer row reads back as whole cents @smoke",
+              "fullTitle": "Home screen.Every cart footer row reads back as whole cents @smoke",
+              "state": "failed",
+              "durationMs": 15423,
+              "retries": 0,
+              "error": "Could not find \"cart subtotal\" within 15000ms.",
+              "stack": "Error: Could not find \"cart subtotal\" within 15000ms.\nTried, in order:\n  - [data-testid=\"home-cart-subtotal\"]\n  - //*[contains(@class,\"is-changing-staff\")]//div[./span[normalize-space()=\"Subtotal\" or normalize-space()=\"Tạm tính\"]]/span[last()]\nIf the first candidate is the missing one, run `npm run audit:testids` — the app may simply not expose data-testid=\"home-cart-subtotal\" yet.\n    at HomePage.find (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:65:11)\n    at async HomePage.text (D:\\Project\\webdriverIO_volt_pos\\src\\support\\UiObject.ts:165:16)\n    at async HomePage.readAmount (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\HomePage.ts:1113:23)\n    at async HomePage.cartTotals (D:\\Project\\webdriverIO_volt_pos\\src\\pages\\pos\\HomePage.ts:1008:17)\n    at async Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\smoke\\home-screen.spec.ts:32:20)\n    at async Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1133:20)\n    at async Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:14)"
+            }
+          ],
+          "suites": []
+        }
+      ],
+      "totals": {
+        "tests": 2,
+        "passed": 1,
         "failed": 1,
         "skipped": 0,
-        "passRate": 75
+        "passRate": 50
+      }
+    },
+    {
+      "cid": "0-3",
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/smoke/order-history.spec.ts",
+      "specName": "order-history",
+      "startedAt": "2026-10-27T07:03:14.135Z",
+      "finishedAt": "2026-10-27T07:03:39.247Z",
+      "durationMs": 25112,
+      "retry": 2,
+      "suites": [
+        {
+          "title": "Order history",
+          "tests": [
+            {
+              "title": "The order list loads with addressable, priced rows @smoke",
+              "fullTitle": "Order history.The order list loads with addressable, priced rows @smoke",
+              "state": "passed",
+              "durationMs": 970,
+              "retries": 0
+            },
+            {
+              "title": "The filter dialog opens and closes leaving the list untouched @smoke",
+              "fullTitle": "Order history.The filter dialog opens and closes leaving the list untouched @smoke",
+              "state": "passed",
+              "durationMs": 2920,
+              "retries": 0
+            }
+          ],
+          "suites": []
+        }
+      ],
+      "totals": {
+        "tests": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "passRate": 100
       }
     }
   ]

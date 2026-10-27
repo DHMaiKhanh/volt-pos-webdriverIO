@@ -17,6 +17,11 @@
  *   node cdp.mjs eval <jsFile> [urlSubstr]     eval a JS expression file, print JSON result
  *   node cdp.mjs click "<text>" [urlSubstr]    click element by visible text/role, print new url
  *   node cdp.mjs nav-home [urlSubstr]          click the app logo/back to reach /home
+ *   node cdp.mjs type "<field>" "<value>" [urlSubstr]
+ *                                              fill an input found by placeholder/label/testid/name
+ *   node cdp.mjs watch <seconds> [urlSubstr]   BUG SIGNAL: listen for console errors, uncaught
+ *                                              exceptions and failed/4xx/5xx network calls while
+ *                                              you (or another command) drive the app; prints JSON
  *
  * urlSubstr picks WHICH webview: omit = main POS window (not /customer/);
  * pass "customer" to drive the customer display.
@@ -34,7 +39,8 @@ async function listTargets() {
 function pickTarget(ts, sub) {
   const t = sub
     ? ts.find((x) => (x.url || '').includes(sub))
-    : ts.find((x) => !(x.url || '').includes('/customer/')) || ts[0];
+    : // skip the customer display and the about:blank tab a wdio attach session leaves behind
+      ts.find((x) => /^https?:/.test(x.url || '') && !x.url.includes('/customer/')) || ts[0];
   if (!t) die('No matching target. Available: ' + JSON.stringify(ts.map((x) => x.url)));
   return t;
 }
@@ -148,6 +154,56 @@ const NAV_HOME_EXPR = `(async () => {
   return { ok: true, url: location.href };
 })()`;
 
+// ---- fill-input expression builder (React-safe: native setter + input/change events) ----
+function typeExpr(field, value) {
+  return `(async () => {
+    const f = ${JSON.stringify(field)}.toLowerCase(), v = ${JSON.stringify(value)};
+    const vis = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const labelOf = (el) => ((el.id && document.querySelector('label[for="' + el.id + '"]')?.textContent) || el.closest('label')?.textContent || '');
+    const keys = (el) => [el.placeholder, el.getAttribute('aria-label'), el.getAttribute('data-testid'), el.name, labelOf(el)].map((x) => (x || '').toLowerCase());
+    const els = [...document.querySelectorAll('input,textarea')].filter(vis);
+    const el = els.find((e) => keys(e).some((k) => k === f)) || els.find((e) => keys(e).some((k) => k.includes(f)));
+    if (!el) return { ok: false, reason: 'input not found: ' + f, inputs: els.map((e) => keys(e).filter(Boolean)[0] || e.type) };
+    el.focus();
+    const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, v);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 500));
+    return { ok: true, field: keys(el).filter(Boolean)[0], readBack: el.value };
+  })()`;
+}
+
+// ---- watch: collect runtime + network errors for N seconds ----
+async function watch(target, seconds) {
+  const ws = new WebSocket(target.webSocketDebuggerUrl);
+  const out = { url: target.url, seconds, consoleErrors: [], exceptions: [], failedRequests: [], httpErrors: [] };
+  const reqs = new Map();
+  let id = 0;
+  await new Promise((res, rej) => { ws.addEventListener('open', res); ws.addEventListener('error', () => rej(new Error('WS error'))); });
+  const send = (method, params = {}) => ws.send(JSON.stringify({ id: ++id, method, params }));
+  ws.addEventListener('message', (ev) => {
+    const m = JSON.parse(ev.data);
+    const p = m.params || {};
+    if (m.method === 'Runtime.consoleAPICalled' && (p.type === 'error' || p.type === 'warning' || p.type === 'assert'))
+      out.consoleErrors.push({ level: p.type, text: (p.args || []).map((a) => a.value ?? a.description ?? '').join(' ').slice(0, 400) });
+    else if (m.method === 'Runtime.exceptionThrown')
+      out.exceptions.push((p.exceptionDetails?.exception?.description || p.exceptionDetails?.text || '').slice(0, 600));
+    else if (m.method === 'Log.entryAdded' && p.entry?.level === 'error')
+      out.consoleErrors.push({ level: 'log-error', text: (p.entry.text || '').slice(0, 400), url: p.entry.url });
+    else if (m.method === 'Network.requestWillBeSent') reqs.set(p.requestId, { method: p.request.method, url: p.request.url });
+    else if (m.method === 'Network.responseReceived' && p.response.status >= 400)
+      out.httpErrors.push({ status: p.response.status, ...(reqs.get(p.requestId) || { url: p.response.url }) });
+    else if (m.method === 'Network.loadingFailed' && !p.canceled)
+      out.failedRequests.push({ error: p.errorText, ...(reqs.get(p.requestId) || {}) });
+  });
+  send('Runtime.enable'); send('Log.enable'); send('Network.enable');
+  await new Promise((r) => setTimeout(r, seconds * 1000));
+  ws.close();
+  out.total = out.consoleErrors.length + out.exceptions.length + out.failedRequests.length + out.httpErrors.length;
+  return out;
+}
+
 // ---- main ----
 try {
   if (cmd === 'targets') {
@@ -176,8 +232,17 @@ try {
   } else if (cmd === 'nav-home') {
     const t = pickTarget(await listTargets(), rest[0]);
     console.log(JSON.stringify(await evaluate(t, NAV_HOME_EXPR), null, 2));
+  } else if (cmd === 'type') {
+    const [field, value, sub] = rest;
+    if (!field || value === undefined) die('type needs "<field>" "<value>"');
+    const t = pickTarget(await listTargets(), sub);
+    console.log(JSON.stringify(await evaluate(t, typeExpr(field, value)), null, 2));
+  } else if (cmd === 'watch') {
+    const secs = Number(rest[0] || 20);
+    const t = pickTarget(await listTargets(), rest[1]);
+    console.log(JSON.stringify(await watch(t, secs), null, 2));
   } else {
-    console.log('Usage: node cdp.mjs <targets|scan|text|shot|eval|click|nav-home> [args]');
+    console.log('Usage: node cdp.mjs <targets|scan|text|shot|eval|click|nav-home|type|watch> [args]');
     process.exit(cmd ? 1 : 0);
   }
 } catch (e) {

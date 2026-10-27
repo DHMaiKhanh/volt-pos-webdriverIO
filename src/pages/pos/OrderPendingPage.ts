@@ -1,11 +1,13 @@
 import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { Routes } from '../../constants/routes.js';
-import { OrderPendingIds, PENDING_ORDER_CODE } from '../../constants/testids.orders.js';
+import { headerMenuItem } from '../../constants/testids.js';
+import { OrderPendingScreenIds as OrderPendingIds } from '../../constants/testids.order-pending.js';
+import { PENDING_ORDER_CODE } from '../../constants/testids.orders.js';
 import { goTo } from '../../helpers/navigate.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { logStep } from '../../helpers/steps.js';
-import { settle } from '../../helpers/wait.js';
+import { settle, waitUntilPath } from '../../helpers/wait.js';
 import { BasePage } from '../BasePage.js';
 
 /** How the queue is ordered. The values are what the Radix select shows. */
@@ -39,7 +41,14 @@ export class OrderPendingPage extends BasePage {
   readonly name = 'Pending Orders';
   readonly route = Routes.ORDER_PENDING;
 
-  protected readonly readyAnchor: Locator = OrderPendingIds.heading;
+  /**
+   * The search box, not the "Pending Orders" heading: on build 1.1.x the screen
+   * renders no heading at all, and the only "Pending Orders" text is the header
+   * quick-nav button — present on EVERY screen with a header, so it would report
+   * this route ready while the app is still on /home. The search input is
+   * rendered by this route's filter bar only.
+   */
+  protected readonly readyAnchor: Locator = OrderPendingIds.searchInput;
 
   /** Navigate client-side and wait for the queue to render. */
   async open(): Promise<this> {
@@ -174,6 +183,110 @@ export class OrderPendingPage extends BasePage {
     const labels: string[] = [];
     for (const option of options) labels.push((await option.getText()).trim());
     return labels;
+  }
+
+  /* --------------------------------------------------------------------- *
+   * Reads for the toolbar (TC-OP-01, -06..-09)
+   * --------------------------------------------------------------------- */
+
+  /** Which toolbar controls are on screen. One read per control, SHORT budget each. */
+  async toolbarVisibility(): Promise<
+    Record<'search' | 'staffFilter' | 'sort' | 'datePreset' | 'dateRange' | 'quickCheckout', boolean>
+  > {
+    return {
+      search: await this.isVisible(OrderPendingIds.searchInput, Timeouts.SHORT),
+      staffFilter: await this.isVisible(OrderPendingIds.staffFilter, Timeouts.SHORT),
+      sort: await this.isVisible(OrderPendingIds.sortSelect, Timeouts.SHORT),
+      datePreset: await this.isVisible(OrderPendingIds.datePreset, Timeouts.SHORT),
+      dateRange: await this.isVisible(OrderPendingIds.dateRange, Timeouts.SHORT),
+      quickCheckout: await this.isVisible(OrderPendingIds.quickCheckout, Timeouts.SHORT),
+    };
+  }
+
+  /** The staff filter's label with its count badge, whitespace-collapsed: `Staff 305`. */
+  async staffFilterLabel(): Promise<string> {
+    return (await this.text(OrderPendingIds.staffFilter, { timeout: Timeouts.SHORT }))
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /** The sort select's CURRENT value (`Latest` / `Oldest`, or the VI pair). */
+  async currentSortLabel(): Promise<string> {
+    return this.text(OrderPendingIds.sortSelect, { timeout: Timeouts.SHORT });
+  }
+
+  /** The date-range preset select's current value (`Today` on arrival). */
+  async datePresetLabel(): Promise<string> {
+    return this.text(OrderPendingIds.datePreset, { timeout: Timeouts.SHORT });
+  }
+
+  /** The calendar trigger's text — the selected date, e.g. `10/25/2026`. */
+  async dateRangeLabel(): Promise<string> {
+    return this.text(OrderPendingIds.dateRange, { timeout: Timeouts.SHORT });
+  }
+
+  /** Is Quick Checkout rendered AND enabled? */
+  async isQuickCheckoutEnabled(): Promise<boolean> {
+    if (!(await this.isVisible(OrderPendingIds.quickCheckout, Timeouts.SHORT))) return false;
+    const button = await this.find(OrderPendingIds.quickCheckout, { timeout: Timeouts.SHORT });
+    return button.isEnabled();
+  }
+
+  /**
+   * Open the sort dropdown, read its options, and close it again with Escape.
+   *
+   * {@link sortOptionLabels} reads an ALREADY-open dropdown; this is the
+   * self-contained version a "what does Sort offer" check wants.
+   */
+  async readSortOptions(): Promise<string[]> {
+    await this.click(OrderPendingIds.sortSelect);
+    await settle(Timeouts.ANIMATION);
+    const labels = await this.sortOptionLabels();
+    await browser.keys(['Escape']);
+    await settle(Timeouts.ANIMATION);
+    return labels;
+  }
+
+  /* --------------------------------------------------------------------- *
+   * Reads for a card (TC-OP-02)
+   * --------------------------------------------------------------------- */
+
+  /**
+   * The full text of the card carrying `orderCode`, or `null` when no card does.
+   *
+   * Read through `textContent` as well as `getText()` — WebView2 152 returns ''
+   * from `getText()` for a node React just re-rendered (see UiObject.text()).
+   */
+  async cardText(orderCode: string): Promise<string | null> {
+    const bare = orderCode.replace(/^#/, '');
+    const cards = await this.findAll(OrderPendingIds.orderCards, { timeout: Timeouts.SHORT });
+    for (const card of cards) {
+      let text = (await card.getText().catch(() => '')).trim();
+      if (text === '') {
+        const raw = await card.getProperty('textContent').catch(() => '');
+        text = typeof raw === 'string' ? raw.trim() : '';
+      }
+      if (text.includes(bare)) return text;
+    }
+    return null;
+  }
+
+  /* --------------------------------------------------------------------- *
+   * Header cross-navigation (TC-OP-10)
+   * --------------------------------------------------------------------- */
+
+  /**
+   * Press a header quick-nav link (`/order-history`, `/appointment`) and wait
+   * for the router to land on it. The Appointment link carries `?date=<epoch>`,
+   * which is why {@link headerMenuItem} also matches by href PREFIX.
+   */
+  async pressHeaderLink(route: string): Promise<string> {
+    await logStep(`${this.name}: header link ${route}`);
+    await this.click(headerMenuItem(route));
+    return waitUntilPath((path) => path.startsWith(route), {
+      timeout: Timeouts.NAVIGATION,
+      message: `The header link to ${route} did not navigate`,
+    });
   }
 
   /** Start a checkout that has no order behind it yet. */
