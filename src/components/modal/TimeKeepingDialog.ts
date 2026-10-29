@@ -323,6 +323,10 @@ export class TimeKeepingDialog extends BaseComponent {
     label: 'Check In' | 'Check Out',
   ): Promise<void> {
     await logStep(`Time Keeping: ${label} ${staffName}`);
+    // A preceding write (e.g. a Check In right before a Check Out, TC-TK-04) can re-render the
+    // dialog shut, so the next card lookup finds no dialog root and times out. Re-open first —
+    // `open()` is idempotent, a no-op when the dialog is already up.
+    await this.open();
     await this.selectCard(staffName, from);
     const card = await this.cardElement(staffName, from);
     await this.click(TimeKeepingIds.cardAction, { within: card, timeout: Timeouts.SHORT });

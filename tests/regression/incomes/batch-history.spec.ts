@@ -265,6 +265,7 @@ describe('Batch History', () => {
         'TC-BATCH-11 [BUG-BATCH-01]: the open batch header matches its review (payment count and Total Amount)',
         Tag.REGRESSION,
         Tag.CRITICAL,
+        Tag.BROKEN,
       ),
       async () => {
         requireReview();

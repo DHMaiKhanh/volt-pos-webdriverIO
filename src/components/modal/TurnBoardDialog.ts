@@ -168,11 +168,23 @@ export class TurnBoardDialog extends BaseComponent {
     await this.waitClosed(Timeouts.MEDIUM);
   }
 
-  /** Close with Escape (closes only the TOPMOST layer — see {@link pressEscape}). */
+  /**
+   * Close the board. Escape first (it closes only the TOPMOST layer — see
+   * {@link pressEscape}), falling back to the header Close button.
+   *
+   * Escape only reaches a Radix dialog while focus is still inside it. After the
+   * rows are read through `execute` (TC-TURN-51/10/13 call {@link close} straight
+   * after `todayRows()`) focus can sit on the document body, so Escape no-ops and
+   * the board lingers until the wait times out. The Close button does not depend
+   * on focus, so fall back to it when Escape did not take.
+   */
   async close(): Promise<void> {
     if (!(await this.isOpen(Timeouts.ANIMATION))) return;
     await browser.keys(['Escape']);
-    await this.waitClosed(Timeouts.MEDIUM);
+    const closed = await this.waitClosed(Timeouts.SHORT)
+      .then(() => true)
+      .catch(() => false);
+    if (!closed) await this.closeWithButton();
   }
 
   /** One Escape keypress, no waiting on any particular layer. */

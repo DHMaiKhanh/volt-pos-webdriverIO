@@ -29,11 +29,12 @@
 
 import { expect } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
-import { env } from '../../../configs/env/loadEnv.js';
+import { assertWritesAllowed, env } from '../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../../src/components/index.js';
-import { returnToHome } from '../../../src/flows/index.js';
+import { goToSettings, returnToHome } from '../../../src/flows/index.js';
 import { step } from '../../../src/helpers/steps.js';
-import { incomeStaffPage } from '../../../src/pages/index.js';
+import { accessibilitySettingsPage, incomeStaffPage, settingsPage } from '../../../src/pages/index.js';
+import type { PasscodeGateState } from '../../../src/pages/index.js';
 import {
   fieldCents,
   findField,
@@ -186,10 +187,40 @@ async function openDetailOfLayout(
  * Spec
  * ------------------------------------------------------------------------- */
 
+/**
+ * The `staff_income` gate decides whether Staff Income prompts for a passcode.
+ * It is MERCHANT-GLOBAL and this merchant ships it OFF, so `resolvePasscodeBypass`
+ * bypasses the guard and TC-IST-01's "the guard comes up" never would. Enable it
+ * for the file and restore the merchant's own gates afterwards — the same
+ * snapshot/restore VP-2400 uses.
+ */
+let gateSnapshot: PasscodeGateState | null = null;
+
+async function openAccessibility(): Promise<void> {
+  await goToSettings();
+  await settingsPage.openSection('ACCESSIBILITY');
+  await accessibilitySettingsPage.waitForReady(Timeouts.MEDIUM);
+}
+
 describe('Staff Income', () => {
+  before(async function (this: Mocha.Context): Promise<void> {
+    this.timeout(Timeouts.MOCHA_HOOK);
+    assertWritesAllowed('enable the staff_income passcode gate for the gate probe');
+    await openAccessibility();
+    gateSnapshot = await accessibilitySettingsPage.readGates();
+    await accessibilitySettingsPage.applyGates({ staff_income: true });
+    await returnToHome();
+  });
+
   after(async function (this: Mocha.Context): Promise<void> {
     this.timeout(Timeouts.MOCHA_HOOK);
+    if (gateSnapshot) {
+      await openAccessibility();
+      await accessibilitySettingsPage.applyGates(gateSnapshot);
+      gateSnapshot = null;
+    }
     // TC-IST-01 drops the grant on purpose; never leave the lane prompting.
+    await returnToHome();
     await ensurePasscodeGrant();
   });
 

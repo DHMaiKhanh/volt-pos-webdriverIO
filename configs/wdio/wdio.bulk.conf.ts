@@ -36,6 +36,11 @@ export const config: WebdriverIO.Config = {
   // it.skip, but each still spins a worker) and every confirmed-app-bug file.
   exclude: [
     path.join(Paths.TESTS, 'regression', 'volt-qc', '_manual', '*.spec.ts'),
+    // `_recovery/` holds exploratory PROBE/DEMO specs (cash-demo, *-scan, *-probe,
+    // *-verify) used to reproduce a defect by hand — NOT authoritative regression.
+    // Some target a different merchant (20258) than this machine (14), so they
+    // always red and burn a full timeout each. Dropped from the bulk inventory.
+    path.join(Paths.TESTS, '_recovery', '*.spec.ts'),
     ...QUARANTINE.map(toAbs),
   ],
 
