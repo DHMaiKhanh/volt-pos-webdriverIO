@@ -1,7 +1,25 @@
+import path from 'node:path';
 import { config as bulk } from './wdio.bulk.conf.js';
+import { Paths } from '../constants/paths.js';
 import { loadEnv } from '../env/loadEnv.js';
 
 const env = loadEnv();
+
+/**
+ * Specs the attach lane cannot drive: anything that drives the CUSTOMER DISPLAY.
+ *
+ * CDP attach exposes only the staff window — the second (customer) window shows as
+ * a bare `about:blank` target no `switchToCustomer` can reach — so a customer-tip /
+ * signature / customer-display spec wedges on the window switch. The self-heal then
+ * relaunches a clean app for the NEXT file, so a miss here only costs one relaunch,
+ * not a cascade; this list just keeps those relaunches down. The whole `cd-e2e`
+ * folder is customer-display by definition; the `@dual-window` TAG (handled by the
+ * grep below) covers the rest that live inside otherwise-attachable files. Run
+ * these on the LAUNCH lane (`test:bulk`), which drives both windows.
+ */
+const ATTACH_EXCLUDE: readonly string[] = [
+  path.join(Paths.TESTS, 'regression', 'volt-qc', 'cd-e2e', '*.spec.ts'),
+];
 
 /**
  * BULK + ATTACH lane — the bulk tuning, but driving an app that is ALREADY
@@ -41,6 +59,19 @@ const env = loadEnv();
  */
 export const config: WebdriverIO.Config = {
   ...bulk,
+
+  // Drop the customer-display files on top of whatever the bulk lane already
+  // excludes (_manual, _recovery, quarantine) — attach cannot drive the 2nd window.
+  exclude: [...(bulk.exclude ?? []), ...ATTACH_EXCLUDE],
+
+  // Skip @broken (bulk's reason) AND @dual-window: the latter's cross-window
+  // assertions only hold on the launch lane, where both windows are real handles.
+  mochaOpts: {
+    ...bulk.mochaOpts,
+    grep: '@broken|@dual-window',
+    invert: true,
+  },
+
   // Attach to the running WebView2 instead of letting tauri-driver launch one.
   // The port must match what `app:launch` opened (REMOTE_DEBUG_PORT).
   capabilities: [

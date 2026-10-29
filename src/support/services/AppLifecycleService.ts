@@ -10,6 +10,7 @@ import { collectAppLogs } from '../../db/appLogs.js';
 import { startUpdaterWatcher, stopUpdaterWatcher } from '../../helpers/updater.js';
 import { installStepOverlay } from '../../helpers/steps.js';
 import { moduleLogger } from '../../utils/logger.js';
+import { ensureHealthyAttachedApp } from '../attachApp.js';
 import { APP_IMAGE_NAMES, killStaleProcesses, waitForImagesGone } from '../process.js';
 
 const log = moduleLogger('AppLifecycleService');
@@ -36,8 +37,22 @@ export default class AppLifecycleService {
    * `async` wrapper here would only advertise a suspension point that does not
    * exist.
    */
-  beforeSession(): void {
+  async beforeSession(): Promise<void> {
     const env = loadEnv();
+
+    // Attach self-heal (the ONLY per-file app work this mode does). Before each spec
+    // file, make sure a healthy app parked on /home is attachable: a no-op when the
+    // previous file left it there — keeping the open-once speed — and a relaunch only
+    // when a spec wedged or crashed it, which is what stops the cascade that otherwise
+    // turns one bad file into an all-red run. Also starts the app on the FIRST file if
+    // nobody ran `app:launch`.
+    if (env.MODE === 'attach') {
+      await ensureHealthyAttachedApp();
+      for (const dir of [Paths.SCREENSHOTS, Paths.APP_LOGS, Paths.ALLURE_RESULTS]) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      return;
+    }
 
     // ATTACH MODE OWNS NOTHING. `npm run app:launch` started both the app and the
     // msedgedriver this session is about to connect to, and WebdriverIO runs
