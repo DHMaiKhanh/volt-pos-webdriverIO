@@ -21,6 +21,7 @@ import { ReportBasePage } from './ReportBasePage.js';
 import {
   cardValueText,
   countOf,
+  findFullTable,
   findTable,
   isCountText,
   labelMoneyPairs,
@@ -105,7 +106,7 @@ abstract class CardTableReportPage extends ReportBasePage {
 
   /** Staff Income / Payroll rows. The name cell carries an avatar initial line first — the name is its LAST line. */
   async staffRows(): Promise<StaffReportRow[]> {
-    const table = await findTable(V4Labels.supplyFeeHead);
+    const table = await findFullTable(V4Labels.supplyFeeHead);
     return (table?.rows ?? [])
       .filter((cells) => cells.length >= 6)
       .map((cells) => {
@@ -131,7 +132,7 @@ abstract class CardTableReportPage extends ReportBasePage {
 
   /** Income Summary period rows (Date / Sale / Tip / Tax / Total Payment). */
   async incomePeriodRows(): Promise<IncomePeriodRow[]> {
-    const table = await findTable(V4Labels.totalPayment);
+    const table = await findFullTable(V4Labels.totalPayment);
     return (table?.rows ?? [])
       .filter((cells) => cells.length >= 5)
       .map((cells) => {
@@ -254,7 +255,7 @@ export class ReportsV4Page extends CardTableReportPage {
 
   /** DSR orders table rows that carry an order code (empty-state rows excluded). */
   async orderRows(): Promise<OrderReportRow[]> {
-    const table = await findTable(V4Labels.orderNumberHead);
+    const table = await findFullTable(V4Labels.orderNumberHead);
     return (table?.rows ?? [])
       .filter((cells) => cells.length >= 5 && /OD\d{6}/.test(cells[0] ?? ''))
       .map((cells) => {

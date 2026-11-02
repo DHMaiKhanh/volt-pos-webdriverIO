@@ -94,6 +94,22 @@ async function textContentOf(el: WebdriverIO.Element): Promise<string> {
   return typeof raw === 'string' ? raw.trim() : '';
 }
 
+/**
+ * Trimmed `textContent` of many elements in ONE round trip. The date picker's
+ * year listbox holds ~200 options; reading them one `getProperty` at a time
+ * made every `pickDate` cost ~12s.
+ */
+async function textContentsOf(els: readonly WebdriverIO.Element[]): Promise<string[]> {
+  if (els.length === 0) return [];
+  const texts = await browser.execute(
+    function (...nodes: HTMLElement[]) {
+      return nodes.map((node) => (node.textContent ?? '').trim());
+    },
+    ...(els as unknown as HTMLElement[]),
+  );
+  return texts;
+}
+
 const parseNumber = (text: string): number => {
   const match = /-?\d+(?:\.\d+)?/.exec(text.replace(/,/g, ''));
   return match ? Number.parseFloat(match[0]) : 0;
@@ -168,11 +184,23 @@ export class TurnBoardDialog extends BaseComponent {
     await this.waitClosed(Timeouts.MEDIUM);
   }
 
-  /** Close with Escape (closes only the TOPMOST layer — see {@link pressEscape}). */
+  /**
+   * Close the board. Escape first (it closes only the TOPMOST layer — see
+   * {@link pressEscape}), falling back to the header Close button.
+   *
+   * Escape only reaches a Radix dialog while focus is still inside it. After the
+   * rows are read through `execute` (TC-TURN-51/10/13 call {@link close} straight
+   * after `todayRows()`) focus can sit on the document body, so Escape no-ops and
+   * the board lingers until the wait times out. The Close button does not depend
+   * on focus, so fall back to it when Escape did not take.
+   */
   async close(): Promise<void> {
     if (!(await this.isOpen(Timeouts.ANIMATION))) return;
     await browser.keys(['Escape']);
-    await this.waitClosed(Timeouts.MEDIUM);
+    const closed = await this.waitClosed(Timeouts.SHORT)
+      .then(() => true)
+      .catch(() => false);
+    if (!closed) await this.closeWithButton();
   }
 
   /** One Escape keypress, no waiting on any particular layer. */
@@ -450,8 +478,7 @@ export class TurnBoardDialog extends BaseComponent {
       if (!trigger) throw new Error(`Date picker dropdown ${index} not found.`);
       await trigger.click();
       const options = await this.findAll(TurnBoardIds.openListboxOptions, { timeout: Timeouts.SHORT });
-      const texts: string[] = [];
-      for (const o of options) texts.push(await textContentOf(o));
+      const texts = await textContentsOf(options);
       const at = pickOption(texts);
       const option = options[at];
       if (at < 0 || !option) {

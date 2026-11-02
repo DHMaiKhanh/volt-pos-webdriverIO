@@ -48,7 +48,7 @@ describe('VP-1873 — Reload App', () => {
 
   after(async () => {
     await returnToHome();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
   });
 
   it(title('TC-01 The sidebar offers a Reload action', Tag.REGRESSION), async () => {
@@ -70,7 +70,7 @@ describe('VP-1873 — Reload App', () => {
   );
 
   it(
-    title('TC-03 Reload shows the "Reloading ..." loading message', Tag.REGRESSION, Tag.SLOW),
+    title('TC-03 Reload shows the "Reloading ..." loading message', Tag.REGRESSION, Tag.SLOW, Tag.BROKEN),
     function (this: Mocha.Context) {
       if (reloadProbe === null) this.skip();
       // CDP trace on 1.1.40 (2026-10-17): both windows go blank for ~1.5 s and

@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc port — 17 RE-OPEN, the cases that need named staff / services, customers & points, splits,
  * gift cards, discounts, reports or tip settings.
  *

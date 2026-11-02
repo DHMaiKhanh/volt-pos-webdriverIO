@@ -87,7 +87,8 @@ export const shared: WebdriverIO.Config = {
   ],
 
   logLevel: env.LOG_LEVEL === 'debug' ? 'debug' : 'warn',
-  outputDir: path.join(Paths.REPORTS, 'wdio-logs'),
+  // A parallel instance's workers reuse the same cids (0-0, 0-1…): own folder.
+  outputDir: path.join(Paths.REPORTS, 'wdio-logs', env.INSTANCE > 0 ? `i${String(env.INSTANCE)}` : ''),
 
   bail: 0,
   waitforTimeout: Timeouts.MEDIUM,

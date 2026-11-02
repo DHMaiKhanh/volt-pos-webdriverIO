@@ -10,7 +10,7 @@
  *
  * The detail has ONE Save shared by its five tabs and no case presses it; Create
  * New Staff is opened, read and dismissed with Escape, never submitted. The one
- * mutation is TC-EMP-23 typing into City to prove the Save gate — TC-EMP-24 then
+ * mutation is TC-EMP-23 typing into Address to prove the Save gate — TC-EMP-24 then
  * discards it through the app's own leave-with-unsaved-changes guard, and the
  * `after` hook does the same as a backstop, so no staff record changes.
  *
@@ -60,8 +60,8 @@ const CONSOLE_WHITELIST: readonly RegExp[] = [
 describe('Settings — Employees', () => {
   /** The staff member the detail cases run against (resolved in `before`). */
   let staff = '';
-  /** City as loaded, captured by TC-EMP-23 so TC-EMP-24 can prove the discard. */
-  let originalCity: string | null = null;
+  /** Address as loaded, captured by TC-EMP-23 so TC-EMP-24 can prove the discard. */
+  let originalAddress: string | null = null;
 
   /** On the staff list with nothing open, filter All, search empty. */
   async function onStaffsScreen(): Promise<void> {
@@ -439,29 +439,32 @@ describe('Settings — Employees', () => {
     expect(await staffsSettingsPage.isSaveEnabled()).toBe(false);
   });
 
+  // Keys are APPENDED (no clear): after WebDriver's Element Clear a field stops
+  // dirtying this form however it is retyped (measured 2026-10-30). Still red when
+  // run after TC-EMP-01..22 while green on its own — open, see the doc's notes.
   it(title('Editing a field makes the form dirty and enables Save (TC-EMP-23)', Tag.REGRESSION), async () => {
     await onStaffDetail();
-    originalCity = await staffsSettingsPage.cityValue();
+    originalAddress = await staffsSettingsPage.addressValue();
 
-    await staffsSettingsPage.setCity('QA City');
+    await staffsSettingsPage.appendTo('address', ' QA');
 
-    expect(await staffsSettingsPage.cityValue()).toBe('QA City');
+    expect(await staffsSettingsPage.addressValue()).toBe(`${originalAddress} QA`);
     expect(await staffsSettingsPage.isSaveEnabled()).toBe(true);
     // NOT saved — TC-EMP-24 discards it (and `after` backstops).
   });
 
   it(title('Leaving discards the unsaved edit (TC-EMP-24)', Tag.REGRESSION), async () => {
-    if (originalCity === null || !(await staffsSettingsPage.isSaveEnabled().catch(() => false))) {
+    if (originalAddress === null || !(await staffsSettingsPage.isSaveEnabled().catch(() => false))) {
       // Self-sufficient when TC-EMP-23 did not leave the form dirty.
       await onStaffDetail();
-      originalCity = await staffsSettingsPage.cityValue();
-      await staffsSettingsPage.setCity('QA City');
+      originalAddress = await staffsSettingsPage.addressValue();
+      await staffsSettingsPage.appendTo('address', ' QA');
     }
 
     const sawGuard = await step('Leave through the settings rail, discarding', discardAndReturn);
     await staffsSettingsPage.openStaff(staff);
 
-    expect(await staffsSettingsPage.cityValue()).toBe(originalCity);
+    expect(await staffsSettingsPage.addressValue()).toBe(originalAddress);
     expect(await staffsSettingsPage.isSaveEnabled()).toBe(false);
     // In-app navigation with a dirty form is guarded (unlike the doc's hard reload).
     expect(sawGuard).toBe(true);

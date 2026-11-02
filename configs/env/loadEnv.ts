@@ -86,6 +86,10 @@ export interface AppEnv {
    * web lane, like WEB_URL, with no tauri-driver.
    */
   GAP_URL: string;
+  /** Fastboy Portal origin (store settings), e.g. https://v2.dev-fastboypay.com — web lane, QR-signed profile. */
+  PORTAL_URL: string;
+  /** Merchant whose Store Settings the Portal lane edits — the same store the till is signed into. */
+  PORTAL_MERCHANT_ID: string;
   /**
    * The appointment the web lane books. These live in env rather than in code
    * because the customer fields are real PII — a name and phone that must not be
@@ -130,6 +134,16 @@ export interface AppEnv {
   MSEDGEDRIVER_PATH: string;
   /** WebView2 CDP port used by `attach` mode. */
   REMOTE_DEBUG_PORT: number;
+
+  // ── Parallel instances (docs/parallel-instances.md) ────────────────────────
+  /** 0 = the installed app; 1, 2… = a test copy with its own identifier, ports and driver images. */
+  INSTANCE: number;
+  /** tauri-driver `--native-port` (the msedgedriver behind it); 0 = tauri-driver's default, 4445. */
+  TAURI_NATIVE_PORT: number;
+  /** Extra WebView2 browser arguments for an attach launch — a parked copy needs the anti-throttling set. */
+  APP_BROWSER_ARGS: string;
+  /** Window placement copied over the app's `.window-state.json` (in APP_IDENTIFIER's folder) before every launch; '' = leave it alone. */
+  APP_WINDOW_SEED: string;
 
   // ── Run behaviour ──────────────────────────────────────────────────────────
   LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error';
@@ -243,6 +257,8 @@ export function loadEnv(force = false): AppEnv {
     WEB_USERNAME: process.env.WEB_USERNAME ?? '',
     WEB_PASSWORD: process.env.WEB_PASSWORD ?? '',
     GAP_URL: process.env.GAP_URL ?? 'https://gap.gocheckin.net/home',
+    PORTAL_URL: (process.env.PORTAL_URL ?? 'https://v2.dev-fastboypay.com').replace(/\/+$/, ''),
+    PORTAL_MERCHANT_ID: process.env.PORTAL_MERCHANT_ID ?? '14',
     WEB_CUSTOMER_PHONE: process.env.WEB_CUSTOMER_PHONE ?? '',
     WEB_CUSTOMER_NAME: process.env.WEB_CUSTOMER_NAME ?? '',
     WEB_STAFF: process.env.WEB_STAFF ?? '',
@@ -257,6 +273,11 @@ export function loadEnv(force = false): AppEnv {
     TAURI_DRIVER_PATH: process.env.TAURI_DRIVER_PATH ?? '',
     MSEDGEDRIVER_PATH: process.env.MSEDGEDRIVER_PATH ?? '',
     REMOTE_DEBUG_PORT: toInt(process.env.REMOTE_DEBUG_PORT, 9222),
+
+    INSTANCE: toInt(process.env.VOLT_INSTANCE, 0),
+    TAURI_NATIVE_PORT: toInt(process.env.TAURI_NATIVE_PORT, 0),
+    APP_BROWSER_ARGS: process.env.APP_BROWSER_ARGS ?? '',
+    APP_WINDOW_SEED: process.env.APP_WINDOW_SEED ?? '',
 
     LOG_LEVEL: (process.env.LOG_LEVEL as AppEnv['LOG_LEVEL'] | undefined) ?? 'info',
     SPEC_RETRIES: toInt(process.env.SPEC_RETRIES, envName === 'prod' ? 0 : 1),

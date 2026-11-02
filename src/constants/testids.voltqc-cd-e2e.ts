@@ -32,13 +32,21 @@ const tRe = (textRe: string, flags?: string): VqcQuery => ({ textRe, flags, nth:
 export const CdMain = {
   quickCheckout: b('Quick Checkout', 0),
   orderHeading: inMainQ({ textRe: '^#OD\\d{6}-\\d+', nth: 0 }),
-  customerInput: { css: 'input', placeholder: 'Enter Customer Phone, Name or Email', nth: 0 } as VqcQuery,
-  customerFieldText: inMainQ({ text: 'Enter Customer Phone, Name or Email', nth: 0 }),
+  // The customer box's copy changed: 'Enter Customer Phone, Name or Email' on the builds
+  // these cases were written for, 'Phone, name or email' on 1.1.8x — accept both.
+  customerInput: {
+    css: 'input[placeholder="Enter Customer Phone, Name or Email"], input[placeholder="Phone, name or email"]',
+    nth: 0,
+  } as VqcQuery,
+  customerFieldText: inMainQ({
+    textRe: '^(Enter Customer Phone, Name or Email|Phone, name or email)$',
+    nth: 0,
+  }),
   keypadKey: (key: string): readonly VqcQuery[] => inMainQ(b(key, 0)),
   done: inMainQ(b('Done', 0)),
   staffNameCss: 'main span.col-span-2.text-xl',
   serviceTile: (name: string): readonly VqcQuery[] =>
-    inMainQ({ css: 'li', hasCss: 'span.block', hasText: name, nth: 0 }),
+    inMainQ({ css: 'li', hasCss: 'span.block, span.line-clamp-2', hasText: name, nth: 0 }),
   serviceTileCss: 'main li',
   serviceSearch: inMainQ({ css: 'input', placeholder: 'Search service', nth: 0 }),
   /** One cart row (`div.pr-11`) of the order panel. */
@@ -79,7 +87,8 @@ export const CdMain = {
   sellGiftCardDialog: { role: 'dialog', hasText: 'Sell Gift Card', nth: -1 } as VqcQuery,
   pay: b('Pay', 0),
   completePayment: b('Complete Payment', 0),
-  method: (m: string): readonly VqcQuery[] => inMainQ(bRe(`^${m} \\$`, 0)),
+  // "Cash $33.00" reads "Cash$33.00" on 1.1.8x (label and amount are separate elements).
+  method: (m: string): readonly VqcQuery[] => inMainQ(bRe(`^${m}\\s*\\$`, 0)),
   tip: inMainQ(b('Tip', 0)),
   cashierTipDialog: { role: 'dialog', hasText: 'Enter Amount', hasTextRe: '\\bAdd\\b', nth: -1 } as VqcQuery,
   waitingDialog: {

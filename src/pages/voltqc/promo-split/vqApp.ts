@@ -588,12 +588,12 @@ class VqApp {
   }
 
   customerField(): VqcChain {
-    return [{ css: 'body' }, { css: `input[placeholder="${VqpsHome.customerPlaceholder}"]`, nth: 0 }];
+    return [{ css: 'body' }, { css: VqpsHome.customerInputCss, nth: 0 }];
   }
 
   async clickCustomerField(): Promise<void> {
     if (await visible(this.customerField())) await P.clickQ(this.customerField());
-    else await P.clickQ(inMain({ text: VqpsHome.customerPlaceholder, nth: 0 }));
+    else await P.clickQ(inMain({ textRe: VqpsHome.customerTextRe, nth: 0 }));
   }
 
   /** New customer: phone on the keypad → Done → name → Save; the customer display confirms Yes. */
@@ -695,8 +695,9 @@ class VqApp {
     await P.waitFor(VqpsCheckout.complete, 15_000, 'Complete Payment');
   }
 
+  /** "Cash $33.00" — read as "Cash$33.00" on 1.1.8x (label and amount are separate elements). */
   methodButton(m: PayMethod): readonly VqcQuery[] {
-    return inMain({ role: 'button', nameRe: `^${escapeRe(m)} \\$`, nth: 0 });
+    return inMain({ role: 'button', nameRe: `^${escapeRe(m)}\\s*\\$`, nth: 0 });
   }
 
   async methodAmount(m: PayMethod): Promise<number> {

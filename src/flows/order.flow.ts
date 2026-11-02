@@ -28,6 +28,16 @@ export interface CreateOrderInput {
    * match. Omitted, the order is a walk-in, which earns no loyalty points.
    */
   customerPhone?: string;
+  /**
+   * Start from Pending Orders → Quick Checkout instead of the till as it stands.
+   *
+   * Quick Checkout always opens a fresh, empty order with the phone keypad
+   * already mounted, so it works while ANOTHER draft is open on /home — there
+   * the customer slot is taken by that draft's customer and the plain path has
+   * nothing to tap. The customer is attached first, before a staff tile swaps
+   * the keypad out.
+   */
+  quickCheckout?: boolean;
 }
 
 export interface CreatedOrder {
@@ -64,6 +74,25 @@ export async function createOrder(input: CreateOrderInput = {}): Promise<Created
   assertWritesAllowed('create an order');
 
   return step('Create an order', async () => {
+    if (input.quickCheckout === true) {
+      await orderPendingPage.open();
+      await orderPendingPage.pressQuickCheckout();
+      await homePage.waitForReady(Timeouts.MEDIUM);
+      if (
+        input.customerPhone !== undefined &&
+        !(await homePage.attachCustomerBySearch(input.customerPhone))
+      ) {
+        throw new Error(
+          `createOrder(): phone ${input.customerPhone} matches no customer on this merchant (no ` +
+            `"Customers Found" row). Point the fixture (e.g. LOYALTY_CUSTOMER_PHONE) at an existing customer.`,
+        );
+      }
+      await addStaff(input.staff);
+      await addService(input.service);
+      const checkout = await homePage.pressPay();
+      return { orderId: await checkout.orderId() };
+    }
+
     if (!(await homePage.isActive())) {
       throw new Error(
         `createOrder(): the app is on "${await homePage.currentPath()}", not ${Routes.HOME}. ` +

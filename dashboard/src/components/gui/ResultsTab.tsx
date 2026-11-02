@@ -57,6 +57,51 @@ function Donut({ passed, flaky, failed, skipped }: { passed: number; flaky: numb
 
 type Filter = 'all' | 'failed' | 'flaky';
 
+interface StopReason {
+  title: string;
+  /** Preflight FAIL rows: check name, what it saw, how to fix it. */
+  checks: { name: string; detail: string; fix: string }[];
+  /** Last log lines when nothing more specific was found. */
+  tail: string[];
+}
+
+/**
+ * Why a run stopped short, read from its own log — a red "Đã dừng · 0/1621" with
+ * no reason sent people to the Console tab (or to ask) for what preflight prints
+ * in plain words.
+ */
+export function stopReason(log: string, done: number): StopReason {
+  const lines = log.split(/\r?\n/);
+  const end = lines.slice(-200).join('\n');
+  if (end.includes('[runner] stop requested')) return { title: 'Đã bấm ■ Dừng.', checks: [], tail: [] };
+  const verdict = lines.find((l) => l.includes('PREFLIGHT FAILED'));
+  if (verdict) {
+    const details = new Map<string, string>();
+    for (const l of lines) {
+      const row = /^\s{2}(\S.*?)\s{2,}FAIL\s{2,}(.+)$/.exec(l);
+      if (row) details.set((row[1] ?? '').trim(), (row[2] ?? '').trim());
+    }
+    const checks: StopReason['checks'] = [];
+    lines.forEach((l, i) => {
+      const name = /^\s*\[FAIL\]\s+(.+)$/.exec(l)?.[1]?.trim();
+      if (name) checks.push({ name, detail: details.get(name) ?? '', fix: (lines[i + 1] ?? '').trim() });
+    });
+    return {
+      title: 'Preflight chặn trước khi chạy, chưa test nào được chạy và chưa đụng dữ liệu.',
+      checks,
+      tail: [],
+    };
+  }
+  if (end.includes('run process is gone without an exit code')) {
+    return { title: 'Tiến trình chạy bị tắt giữa chừng (máy ngủ / khởi động lại / bị kill).', checks: [], tail: [] };
+  }
+  return {
+    title: done === 0 ? 'Run kết thúc trước khi có test nào xong. Cuối log:' : 'Cuối log:',
+    checks: [],
+    tail: lines.filter((l) => l.trim()).slice(-12),
+  };
+}
+
 export function ResultsTab({ runner, features, now, onRerun, disabled }: ResultsTabProps): JSX.Element {
   const { run, results, running } = runner;
   const [filter, setFilter] = useState<Filter>('all');
@@ -100,6 +145,7 @@ export function ResultsTab({ runner, features, now, onRerun, disabled }: Results
   const done = s.done;
   const planned = Math.max(run.planned, done);
   const stopped = !running && run.exitCode !== null && run.exitCode !== 0 && done < run.planned;
+  const reason = stopped ? stopReason(runner.log, done) : null;
 
   const issues: LiveResult[] = results
     .filter((r) => r.state === 'failed' || r.flaky)
@@ -114,7 +160,7 @@ export function ResultsTab({ runner, features, now, onRerun, disabled }: Results
       <section className="card hero">
         <Donut passed={s.passed} flaky={s.flaky} failed={s.failed} skipped={s.skipped} />
         <div className="hero-body">
-          <h2 className={running ? 'h-running' : s.failed ? 'h-fail' : 'h-pass'}>
+          <h2 className={running ? 'h-running' : s.failed || stopped ? 'h-fail' : 'h-pass'}>
             {running ? `Đang chạy… ${done}/${planned}` : stopped ? `Đã dừng · ${done}/${planned}` : `Xong · ${done}/${planned}`}
           </h2>
           <p className="muted">
@@ -133,6 +179,27 @@ export function ResultsTab({ runner, features, now, onRerun, disabled }: Results
           {running && planned > 0 && (
             <div className="progress">
               <span style={{ width: `${Math.min(100, (done / planned) * 100)}%` }} />
+            </div>
+          )}
+          {reason && (
+            <div className="stop-reason">
+              <b>Lý do dừng:</b> {reason.title}
+              {reason.checks.length > 0 && (
+                <ul>
+                  {reason.checks.map((c) => (
+                    <li key={c.name}>
+                      <b>{c.name}</b>
+                      {c.detail && <> — {c.detail}</>}
+                      {c.fix && (
+                        <div className="muted">
+                          Cách sửa: <code>{c.fix}</code>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {reason.tail.length > 0 && <pre>{reason.tail.join('\n')}</pre>}
             </div>
           )}
         </div>

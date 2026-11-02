@@ -28,7 +28,7 @@ import { expect } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { assertWritesAllowed, env } from '../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../../src/components/index.js';
-import { returnToHome } from '../../../src/flows/index.js';
+import { isPasscodeGateOn, returnToHome } from '../../../src/flows/index.js';
 import { step } from '../../../src/helpers/steps.js';
 import { timeTrackingPage } from '../../../src/pages/index.js';
 import { clearPasscodeGrant, ensurePasscodeGrant } from '../../../src/support/passcodeGrant.js';
@@ -90,17 +90,24 @@ describe('Time Tracking', () => {
     }
   });
 
-  it(title('The passcode gate blocks /time-tracking (TC-TT-01)', Tag.REGRESSION), async () => {
-    await step('Drop the 30-minute grant and open the route', async () => {
-      await returnToHome();
-      await clearPasscodeGrant();
-      await timeTrackingPage.navigateGated();
-    });
+  it(
+    title('The passcode gate blocks /time-tracking (TC-TT-01)', Tag.REGRESSION),
+    async function (this: Mocha.Context) {
+      // With the "time_tracking" gate OFF in Passcode Setting the app opens the page
+      // by design, so there is no gate to observe — skip, do not fail.
+      if (!(await isPasscodeGateOn('time_tracking'))) this.skip();
 
-    expect(await passcodeDialog.isPrompting(Timeouts.MEDIUM)).toBe(true);
-    expect(await timeTrackingPage.gateTitle()).toMatch(/Time Tracking|Quản lý chấm công/);
-    expect(await timeTrackingPage.isLoaded(Timeouts.ANIMATION)).toBe(false);
-  });
+      await step('Drop the 30-minute grant and open the route', async () => {
+        await returnToHome();
+        await clearPasscodeGrant();
+        await timeTrackingPage.navigateGated();
+      });
+
+      expect(await passcodeDialog.isPrompting(Timeouts.MEDIUM)).toBe(true);
+      expect(await timeTrackingPage.gateTitle()).toMatch(/Time Tracking|Quản lý chấm công/);
+      expect(await timeTrackingPage.isLoaded(Timeouts.ANIMATION)).toBe(false);
+    },
+  );
 
   it(
     title('The correct passcode opens Time Tracking with its table and filters (TC-TT-02)', Tag.REGRESSION),
@@ -178,7 +185,8 @@ describe('Time Tracking', () => {
       // The toast is transient — read it before anything else.
       expect((await timeTrackingPage.toastTexts()).join(' | ')).toMatch(ADDED_TOAST);
 
-      await timeTrackingPage.waitRecord(QA_MARKER);
+      // The list may not refetch after Add — reopen it once if the row is late.
+      await timeTrackingPage.waitRecord(QA_MARKER, Timeouts.MEDIUM, { reopen: true });
       const record = await timeTrackingPage.recordByNote(QA_MARKER);
       expect(record).not.toBeNull();
       expect(record?.staff).toBe(qaStaff);

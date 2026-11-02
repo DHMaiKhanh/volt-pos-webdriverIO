@@ -36,7 +36,7 @@ let anonOrderId = '';
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 /** Staff + (optional customer) + first service → cash → back home. Returns [uuid, code]. */

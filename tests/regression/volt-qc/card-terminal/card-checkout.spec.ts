@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc card terminal — the checkout side of a real card charge: the state
  * sequence on POS + customer display, and the two signature timings.
  *

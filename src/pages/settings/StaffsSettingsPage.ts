@@ -252,9 +252,31 @@ export class StaffsSettingsPage extends BasePage {
     return this.value(StaffsIds.city, { timeout: Timeouts.MEDIUM });
   }
 
-  /** Replace the City value — dirties the form. Never followed by Save in this suite. */
+  /**
+   * Replace the City value. Never followed by Save in this suite. To prove the
+   * form gets dirty use {@link appendTo}: a field cleared by WebDriver stops
+   * dirtying the form (measured 2026-10-30).
+   */
   async setCity(text: string): Promise<this> {
-    await this.setValue(StaffsIds.city, text);
+    await this.replaceValue(StaffsIds.city, text);
+    await settle();
+    return this;
+  }
+
+  addressValue(): Promise<string> {
+    return this.value(StaffsIds.address, { timeout: Timeouts.MEDIUM });
+  }
+
+  /**
+   * Type `text` at the END of an information field with real key strokes —
+   * no clear. Measured 2026-10-30: after WebDriver's Element Clear a field no
+   * longer dirties the staff form however it is retyped, while keys appended to
+   * the untouched field do (Address: Save enabled). Never followed by Save here.
+   */
+  async appendTo(field: 'address' | 'city', text: string): Promise<this> {
+    await this.click(field === 'address' ? StaffsIds.address : StaffsIds.city);
+    await browser.keys(['End']);
+    await browser.keys(text);
     await settle();
     return this;
   }

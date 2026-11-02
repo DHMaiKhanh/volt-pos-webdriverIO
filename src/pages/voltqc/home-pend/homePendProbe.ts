@@ -633,13 +633,16 @@ export async function enteredAmount(): Promise<number> {
   return money(/Enter Amount \| (\$[\d,.]+)/.exec(t)?.[1]);
 }
 
-/** Amount printed on a tender button ("Cash $33.00"). */
+/**
+ * Amount printed on a tender button ("Cash $33.00"). The label and the amount are
+ * separate elements, so the name reads "Cash$33.00" on 1.1.8x — the space is optional.
+ */
 export async function tenderAmount(method: 'Card' | 'Cash' | 'Other' | 'Gift Card'): Promise<number> {
-  return money(await P.textOf(inMain({ role: 'button', nameRe: `^${method} \\$`, nth: 0 })));
+  return money(await P.textOf(inMain({ role: 'button', nameRe: `^${method}\\s*\\$`, nth: 0 })));
 }
 
 export async function selectTender(method: 'Card' | 'Cash' | 'Other' | 'Gift Card'): Promise<void> {
-  await P.clickQ(inMain({ role: 'button', nameRe: `^${method} \\$`, nth: 0 }));
+  await P.clickQ(inMain({ role: 'button', nameRe: `^${method}\\s*\\$`, nth: 0 }));
   await settle(300);
 }
 

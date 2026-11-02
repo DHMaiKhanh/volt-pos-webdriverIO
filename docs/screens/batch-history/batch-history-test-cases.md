@@ -12,7 +12,7 @@ build: 1.1.56 (merchant 14, DEV)
 
 Màn **Batch History** (`/batch-history`, menu ☰ → Batch History) liệt kê các batch thẻ theo khoảng ngày:
 
-- Bộ lọc preset (combobox): Today, Yesterday, This Week (mặc định), Last Week, Last 7 Days, This Month,
+- Bộ lọc preset (combobox): Today, Yesterday, This Week, Last Week, Last 7 Days (mặc định — `batch-history.schema.ts` của app), This Month,
   Last Month, Last 30 Days, This Year, Last Year. Bên cạnh là nút khoảng ngày `MM/DD/YYYY - MM/DD/YYYY`.
 - Bảng batch: **Batch Date | Batch Number | Status | Total Payment | Total Amount**.
   - Batch đang mở hiện `Not closed yet`, Status `Open`. Batch Number dạng số (vd. `105`).
@@ -30,7 +30,7 @@ Ký hiệu: ✅ quét live khớp · ⚠️ có điều kiện/drift · 🧱 ch�
 | ID          | Tiêu đề                                              | Tiền điều kiện                | Các bước                                                                              | Kết quả mong đợi                                                                                   | Loại       | Ưu tiên | Nguồn                        |
 | ----------- | ---------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------- | ------- | ---------------------------- |
 | TC-BATCH-01 | Mở màn từ menu                                       | Đã đăng nhập                  | ☰ → Batch History                                                                    | URL `/batch-history`, heading "Batch History"                                                      | Functional | High    | ✅                           |
-| TC-BATCH-02 | Preset mặc định là This Week                         | —                             | Mở màn                                                                                | Combobox hiện "This Week"; nút khoảng ngày từ thứ Hai tới hôm nay của tuần hiện tại                | Functional | Medium  | ✅                           |
+| TC-BATCH-02 | Preset mặc định là Last 7 Days                       | —                             | Mở màn                                                                                | Combobox hiện "Last 7 Days"; nút khoảng ngày từ (hôm nay − 6) tới hôm nay                          | Functional | Medium  | ✅                           |
 | TC-BATCH-03 | Đủ 10 preset                                         | —                             | Mở combobox                                                                           | Đúng 10 option theo thứ tự ở mục overview                                                          | Functional | Medium  | ✅                           |
 | TC-BATCH-04 | Header bảng batch                                    | —                             | Đọc `th`                                                                              | Batch Date, Batch Number, Status, Total Payment, Total Amount                                      | UI         | Medium  | ✅                           |
 | TC-BATCH-05 | Batch đang mở hiển thị đúng                          | Có batch chưa đóng            | Đọc dòng có Status Open                                                               | Batch Date = "Not closed yet", Total Amount có dạng tiền `$x,xxx.xx`                               | Functional | High    | ✅                           |

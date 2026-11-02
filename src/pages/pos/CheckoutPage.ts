@@ -406,6 +406,14 @@ export class CheckoutPage extends BasePage {
     return button.isEnabled();
   }
 
+  /**
+   * Is the header's red "!" up? It counts every device that needs attention, so it
+   * says "terminal OR printer" — only the Devices popover tells which.
+   */
+  async hasDeviceWarning(): Promise<boolean> {
+    return this.isVisible(CheckoutIds.headerDeviceWarning, Timeouts.ANIMATION);
+  }
+
   /** Hand the tip screen to the customer display. Disabled when the order cannot be tipped. */
   async pressTip(): Promise<this> {
     await this.click(CheckoutIds.tipBtn);
@@ -601,6 +609,20 @@ export class CheckoutPage extends BasePage {
   /** Is the "customer is adding a tip" wait dialog up on this window? */
   isWaitingForCustomerTip(): Promise<boolean> {
     return this.isVisible(CheckoutIds.waitingCustomerTipDialog);
+  }
+
+  /**
+   * Recovery: cancel a "Customer is adding a tip. Please wait…" the till was left on.
+   *
+   * The dialog is modal over the whole checkout, back button included, so a spec
+   * that failed mid-tip used to strand the till there — and in a grouped worker
+   * every later file then failed on "Return to the till". Returns whether it was up.
+   */
+  async cancelCustomerTipWaitIfShown(): Promise<boolean> {
+    if (!(await this.isVisible(CheckoutIds.waitingCustomerTipDialog, Timeouts.ANIMATION))) return false;
+    await this.click(CheckoutIds.waitingCustomerTipCancel);
+    await this.waitGone(CheckoutIds.waitingCustomerTipDialog, Timeouts.SHORT);
+    return true;
   }
 
   /** Is the "customer is signing" wait dialog up on this window? */

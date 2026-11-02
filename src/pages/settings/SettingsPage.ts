@@ -1,5 +1,6 @@
+import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
-import { Routes } from '../../constants/routes.js';
+import { pathOf, Routes } from '../../constants/routes.js';
 import { SettingsIds, settingsLanguageOption, settingsNavItem } from '../../constants/testids.js';
 import { SettingsLeaveGuardIds } from '../../constants/testids.settings.js';
 import type { Locator } from '../../helpers/selectors.js';
@@ -102,7 +103,15 @@ export class SettingsPage extends BasePage {
   async openSectionDiscarding(section: SettingsSectionName): Promise<this> {
     const path = SettingsSection[section];
     await this.click(settingsNavItem(path));
-    await this.confirmLeaveGuardIfShown();
+    // Race the guard against the navigation: a clean form just navigates, and
+    // probing for an absent guard used to cost the full SHORT timeout per call.
+    await browser.waitUntil(
+      async () =>
+        pathOf(await browser.getUrl()).startsWith(path) ||
+        (await this.isVisible(SettingsLeaveGuardIds.dialog, 0)),
+      { timeout: Timeouts.NAVIGATION, interval: 200 },
+    );
+    await this.confirmLeaveGuardIfShown(0);
     await waitUntilPath((current) => current.startsWith(path), {
       timeout: Timeouts.NAVIGATION,
       message: `Settings never opened ${section} (${path})`,
@@ -114,9 +123,13 @@ export class SettingsPage extends BasePage {
    * Confirm the unsaved-changes guard if a navigation raised it, discarding the
    * change. Returns whether it was up. Used by recovery paths too, so a failed
    * case that left a form dirty cannot strand the till under the dialog.
+   *
+   * `timeout` is how long to look for it. Pass a short one when the guard is
+   * either already up or cannot come any more — waiting out SHORT for a dialog
+   * that is not there is pure dead time.
    */
-  async confirmLeaveGuardIfShown(): Promise<boolean> {
-    if (!(await this.isVisible(SettingsLeaveGuardIds.dialog, Timeouts.SHORT))) return false;
+  async confirmLeaveGuardIfShown(timeout: number = Timeouts.SHORT): Promise<boolean> {
+    if (!(await this.isVisible(SettingsLeaveGuardIds.dialog, timeout))) return false;
     await this.click(SettingsLeaveGuardIds.confirm);
     await this.waitGone(SettingsLeaveGuardIds.dialog, Timeouts.SHORT);
     return true;

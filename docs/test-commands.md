@@ -24,17 +24,21 @@ npm run setup:drivers  # cài lại driver, thêm --force nếu cần
 
 ## 1. Chạy tất cả
 
-| Mục tiêu                                                                                       | Lệnh                     |
-| ---------------------------------------------------------------------------------------------- | ------------------------ |
-| **TẤT CẢ** — 18 unit + 227 E2E = 245 case                                                      | `npm run test:all`       |
-| Toàn bộ E2E (227 spec, có preflight), ENV=dev                                                  | `npm test`               |
-| Toàn bộ E2E rồi mở dashboard xem kết quả                                                       | `npm run test:dashboard` |
-| Như trên nhưng **đợi chạy xong** mới mở viewer (có progress marker, tránh xem nhầm kết quả cũ) | `npm run test:fresh`     |
+| Mục tiêu                                                                                            | Lệnh                     |
+| --------------------------------------------------------------------------------------------------- | ------------------------ |
+| **TẤT CẢ** — 18 unit + 227 E2E = 245 case                                                           | `npm run test:all`       |
+| Toàn bộ E2E (227 spec, có preflight), ENV=dev                                                       | `npm test`               |
+| Toàn bộ E2E rồi mở dashboard xem kết quả                                                            | `npm run test:dashboard` |
+| Như trên nhưng **đợi chạy xong** mới mở viewer (có progress marker, tránh xem nhầm kết quả cũ)      | `npm run test:fresh`     |
+| **Chạy NHANH NHẤT toàn suite** (retry 0, không Allure, quarantine) — xem [bulk-run.md](bulk-run.md) | `npm run test:bulk`      |
+| Chạy lại CHỈ các spec fail ở lần chạy gần nhất                                                      | `npm run test:failures`  |
 
 `test:all` dùng `&` (toán tử tuần tự của cmd) nên lane E2E vẫn chạy dù unit có fail.
 Dashboard chỉ phản ánh 227 E2E — unit test không feed vào.
 
 > Dùng `test:fresh` khi `test:dashboard` chỉ hiện kết quả cũ (stale history) do viewer mở trước khi lane chạy xong.
+
+> **Muốn chạy hết nhanh nhất?** `npm run test:bulk` rồi `npm run test:failures`. Lưu ý: 1 máy KHÔNG thể < 1h cho 2208 case (`maxInstances:1` khoá cứng do app single-instance + chung DB); < 1h cần shard qua nhiều máy. Chi tiết: [bulk-run.md](bulk-run.md).
 
 ---
 

@@ -106,7 +106,7 @@ export interface SettledCashOrder {
 export async function createAndSettleCashOrder(): Promise<SettledCashOrder> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 
   const { orderId } = await createOrder();
   await checkoutPage.waitForReady();
@@ -217,7 +217,7 @@ export interface SettledCardOrder {
 export async function createAndSettleCardOrder(): Promise<SettledCardOrder> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 
   const { orderId } = await createOrder();
   await checkoutPage.waitForReady();

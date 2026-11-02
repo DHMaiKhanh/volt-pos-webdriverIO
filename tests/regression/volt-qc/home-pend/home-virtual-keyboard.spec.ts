@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc port — 02 HOME: the on-screen (virtual) keyboard (WRITE + settings cases).
  *
  * Source: volt-qc `e2e/tests/02-home/home-plan-panels.spec.ts` (HOME-VK1…VK3, `@settings`).

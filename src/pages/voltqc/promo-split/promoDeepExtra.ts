@@ -556,9 +556,9 @@ export async function payAnyLang(): Promise<void> {
   await app.waitPath(/\/checkout/, 15_000);
 }
 
-/** Checkout method button by any-language label ("Thẻ quà tặng $33.00"). */
+/** Checkout method button by any-language label ("Thẻ quà tặng $33.00"; no space on 1.1.8x). */
 export const methodButtonByLabel = (label: string): readonly VqcQuery[] =>
-  inMain({ role: 'button', nameRe: `^${escapeRe(label)} \\$`, nth: 0 });
+  inMain({ role: 'button', nameRe: `^${escapeRe(label)}\\s*\\$`, nth: 0 });
 
 /** Wait until `until()`; answer the passcode (EN/VI) and pick No Tip on the customer display when asked. */
 export async function driveUntil(
@@ -616,6 +616,6 @@ export async function besideLabel(
 /** Home order panel: is the customer field locked (Re-Open: pointer-events-none)? */
 export async function customerFieldLocked(): Promise<boolean> {
   const cls =
-    (await P.attrOf(inMain({ text: VqpsHome.customerPlaceholder, nth: 0 }), 'class').catch(() => null)) ?? '';
+    (await P.attrOf(inMain({ textRe: VqpsHome.customerTextRe, nth: 0 }), 'class').catch(() => null)) ?? '';
   return /pointer-events-none/.test(cls);
 }

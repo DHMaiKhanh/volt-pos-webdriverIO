@@ -313,7 +313,7 @@ export class ChargeFeePage extends BasePage {
 
   /** Replace the tax value. Non-digits and a leading minus are stripped; the field clamps at 100. */
   async setTax(value: string): Promise<this> {
-    await this.setValue(ChargeFeeIds.taxInput, value);
+    await this.replaceValue(ChargeFeeIds.taxInput, value);
     await settle();
     return this;
   }
@@ -351,14 +351,14 @@ export class ChargeFeePage extends BasePage {
 
   /** Replace the owner percentage. Leaves the card dirty — Save is never pressed here. */
   async setDiscountOwner(value: string): Promise<this> {
-    await this.setValue(ChargeFeeIds.discountOwnerInput, value);
+    await this.replaceValue(ChargeFeeIds.discountOwnerInput, value);
     await settle();
     return this;
   }
 
   /** Replace the staff percentage. */
   async setDiscountStaff(value: string): Promise<this> {
-    await this.setValue(ChargeFeeIds.discountStaffInput, value);
+    await this.replaceValue(ChargeFeeIds.discountStaffInput, value);
     await settle();
     return this;
   }

@@ -329,7 +329,9 @@ export function customerTipPresets(): Promise<TipPreset[]> {
         index,
         percent: Number(p?.[1] ?? Number.NaN),
         amount: lastMoney(r.t.replace(p?.[0] ?? '', '')),
-        selected: /bg-primary|border-primary|ring-/.test(r.c),
+        // Exact `bg-primary` token only: every tile carries `hover:bg-primary/…` /
+        // `border-primary` / `focus:ring-…`, which made all of them read selected.
+        selected: r.c.split(/\s+/).includes('bg-primary'),
       };
     });
   });
@@ -467,7 +469,7 @@ export async function cleanTill(): Promise<void> {
   if (await paymentSuccessPage.isActive().catch(() => false)) await noReceipt().catch(() => undefined);
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 export async function isHomePayDisabled(): Promise<boolean> {

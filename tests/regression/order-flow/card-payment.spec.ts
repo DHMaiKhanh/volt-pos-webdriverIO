@@ -69,7 +69,7 @@ const SETTLE_ENABLED = process.env.CARD_SETTLE === '1';
 async function openCardCheckout(staffIndex: number, serviceIndex: number): Promise<string> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 
   const staffCount = await homePage.visibleStaffCount();
   const serviceCount = await homePage.visibleServiceCount();
@@ -86,7 +86,7 @@ async function openCardCheckout(staffIndex: number, serviceIndex: number): Promi
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 describe('Order flow — Card payment', () => {

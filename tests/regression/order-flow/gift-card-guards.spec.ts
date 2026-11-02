@@ -54,7 +54,7 @@ describe('Payment flows — Gift Card', () => {
   after(async () => {
     await returnToHome();
     await homePage.waitForReady();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
   });
 
   it(
@@ -68,7 +68,7 @@ describe('Payment flows — Gift Card', () => {
       this.timeout(Timeouts.MOCHA_HOOK);
 
       await returnToHome();
-      if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+      await homePage.discardDraftIfAny();
       await createOrder();
       await checkoutPage.waitForReady();
 

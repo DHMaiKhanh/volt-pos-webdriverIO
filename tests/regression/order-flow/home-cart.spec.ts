@@ -44,7 +44,7 @@ const expectedTotal = (t: CartTotals): number => t.subtotal - t.itemDiscount - t
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 describe('Order flow — Home & Cart', () => {

@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc port — 05 SPLIT "deep": multi-method checks, void, tips, receipts, reports, Split Tip Setting, Vietnamese.
  *
  * Source: volt-qc `e2e/tests/05-split/split-deep.spec.ts` (SPLIT-D01..D06).

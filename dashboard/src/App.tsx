@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from './lib/useHistory';
 import { formatDuration } from './lib/format';
-import type { RunInfo, RunRequest } from './lib/gui';
+import type { RunInfo, RunRequest, WarmState, WarmStatus } from './lib/gui';
 import { useCatalog, useGuiRunner, usePersisted } from './lib/gui';
 import { Sidebar, type FileCounts } from './components/gui/Sidebar';
 import { ResultsTab } from './components/gui/ResultsTab';
@@ -31,6 +31,22 @@ const relSpec = (file: string): string => {
 /** Strip the `@tag` suffixes `title()` appends, so live titles match catalogue titles. */
 const cleanTitle = (t: string): string => t.replace(/(\s+@[a-z][\w-]*)+\s*$/i, '').trim();
 
+/** Pre-warm pill text (dashboard/server/warm.mjs states). */
+const WARM_LABEL: Record<WarmState, string> = {
+  off: 'Mở sẵn app: tắt',
+  cold: 'App chưa mở sẵn',
+  warming: 'Đang mở sẵn app…',
+  ready: 'App mở sẵn · chạy ngay',
+  busy: 'App đang bận',
+  error: 'Mở sẵn app lỗi',
+};
+
+const warmTitle = (w: WarmStatus): string =>
+  'Mở sẵn app: runner boot app (CDP) từ trước, nên bấm Chạy là pha attach chạy luôn trong vài giây\n' +
+  'thay vì đợi splash ~20s (máy nguội tới ~2 phút). Spec thanh toán / màn khách vẫn launch app riêng.\n' +
+  (w.detail ? `\nTrạng thái: ${w.detail}\n` : '') +
+  '\nBỏ tick để tắt (đóng luôn app runner đã mở). Log: .tmp/gui-warm.log';
+
 function useThemeToggle(): [string, () => void] {
   const [theme, setTheme] = useState(document.documentElement.dataset.theme ?? '');
   const toggle = (): void => {
@@ -54,6 +70,7 @@ export function App(): JSX.Element {
   const [env, setEnv] = usePersisted('gui-env', 'dev');
   const [selectedList, setSelectedList] = usePersisted<string[]>('gui-selected', []);
   const [tags, setTags] = usePersisted<string[]>('gui-tags', []);
+  const [fast, setFast] = usePersisted('gui-fast', true);
   const [failedOnly, setFailedOnly] = useState(false);
   const [notifyPrefs, setNotifyPrefs] = usePersisted<NotifyPrefs>('gui-notify', DEFAULT_NOTIFY);
   const [startError, setStartError] = useState<string | null>(null);
@@ -76,6 +93,29 @@ export function App(): JSX.Element {
   );
   const runner = useGuiRunner(onFinished);
   const { run, running, results } = runner;
+
+  // Coming back to the runner is when a Run is likely: if the pre-warmed app is
+  // not up (closed by hand, …), retry now instead of waiting out the server's
+  // 3-minute backoff. At most once per 30s.
+  const warmNow = useRef({ warm: runner.warm, running });
+  warmNow.current = { warm: runner.warm, running };
+  const { setWarm } = runner;
+  useEffect(() => {
+    let last = 0;
+    const wake = (): void => {
+      const { warm, running: busy } = warmNow.current;
+      if (document.visibilityState !== 'visible' || busy || !warm?.enabled) return;
+      if (!['cold', 'busy', 'error'].includes(warm.state) || Date.now() - last < 30_000) return;
+      last = Date.now();
+      void setWarm();
+    };
+    window.addEventListener('focus', wake);
+    document.addEventListener('visibilitychange', wake);
+    return () => {
+      window.removeEventListener('focus', wake);
+      document.removeEventListener('visibilitychange', wake);
+    };
+  }, [setWarm]);
 
   const selected = useMemo(() => new Set(selectedList), [selectedList]);
   const knownPaths = useMemo(() => new Set(features.flatMap((f) => f.files.map((x) => x.path))), [features]);
@@ -100,7 +140,8 @@ export function App(): JSX.Element {
 
   // Window title carries progress so the taskbar shows it.
   useEffect(() => {
-    document.title = running && run ? `(${run.summary.done}/${run.planned}) Volt POS Test Runner` : 'Volt POS Test Runner';
+    document.title =
+      running && run ? `(${run.summary.done}/${run.planned}) Volt POS Test Runner` : 'Volt POS Test Runner';
   }, [running, run]);
 
   /* Per-file counts: live run first, else the last recorded run. */
@@ -150,7 +191,13 @@ export function App(): JSX.Element {
 
   const runSelected = (): void => {
     const specs = selectedList.filter((p) => knownPaths.has(p));
-    void start({ specs, tags, label: `${specs.length} spec${tags.length ? ` · ${tags.join(' ')}` : ''}` });
+    const useFast = fast && env === 'dev';
+    void start({
+      specs,
+      tags,
+      fast: useFast,
+      label: `${useFast ? '⚡ ' : ''}${specs.length} spec${tags.length ? ` · ${tags.join(' ')}` : ''}`,
+    });
   };
 
   const onSelect = (paths: string[], on: boolean): void =>
@@ -163,16 +210,36 @@ export function App(): JSX.Element {
       return [...next];
     });
 
-  const remaining = run && running ? Math.max(0, run.estimateMs - (now - new Date(run.startedAt).getTime())) : 0;
+  const remaining =
+    run && running ? Math.max(0, run.estimateMs - (now - new Date(run.startedAt).getTime())) : 0;
+  const warmState: WarmState = runner.warm?.enabled ? runner.warm.state : 'off';
+  const lanesCopies = runner.lanes?.copies ?? [];
+  const lanesSignedIn = lanesCopies.filter((c) => c.signedIn).length;
+  /** First copy still on its QR login — the "Mở QR" button opens that one. */
+  const unsignedCopy = lanesCopies.find((c) => !c.signedIn);
   const selectedCount = selectedList.filter((p) => knownPaths.has(p)).length;
   // Test cases (it) the run will execute: tests in the ticked files, narrowed by the tag chips.
+  // ⚡ fast mode never runs the _manual stubs, _recovery probes or @broken tests.
+  const fastOn = fast && env === 'dev';
   const selectedTests = useMemo(
     () =>
       features
         .flatMap((f) => f.files)
         .filter((f) => selected.has(f.path))
-        .reduce((n, f) => n + f.tests.filter((t) => tags.length === 0 || t.tags.some((g) => tags.includes(g))).length, 0),
-    [features, selected, tags],
+        .filter(
+          (f) => !fastOn || !(f.path.includes('/volt-qc/_manual/') || f.path.startsWith('tests/_recovery/')),
+        )
+        .reduce(
+          (n, f) =>
+            n +
+            f.tests.filter(
+              (t) =>
+                (tags.length === 0 || t.tags.some((g) => tags.includes(g))) &&
+                (!fastOn || !t.tags.includes('@broken')),
+            ).length,
+          0,
+        ),
+    [features, selected, tags, fastOn],
   );
 
   return (
@@ -185,7 +252,12 @@ export function App(): JSX.Element {
             <div className="brand-sub">WebdriverIO E2E · chọn &amp; chạy test</div>
           </div>
         </div>
-        <select value={env} onChange={(e) => setEnv(e.target.value)} disabled={running} title="Môi trường (build .exe)">
+        <select
+          value={env}
+          onChange={(e) => setEnv(e.target.value)}
+          disabled={running}
+          title="Môi trường (build .exe)"
+        >
           <option value="dev">ENV: dev</option>
           <option value="staging">ENV: staging</option>
           <option value="prod">ENV: prod (chỉ smoke)</option>
@@ -200,12 +272,85 @@ export function App(): JSX.Element {
                 ? `Xong · ${run.summary.failed} lỗi`
                 : 'Sẵn sàng'}
         </span>
+        {env === 'dev' && runner.warm && (
+          <span className={`warm-pill ${warmState}`} title={warmTitle(runner.warm)}>
+            <label>
+              <input
+                type="checkbox"
+                checked={runner.warm.enabled}
+                onChange={(e) => void runner.setWarm(e.target.checked)}
+              />
+              <i />
+              {WARM_LABEL[warmState]}
+            </label>
+            {runner.warm.enabled && !running && ['cold', 'busy', 'error'].includes(warmState) && (
+              <button
+                className="warm-retry"
+                onClick={() => void runner.setWarm()}
+                title="Mở sẵn app ngay bây giờ"
+              >
+                ↻
+              </button>
+            )}
+          </span>
+        )}
+        {env === 'dev' && lanesCopies.length > 0 && (
+          <span
+            className={`warm-pill ${lanesSignedIn > 0 ? 'ready' : 'busy'}`}
+            title={
+              lanesSignedIn > 0
+                ? `⚡ chạy nhanh chia spec cho ${1 + lanesSignedIn} app (app gốc + bản sao chạy ngầm). ` +
+                  'Cài đặt / báo cáo vẫn chạy riêng ở cuối. Xem docs/parallel-instances.md'
+                : 'Bản sao (D:\\VoltE2E\\i1) chưa đăng nhập: bấm "Mở QR", quét bằng app GCI Business (tiệm 14), ' +
+                  'đăng nhập xong thì đóng cửa sổ bản sao. Tới lúc đó ⚡ chạy 1 app như cũ.'
+            }
+          >
+            <i />
+            {lanesSignedIn > 0 ? `${1 + lanesSignedIn} app song song` : 'Bản sao chưa đăng nhập'}
+            {unsignedCopy && !running && (
+              <button
+                className="warm-retry"
+                onClick={() => void runner.signInCopy(unsignedCopy.n)}
+                title={`Mở bản sao i${unsignedCopy.n} với màn QR đăng nhập`}
+              >
+                Mở QR i{unsignedCopy.n}
+              </button>
+            )}
+          </span>
+        )}
+        {env === 'dev' && runner.freeze && (
+          <span
+            className={`warm-pill ${runner.freeze.frozen > 0 ? 'busy' : runner.freeze.enabled ? 'ready' : 'off'}`}
+            title={
+              'Khi chạy cả bộ (≥ 20 spec): tạm dừng Edge/Chrome (profile của bạn), Discord, WhatsApp, Teams, WPS, ' +
+              'OneDrive… và trả RAM của chúng cho các app Volt POS. Hết run hoặc bấm Dừng thì chúng chạy lại, ' +
+              'tab và tin nhắn còn nguyên. Không đụng Claude, Windows, WebView2. Script: scripts/freeze-apps.ps1'
+            }
+          >
+            <label>
+              <input
+                type="checkbox"
+                checked={runner.freeze.enabled}
+                onChange={(e) => void runner.setFreeze(e.target.checked)}
+              />
+              <i />
+              {runner.freeze.frozen > 0
+                ? `Đang đóng băng ${runner.freeze.frozen} tiến trình`
+                : 'Đóng băng app khác khi chạy'}
+            </label>
+          </span>
+        )}
         <span className="spacer" />
         {running && run && <span className="muted eta">≈ {formatDuration(remaining)} ước tính</span>}
         <button
           className="btn"
           disabled={running || lastFailedSpecs.length === 0}
-          onClick={() => void start({ specs: lastFailedSpecs, label: `Test lỗi lần trước (${lastFailedSpecs.length} spec)` })}
+          onClick={() =>
+            void start({
+              specs: lastFailedSpecs,
+              label: `Test lỗi lần trước (${lastFailedSpecs.length} spec)`,
+            })
+          }
           title={lastFailedSpecs.join('\n')}
         >
           ↻ Test lỗi lần trước ({lastFailedSpecs.length})
@@ -215,7 +360,29 @@ export function App(): JSX.Element {
             ■ Dừng
           </button>
         ) : (
-          <button className="btn primary big" disabled={!runner.online || selectedCount === 0} onClick={runSelected}>
+          <label
+            className={`fast-toggle${env === 'dev' ? '' : ' disabled'}`}
+            title={
+              'Chạy nhanh: spec thường attach vào app mở sẵn (bắt đầu ngay), chỉ spec thanh toán / màn khách / @dual-window\n' +
+              'mới launch app riêng (gom file mỗi lần mở). Bỏ case kiểm tay (_manual), _recovery và @broken. Chỉ áp dụng ENV dev.\n' +
+              'Chạy từ 20 file trở lên thì LUÔN chạy nhanh — và chia cho 2 app song song khi bản sao đã đăng nhập.'
+            }
+          >
+            <input
+              type="checkbox"
+              checked={fast}
+              disabled={env !== 'dev'}
+              onChange={(e) => setFast(e.target.checked)}
+            />
+            ⚡ Chạy nhanh
+          </label>
+        )}
+        {running ? null : (
+          <button
+            className="btn primary big"
+            disabled={!runner.online || selectedCount === 0}
+            onClick={runSelected}
+          >
             ▶ Chạy {selectedCount} spec · {selectedTests.toLocaleString('vi-VN')} test
           </button>
         )}
@@ -239,7 +406,9 @@ export function App(): JSX.Element {
           activeSpec={run?.activeSpec ?? null}
           disabled={running || !runner.online}
           onRunFile={(file) => void start({ specs: [file], label: file.split('/').pop() })}
-          onRunTest={(file, title) => void start({ specs: [file], titles: [title], label: title, retries: 0 })}
+          onRunTest={(file, title) =>
+            void start({ specs: [file], titles: [title], label: title, retries: 0 })
+          }
         />
 
         <main className="main">
@@ -258,7 +427,8 @@ export function App(): JSX.Element {
           <div className="tab-body">
             {!runner.online && (
               <div className="banner bad">
-                Không kết nối được runner server. Mở bằng <code>npm run runner:gui</code> (hoặc <code>npm run dashboard:full</code> khi dev).
+                Không kết nối được runner server. Mở bằng <code>npm run runner:gui</code> (hoặc{' '}
+                <code>npm run dashboard:full</code> khi dev).
               </div>
             )}
             {catalogError && <div className="banner bad">Không đọc được danh sách spec: {catalogError}</div>}
@@ -271,7 +441,9 @@ export function App(): JSX.Element {
               </div>
             )}
             {env === 'prod' && (
-              <div className="banner warn">ENV prod là app thật của tiệm — chỉ chạy được spec trong tests/smoke (read-only).</div>
+              <div className="banner warn">
+                ENV prod là app thật của tiệm — chỉ chạy được spec trong tests/smoke (read-only).
+              </div>
             )}
 
             {tab === 'dashboard' && <HistoryTab history={history} mode="overview" />}
@@ -282,13 +454,20 @@ export function App(): JSX.Element {
                 now={now}
                 disabled={running || !runner.online}
                 onRerun={(file, title) =>
-                  void start({ specs: [file], titles: [cleanTitle(title)], label: cleanTitle(title), retries: 0 })
+                  void start({
+                    specs: [file],
+                    titles: [cleanTitle(title)],
+                    label: cleanTitle(title),
+                    retries: 0,
+                  })
                 }
               />
             )}
             {tab === 'console' && <ConsoleTab runner={runner} />}
             {tab === 'history' && <HistoryTab history={history} mode="full" />}
-            {tab === 'schedule' && <ScheduleTab env={env} selected={selectedList.filter((p) => knownPaths.has(p))} tags={tags} />}
+            {tab === 'schedule' && (
+              <ScheduleTab env={env} selected={selectedList.filter((p) => knownPaths.has(p))} tags={tags} />
+            )}
             {tab === 'notify' && <NotifyTab prefs={notifyPrefs} onChange={setNotifyPrefs} />}
           </div>
         </main>

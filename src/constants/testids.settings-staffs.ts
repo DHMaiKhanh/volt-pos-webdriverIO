@@ -169,6 +169,7 @@ export const StaffsIds = {
   nickname: locator('nickname field', 'settings-staffs-nickname', '#nickname'),
   staffCode: locator('staff code field', 'settings-staffs-staff-code', 'input[name="staffCode"]'),
   city: locator('city field', 'settings-staffs-city', '#city'),
+  address: locator('address field', 'settings-staffs-address', '#address'),
   countrySelect: locator(
     'country select',
     'settings-staffs-country',

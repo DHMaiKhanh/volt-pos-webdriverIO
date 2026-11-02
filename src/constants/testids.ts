@@ -347,6 +347,20 @@ export const HomeIds = {
     byTestIdPrefix('home-customer-suggestion-item-'),
     '[data-slot="popover-content"] div.active\\:bg-accent',
   ),
+  /**
+   * The order panel's customer search box on 1.1.8x ("Phone, name or email") —
+   * a real text input on a Quick Checkout order. Typing a phone lists matches
+   * under "Customers Found".
+   */
+  customerSearchInput: locator(
+    'customer search input',
+    'home-customer-search-input',
+    inputWithAnyPlaceholder(
+      'Phone, name or email',
+      'Enter Customer Phone, Name or Email',
+      'Nhập SĐT, tên hoặc email khách hàng',
+    ),
+  ),
   createCustomerNameInput: locator(
     'create customer name input',
     'home-create-customer-name-input',
@@ -877,6 +891,16 @@ export const CheckoutIds = {
    */
   completePaymentBtn: locator('complete payment button', 'checkout-complete-payment-btn', 'button.bg-green'),
   /**
+   * The red "!" on the header Devices button (`header-devices-status.tsx`): up while
+   * any device needs attention — a disconnected card terminal, or the printer.
+   */
+  headerDeviceWarning: locator(
+    'header device warning badge',
+    'header-devices-warning',
+    // The icon span (an inline svg), not the notification bell's count badge.
+    '//header//button//span[contains(@class,"text-destructive") and contains(@class,"absolute") and .//*[local-name()="svg"]]',
+  ),
+  /**
    * Re-open variants of the green action (`list-action-detail.tsx`). "Re-Open Done"
    * renders while a reopened order owes nothing and has no entered amount — it
    * CANCELS the reopen (order back to Successful, no edit allowance spent).
@@ -1128,6 +1152,14 @@ export const CheckoutIds = {
     // a tip." / "Please wait…"), so it is true for the tip-wait dialog ALONE.
     '//*[@data-slot="dialog-content"][contains(normalize-space(),"Customer is adding a tip")' +
       ' or contains(normalize-space(),"đang thêm tiền tip") or contains(normalize-space(),"Vui lòng chờ")]',
+  ),
+  /** The tip-wait dialog's own Cancel — the only way off a till parked on it. */
+  waitingCustomerTipCancel: locator(
+    'waiting for customer tip cancel',
+    'waiting-customer-tip-cancel',
+    '//*[@data-slot="dialog-content"][contains(normalize-space(),"Customer is adding a tip")' +
+      ' or contains(normalize-space(),"đang thêm tiền tip")]//button[contains(normalize-space(),"Cancel")' +
+      ' or contains(normalize-space(),"Hủy")]',
   ),
   waitingCustomerSignatureDialog: locator(
     'waiting for customer signature dialog',
@@ -1623,6 +1655,17 @@ export const homeCustomerKeypadKey = (value: string): Locator =>
 export const customerSuggestionItem = (customerId: string): Locator =>
   locator(`customer suggestion ${customerId}`, `home-customer-suggestion-item-${customerId}`);
 
+/**
+ * A "Customers Found" row under the customer search box, picked by the masked
+ * phone it prints (`***-***-0593`) — the rows carry no testid on 1.1.8x.
+ */
+export const customerSearchResult = (phone: string): Locator =>
+  locator(
+    `customer search result …${phone.slice(-4)}`,
+    `home-customer-search-result-${phone}`,
+    `//div[contains(@class,"active:bg-accent")][.//*[normalize-space(.)="***-***-${phone.slice(-4)}"]]`,
+  );
+
 /** Per-line remove button inside the order panel. */
 export const removeServiceBtn = (orderItemId: string): Locator =>
   locator(`remove service ${orderItemId}`, `home-order-remove-service-btn-${orderItemId}`);
@@ -1745,7 +1788,13 @@ export const paymentSuccessActionBtn = (value: string): Locator =>
  * Only meaningful when the merchant runs percent-mode tipping.
  */
 export const customerTipOption = (percent: number | string): Locator =>
-  locator(`customer tip option ${percent}`, `customer-tip-option-${percent}`);
+  locator(
+    `customer tip option ${percent}`,
+    `customer-tip-option-${percent}`,
+    // Installed 1.1.8x builds strip the testid; the tile prints "20%" over its dollar value,
+    // as TWO text nodes ("20" + "%") in one <p> — so match the element's string value, not text().
+    `//p[normalize-space(.)="${String(percent).replace(/%$/, '')}%"]`,
+  );
 
 /**
  * A key on the customer custom-tip keypad (the shared `Keypad`, no testids).

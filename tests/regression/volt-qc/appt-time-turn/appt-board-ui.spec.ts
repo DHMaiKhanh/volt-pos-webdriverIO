@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc port — 08 APPOINTMENT board: entry, defaults, no-write surface,
  * persistence, offline, Vietnamese and Dark mode.
  *

@@ -135,3 +135,75 @@ describe('expectedAward', () => {
     );
   });
 });
+
+/**
+ * Portal "Earn points on tip" (`earn_on_tip`, VP-4812). Figures are the live
+ * 2026-11-01 run on merchant #14 (1 point / $1): $63.00 cash and $64.89 card,
+ * each with a $12.00 tip — docs/screens/earn-points-on-tip/earn-points-on-tip-test-cases.md.
+ */
+describe('earn_on_tip (VP-4812)', () => {
+  const setting = (earnOnTip?: unknown): ReturnType<typeof parsePointPaymentSetting> =>
+    parsePointPaymentSetting(
+      config({
+        selected_type: 'payment_method',
+        point_bonus: 10,
+        ...(earnOnTip === undefined ? {} : { earn_on_tip: earnOnTip }),
+      }),
+    );
+  const award = (s: ReturnType<typeof setting>, transactions: PointTender[]): number =>
+    expectedAward({
+      setting: s,
+      transactions,
+      items: SERVICE,
+      orderTotal: transactions.reduce((sum, t) => sum + (t.amount ?? 0) + (t.tip ?? 0), 0),
+      tipTotal: transactions.reduce((sum, t) => sum + (t.tip ?? 0), 0),
+    }).points;
+
+  it('a row without the key keeps the old behaviour: tips earn', () => {
+    const s = setting();
+    assert.equal(s.earnOnTip, true);
+    assert.equal(s.earnOnTipDefaulted, true);
+    assert.equal(award(s, [sale('cash', 6_300, 1_200)]), 75);
+  });
+
+  it('a non-boolean value is treated as missing', () => {
+    const s = setting('false');
+    assert.equal(s.earnOnTip, true);
+    assert.equal(s.earnOnTipDefaulted, true);
+  });
+
+  it('on: cash and card earn on amount + tip (EPT-02 / EPT-03)', () => {
+    const s = setting(true);
+    assert.equal(s.earnOnTipDefaulted, false);
+    assert.equal(award(s, [sale('cash', 6_300, 1_200)]), 75);
+    assert.equal(award(s, [sale('card', 6_489, 1_200)]), 76);
+  });
+
+  it('off: cash and card earn on the amount alone (EPT-04 / EPT-05)', () => {
+    const s = setting(false);
+    assert.equal(s.earnOnTip, false);
+    assert.equal(award(s, [sale('cash', 6_300, 1_200)]), 63);
+    assert.equal(award(s, [sale('card', 6_489, 1_200)]), 64);
+  });
+
+  it('off with no tip earns exactly what on does (EPT-06)', () => {
+    assert.equal(award(setting(false), [sale('cash', 6_300)]), award(setting(true), [sale('cash', 6_300)]));
+  });
+
+  it('off: a split keeps each tender on its own amount', () => {
+    assert.equal(award(setting(false), [sale('cash', 3_000, 500), sale('card', 3_000, 700)]), 60);
+  });
+
+  it('off: a tender that carries only a tip earns nothing', () => {
+    assert.equal(award(setting(false), [sale('cash', 0, 500)]), 0);
+  });
+
+  it('Auto ignores the setting — the bonus is the award either way (EPT-08)', () => {
+    const auto = (earnOnTip: boolean): ReturnType<typeof setting> =>
+      parsePointPaymentSetting(
+        config({ selected_type: 'auto_checkout', point_bonus: 10, earn_on_tip: earnOnTip }),
+      );
+    assert.equal(award(auto(true), [sale('cash', 6_300, 1_200)]), 10);
+    assert.equal(award(auto(false), [sale('cash', 6_300, 1_200)]), 10);
+  });
+});

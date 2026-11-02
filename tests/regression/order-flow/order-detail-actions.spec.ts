@@ -43,7 +43,7 @@ describe('Order flow — Order detail actions', () => {
     this.timeout(Timeouts.MOCHA_HOOK);
 
     await returnToHome();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
 
     const created = await createOrder();
     orderId = created.orderId;

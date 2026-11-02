@@ -140,7 +140,7 @@ describe('volt-qc 13 CD — customer display under Settings', () => {
 
         await app.click([{ css: 'main' }, { role: 'button', nameRe: '^(Pay|Thanh toán)$', nth: 0 }]);
         await app.waitPath(/\/checkout/, 15_000);
-        await app.click([{ css: 'main' }, { role: 'button', nameRe: '^(Other|Khác) \\$', nth: 0 }]);
+        await app.click([{ css: 'main' }, { role: 'button', nameRe: '^(Other|Khác)\\s*\\$', nth: 0 }]);
         if ((await completeAnyLang()) === 'tip') {
           await enOnly('Add a tip', ['Add a tip', 'Custom Tip', 'No Tip', 'Continue', 'Tip Amount:']);
           await cust.chooseTipAndContinue('none');

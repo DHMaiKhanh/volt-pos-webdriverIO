@@ -88,16 +88,21 @@ export const QuickPayIds = {
 } satisfies Record<string, Locator>;
 
 /**
- * The order panel's customer slot ("Enter Customer Phone, Name or Email"). On
- * build 1.1.40 the phone keypad is NOT mounted until this slot is tapped — it
- * then replaces the service panel with the keypad + Back / Done.
+ * The order panel's customer slot ("Enter Customer Phone, Name or Email"; on
+ * 1.1.8x "Phone, name or email"). On build 1.1.40 the phone keypad is NOT
+ * mounted until this slot is tapped — it then replaces the service panel with
+ * the keypad + Back / Done.
  */
 export const CustomerEntryIds = {
   trigger: locator(
     'customer entry trigger',
     'home-customer-entry-trigger',
-    `//*[contains(@class,"is-changing-staff")][.//*[normalize-space(.)="Enter Customer Phone, Name or Email" or normalize-space(.)="Nhập SĐT, tên hoặc email khách hàng"]]`,
-    textIsAnyOf('Enter Customer Phone, Name or Email', 'Nhập SĐT, tên hoặc email khách hàng'),
+    `//*[contains(@class,"is-changing-staff")][.//*[normalize-space(.)="Enter Customer Phone, Name or Email" or normalize-space(.)="Phone, name or email" or normalize-space(.)="Nhập SĐT, tên hoặc email khách hàng"]]`,
+    textIsAnyOf(
+      'Enter Customer Phone, Name or Email',
+      'Phone, name or email',
+      'Nhập SĐT, tên hoặc email khách hàng',
+    ),
   ),
 } satisfies Record<string, Locator>;
 

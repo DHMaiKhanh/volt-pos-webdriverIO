@@ -519,11 +519,17 @@ export async function noResultsShown(kind: DlgKind): Promise<boolean> {
 
 const esc = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Choose `staff` in the Add dialog's searchable picker (option text = avatar initial + nickname). */
+/**
+ * Choose `staff` in the Add dialog's searchable picker. The option is the avatar
+ * then the nickname with no space between (`time-tracking-form-staff.tsx`), and an
+ * avatar with no photo renders the initial: staff "888" reads "8888". So one
+ * leading character is allowed — `(^|\s)888$` never matched it, and the first
+ * free staff sorts first, so 7 time-tracking cases failed on it every run.
+ */
 export async function selectStaff(kind: DlgKind, staff: string): Promise<void> {
   await openStaffPicker(kind);
   await fillStaffSearch(kind, staff);
-  await P.clickQ([dlgQ(kind), { role: 'option', nameRe: `(^|\\s)${esc(staff)}$`, nth: 0 }]);
+  await P.clickQ([dlgQ(kind), { role: 'option', nameRe: `(^\\S?|\\s)${esc(staff)}$`, nth: 0 }]);
   await settle(200);
 }
 

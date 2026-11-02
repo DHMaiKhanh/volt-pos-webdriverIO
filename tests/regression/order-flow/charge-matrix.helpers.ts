@@ -78,7 +78,7 @@ export interface QuickPayShape {
 export async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 /** Take the index onto a tile that exists: `i % max(count, 1)` never throws on a short panel. */

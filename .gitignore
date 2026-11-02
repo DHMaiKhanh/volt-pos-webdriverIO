@@ -24,3 +24,6 @@ Thumbs.db
 
 # Playwright MCP debug artifacts
 .playwright-mcp/
+
+# Fastboy Portal login session (QR-scanned once by `npm run portal:login`)
+.portal-profile/

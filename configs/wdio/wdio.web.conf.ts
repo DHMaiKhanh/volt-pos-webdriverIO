@@ -6,6 +6,14 @@ import { loadEnv } from '../env/loadEnv.js';
 const env = loadEnv();
 
 /**
+ * Fastboy Portal runs (`npm run portal:*`) sign in by QR (GCI Business app) or
+ * Google — nothing a spec can type. They therefore run Edge on a FIXED profile,
+ * `.portal-profile/` (git-ignored): `portal:login` waits while a person scans the
+ * QR once, and every later run reuses the session cookie that profile keeps.
+ */
+const PORTAL_PROFILE = process.env.PORTAL_PROFILE === '1' ? path.join(Paths.ROOT, '.portal-profile') : '';
+
+/**
  * WEB lane — drive the GoPOS web POS in a real browser.
  *
  * ## Why this is its own config
@@ -40,7 +48,11 @@ export const config: WebdriverIO.Config = {
     {
       browserName: 'MicrosoftEdge',
       'ms:edgeOptions': {
-        args: ['--disable-popup-blocking', '--start-maximized'],
+        args: [
+          '--disable-popup-blocking',
+          '--start-maximized',
+          ...(PORTAL_PROFILE ? [`--user-data-dir=${PORTAL_PROFILE}`] : []),
+        ],
       },
     },
   ],

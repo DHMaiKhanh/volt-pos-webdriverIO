@@ -37,6 +37,13 @@ export interface PointPaymentSetting {
   checkoutTypeDefaulted: boolean;
   /** The stored `point_bonus` was missing or invalid — the app fell back to 0. */
   pointBonusDefaulted: boolean;
+  /**
+   * Portal "Earn points on tip" (`earn_on_tip`, VP-4812). Off → Point Config
+   * counts what the customer paid for the order and leaves the tip out.
+   */
+  earnOnTip: boolean;
+  /** The stored `earn_on_tip` was missing or not a boolean — tips count, as they did before VP-4812. */
+  earnOnTipDefaulted: boolean;
 }
 
 const DEFAULT_POINT_CENTS = 100;
@@ -74,6 +81,7 @@ export function parsePointPaymentSetting(value: string | null | undefined): Poin
   const stored = asObject(value ?? '');
   const selected = stored['selected_type'];
   const bonus = stored['point_bonus'];
+  const earnOnTip = stored['earn_on_tip'];
   return {
     methods: {
       cash: parseMethod(stored['cash']),
@@ -85,6 +93,8 @@ export function parsePointPaymentSetting(value: string | null | undefined): Poin
     pointBonus: isPointBonus(bonus) ? bonus : 0,
     checkoutTypeDefaulted: !isCheckoutType(selected),
     pointBonusDefaulted: !isPointBonus(bonus),
+    earnOnTip: earnOnTip !== false,
+    earnOnTipDefaulted: typeof earnOnTip !== 'boolean',
   };
 }
 
@@ -114,6 +124,9 @@ const paidWithTip = (tender: PointTender): number => (tender.amount ?? 0) + (ten
 /**
  * Point Config award (Manual / Hybrid).
  *
+ * The tip is part of the earning amount only while `earnOnTip` is on (VP-4812);
+ * off, each tender earns on its `amount` alone.
+ *
  * One deliberate difference from the app: the app also drops a CARD tender
  * whose gateway status is not settled yet. The suite only measures card
  * completions that reached payment-success, so every card tender passed here
@@ -124,6 +137,7 @@ export function pointsFromConfig(
   transactions: readonly PointTender[],
   items: readonly PointOrderItem[],
 ): number {
+  const earning = (t: PointTender): number => (setting.earnOnTip ? paidWithTip(t) : (t.amount ?? 0));
   const voided = new Set(
     transactions.flatMap((t) => (t.transactionType === 'void' && t.referenceId ? [t.referenceId] : [])),
   );
@@ -133,11 +147,11 @@ export function pointsFromConfig(
       !(t.status ?? '').toLowerCase().includes('void') &&
       !(t.id && voided.has(t.id)) &&
       (t.transactionType ?? 'sale') === 'sale' &&
-      paidWithTip(t) > 0,
+      earning(t) > 0,
   );
   if (tenders.length === 0) return 0;
 
-  const tenderTotal = tenders.reduce((sum, t) => sum + paidWithTip(t), 0);
+  const tenderTotal = tenders.reduce((sum, t) => sum + earning(t), 0);
   const giftCardSold = items.reduce(
     (sum, item) => (item.giftCardId ? sum + (item.servicePrice ?? item.finalPrice ?? 0) : sum),
     0,
@@ -146,7 +160,7 @@ export function pointsFromConfig(
   if (eligible <= 0) return 0;
 
   // Pro-rate the eligible total over the tenders; the rounding drift lands on the last one.
-  const bases = tenders.map((t) => Math.round((paidWithTip(t) * eligible) / tenderTotal));
+  const bases = tenders.map((t) => Math.round((earning(t) * eligible) / tenderTotal));
   const drift = eligible - bases.reduce((sum, b) => sum + b, 0);
   bases[bases.length - 1] = Math.max(0, (bases[bases.length - 1] ?? 0) + drift);
 

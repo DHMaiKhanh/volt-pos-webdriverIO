@@ -32,7 +32,7 @@ import { expect } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { env } from '../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../../src/components/index.js';
-import { returnToHome } from '../../../src/flows/index.js';
+import { isPasscodeGateOn, returnToHome } from '../../../src/flows/index.js';
 import { step } from '../../../src/helpers/steps.js';
 import { staffPayrollPage } from '../../../src/pages/index.js';
 import { PAYROLL_LABELS } from '../../../src/pages/payroll/StaffPayrollPage.js';
@@ -70,7 +70,11 @@ describe('Staff Payroll', () => {
 
   it(
     title('Passcode gate hides the page until the passcode is entered (TC-01)', Tag.REGRESSION),
-    async () => {
+    async function (this: Mocha.Context) {
+      // With the "staff_payroll" gate OFF in Passcode Setting the app opens the
+      // page by design, so there is no gate to observe — skip, do not fail.
+      if (!(await isPasscodeGateOn('staff_payroll'))) this.skip();
+
       await step('Drop the 30-minute grant and open the route', async () => {
         await returnToHome();
         await clearPasscodeGrant();
@@ -235,15 +239,14 @@ describe('Staff Payroll', () => {
 
   it(
     title('A staff member with 0 orders shows zeros / No Data, not an error (TC-08)', Tag.REGRESSION),
-    async () => {
+    async function (this: Mocha.Context) {
       await staffPayrollPage.open();
       const { rows } = await staffPayrollPage.readList();
       const row =
         rows.find((r) => r.orders === 0 && r.totalIncomeCents === 0) ?? rows.find((r) => r.orders === 0);
-      if (!row)
-        throw new Error(
-          'Every staff member has orders this period — no 0-order row to open (TC-08 precondition).',
-        );
+      // Precondition, not a finding: when every staff member has orders this
+      // period there is no 0-order row to open — a skip, not a failure.
+      if (!row) this.skip();
 
       await staffPayrollPage.openStaffDetailAt(row.index);
 

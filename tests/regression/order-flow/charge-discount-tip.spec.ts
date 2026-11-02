@@ -74,6 +74,7 @@ import {
 } from '../../../src/flows/index.js';
 import { checkoutPage, customerDisplayPage, homePage, paymentSuccessPage } from '../../../src/pages/index.js';
 import type { Tender } from '../../../src/pages/pos/CheckoutPage.js';
+import { SIGNATURE_IN_TIP_SCREEN_MS } from '../../../src/pages/pos/CustomerDisplayPage.js';
 import { Tag, title } from '../../../src/types/testTags.js';
 
 /** Opt-in for the real, money-moving settle on cash / gift card / other. */
@@ -103,7 +104,7 @@ const ALL_TENDERS: readonly Tender[] = ['card', 'cash', 'gift-card', 'other'];
 async function buildDiscountedDraft(staffIndex: number, serviceIndex: number): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 
   const staffCount = await homePage.visibleStaffCount();
   const serviceCount = await homePage.visibleServiceCount();
@@ -154,7 +155,7 @@ async function applyTip(percent: number): Promise<boolean> {
   await checkoutPage.pressTip();
   await customerDisplayPage.waitForTipPrompt(Timeouts.LONG);
   await customerDisplayPage.enterCustomTip(customTipCents);
-  if (await customerDisplayPage.isSignaturePadShown()) {
+  if (await customerDisplayPage.isSignaturePadShown(SIGNATURE_IN_TIP_SCREEN_MS)) {
     await customerDisplayPage.sign();
   }
   await customerDisplayPage.pressContinue();
@@ -166,7 +167,7 @@ async function applyTip(percent: number): Promise<boolean> {
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 /** End the sale so the next case starts from a clean till, not the receipt screen. */

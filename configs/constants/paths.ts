@@ -20,6 +20,8 @@ export const Paths = {
   ALLURE_REPORT: path.join(ROOT, 'reports', 'allure-report'),
   SCREENSHOTS: path.join(ROOT, 'reports', 'screenshots'),
   APP_LOGS: path.join(ROOT, 'reports', 'app-logs'),
+  /** The page's DOM at each failure, next to its screenshot's name (AppLifecycleService). */
+  FAILURE_DOM: path.join(ROOT, 'reports', 'failure-dom'),
   LOGS: path.join(ROOT, 'logs'),
   TMP: path.join(ROOT, '.tmp'),
 

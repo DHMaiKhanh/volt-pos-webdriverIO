@@ -10,6 +10,7 @@ import { collectAppLogs } from '../../db/appLogs.js';
 import { startUpdaterWatcher, stopUpdaterWatcher } from '../../helpers/updater.js';
 import { installStepOverlay } from '../../helpers/steps.js';
 import { moduleLogger } from '../../utils/logger.js';
+import { ensureHealthyAttachedApp } from '../attachApp.js';
 import { APP_IMAGE_NAMES, killStaleProcesses, waitForImagesGone } from '../process.js';
 
 const log = moduleLogger('AppLifecycleService');
@@ -20,6 +21,40 @@ const slug = (value: string): string =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 120)
     .toLowerCase();
+
+/** Cap on a failure's DOM snapshot — the inline icon SVGs alone run to megabytes. */
+const DOM_SNAPSHOT_MAX_CHARS = 2_000_000;
+
+/**
+ * In-page: the document's markup with the icon SVG bodies and script/style text
+ * dropped, headed by the URL, viewport, and every element scrolled off its
+ * origin (a Home scrolled sideways left staff and service taps doing nothing in
+ * run 6, and nothing in a screenshot said which container it was).
+ */
+function domSnapshot(max: number): string {
+  const root = document.documentElement.cloneNode(true) as HTMLElement;
+  root.querySelectorAll('svg').forEach((svg) => {
+    svg.innerHTML = '';
+  });
+  root.querySelectorAll('script, style').forEach((el) => {
+    el.textContent = '';
+  });
+  const scrolled: string[] = [];
+  document.querySelectorAll('*').forEach((el) => {
+    if (el.scrollLeft > 0 || el.scrollTop > 0) {
+      const cls = typeof el.className === 'string' ? el.className.slice(0, 80) : '';
+      scrolled.push(`${el.tagName}.${cls} left=${String(el.scrollLeft)} top=${String(el.scrollTop)}`);
+    }
+  });
+  const page = document.scrollingElement ?? document.documentElement;
+  const head =
+    `<!-- ${location.href} | viewport ${String(innerWidth)}x${String(innerHeight)} | ` +
+    `page scroll ${String(page.scrollLeft)},${String(page.scrollTop)} | ` +
+    `active ${document.activeElement?.tagName ?? '-'} -->\n` +
+    `<!-- scrolled: ${scrolled.slice(0, 20).join(' ; ').replace(/--/g, '- -')} -->\n`;
+  const html = root.outerHTML;
+  return head + (html.length > max ? `${html.slice(0, max)}\n<!-- truncated -->` : html);
+}
 
 /**
  * Everything around a session that is about the APP rather than the driver.
@@ -36,8 +71,22 @@ export default class AppLifecycleService {
    * `async` wrapper here would only advertise a suspension point that does not
    * exist.
    */
-  beforeSession(): void {
+  async beforeSession(): Promise<void> {
     const env = loadEnv();
+
+    // Attach self-heal (the ONLY per-file app work this mode does). Before each spec
+    // file, make sure a healthy app parked on /home is attachable: a no-op when the
+    // previous file left it there — keeping the open-once speed — and a relaunch only
+    // when a spec wedged or crashed it, which is what stops the cascade that otherwise
+    // turns one bad file into an all-red run. Also starts the app on the FIRST file if
+    // nobody ran `app:launch`.
+    if (env.MODE === 'attach') {
+      await ensureHealthyAttachedApp();
+      for (const dir of [Paths.SCREENSHOTS, Paths.APP_LOGS, Paths.FAILURE_DOM, Paths.ALLURE_RESULTS]) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      return;
+    }
 
     // ATTACH MODE OWNS NOTHING. `npm run app:launch` started both the app and the
     // msedgedriver this session is about to connect to, and WebdriverIO runs
@@ -73,7 +122,7 @@ export default class AppLifecycleService {
       );
     }
 
-    for (const dir of [Paths.SCREENSHOTS, Paths.APP_LOGS, Paths.ALLURE_RESULTS]) {
+    for (const dir of [Paths.SCREENSHOTS, Paths.APP_LOGS, Paths.FAILURE_DOM, Paths.ALLURE_RESULTS]) {
       fs.mkdirSync(dir, { recursive: true });
     }
   }
@@ -117,6 +166,18 @@ export default class AppLifecycleService {
       await allure.addAttachment('URL at failure', url, 'text/plain');
     } catch {
       /* the session may already be gone */
+    }
+
+    // A screenshot shows that a control is missing, not why: the DOM says which
+    // locator candidate drifted, what a dialog really contains, which container
+    // scrolled. Without it, a recurring failure could only be read on a live app
+    // that the running suite was busy driving.
+    try {
+      const domPath = path.join(Paths.FAILURE_DOM, `${base}.html`);
+      fs.writeFileSync(domPath, await browser.execute(domSnapshot, DOM_SNAPSHOT_MAX_CHARS), 'utf8');
+      log.info(`DOM: ${domPath}`);
+    } catch (error) {
+      log.debug(`No DOM snapshot: ${(error as Error).message}`);
     }
 
     try {

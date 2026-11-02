@@ -73,7 +73,7 @@ describe('volt-qc 14 E2E — re-open & split', () => {
       const before = await app.orderTotals();
 
       await step('other tiles: no effect', async () => {
-        const otherService = (await app.texts({ css: 'main li span.block' })).find(
+        const otherService = (await app.texts({ css: 'main li span.block, main li span.line-clamp-2' })).find(
           (n) => n && n !== d.service,
         );
         if (otherService) await app.click(CdMain.serviceTile(otherService), 3_000).catch(() => undefined);

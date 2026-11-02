@@ -24,6 +24,7 @@ const TAGS = {
   DB: '@db',
   SLOW: '@slow',
   FLAKY: '@flaky',
+  BROKEN: '@broken',
 };
 
 /** Folder (relative to tests/) → name shown in the tree. Unknown folders get a title-cased name. */
@@ -121,7 +122,7 @@ function readTitleArg(src, i) {
     const close = matchParen(src, open);
     const inner = src.slice(open + 1, close - 1);
     const s = skipWs(inner, 0);
-    const text = "'\"`".includes(inner[s]) ? readString(inner, s)[0] : inner.slice(0, 60);
+    const text = '\'"`'.includes(inner[s]) ? readString(inner, s)[0] : inner.slice(0, 60);
     const tags = [...inner.matchAll(/Tag\.([A-Z_]+)/g)].map((m) => TAGS[m[1]]).filter(Boolean);
     return { text, tags };
   }
@@ -187,6 +188,7 @@ export function buildCatalog(repoRoot) {
   }
 
   // Smoke first, then regression features, then the rest — the order people reach for.
-  const rank = (k) => (k === 'smoke' ? 0 : k.startsWith('regression/volt-qc') ? 2 : k.startsWith('regression') ? 1 : 3);
+  const rank = (k) =>
+    k === 'smoke' ? 0 : k.startsWith('regression/volt-qc') ? 2 : k.startsWith('regression') ? 1 : 3;
   return [...features.values()].sort((a, b) => rank(a.key) - rank(b.key) || a.name.localeCompare(b.name));
 }

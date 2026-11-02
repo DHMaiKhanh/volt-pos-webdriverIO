@@ -4,6 +4,7 @@ import { env } from '../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../components/index.js';
 import { Routes } from '../../constants/routes.js';
 import {
+  customerSearchResult,
   customerSuggestionItem,
   HomeIds,
   homeCustomerKeypadKey,
@@ -38,6 +39,9 @@ const CHECKOUT_PATH = /^\/order\/[^/]+\/checkout(?:\/|$)/;
 
 /** `/order/{uuid}/split-order` — where {@link HomePage.openSplitOrder} lands. */
 const SPLIT_ORDER_PATH = /^\/order\/[^/]+\/split-order(?:\/|$)/;
+
+/** How long {@link HomePage.discardDraftIfAny} looks for a draft on a rendered till. */
+const DRAFT_CLEANUP_PROBE_MS = 1_500;
 
 /**
  * The confirm button of the shared `ConfirmDialog` (`src/components/confirm-dialog.tsx`).
@@ -194,6 +198,72 @@ export class HomePage extends BasePage {
     await this.setValue(HomeIds.staffSearchInput, name);
     await settle(Timeouts.DEBOUNCE);
     return this;
+  }
+
+  /**
+   * Recovery: Escape any dialog a spec left open on the till (Quick Pay, a
+   * confirm, a picker). The staff cards still render behind it, so /home reads
+   * "ready" while every click lands on the overlay — in a grouped worker that
+   * failed each later file. Returns how many it closed.
+   */
+  async dismissOpenDialogs(): Promise<number> {
+    let closed = 0;
+    for (let i = 0; i < 3; i += 1) {
+      const open = await browser.execute(function () {
+        return Array.from(document.querySelectorAll('[role="dialog"],[role="alertdialog"]')).some(
+          (el) => el.getClientRects().length > 0,
+        );
+      });
+      if (!open) break;
+      if (i === 0) {
+        await browser.keys(['Escape']);
+      } else {
+        // Escape is ignored by a form showing a validation error (the Tip Settings
+        // dialog with "This tip value already exists" outlived it and blocked a
+        // whole spec): use the dialog's own header Close.
+        await browser.execute(function () {
+          const dialogs = Array.from(
+            document.querySelectorAll('[role="dialog"],[role="alertdialog"]'),
+          ).filter((el) => el.getClientRects().length > 0);
+          const top = dialogs[dialogs.length - 1];
+          const close = Array.from(top?.querySelectorAll('button') ?? []).find((b) =>
+            /^(close|đóng)$/i.test((b.getAttribute('aria-label') ?? b.textContent ?? '').trim()),
+          );
+          close?.click();
+        });
+      }
+      await settle(Timeouts.ANIMATION);
+      closed += 1;
+    }
+    return closed;
+  }
+
+  /**
+   * Recovery: empty the staff and service search boxes if a spec left text there.
+   *
+   * The till keeps both filters across navigation, so a spec that searched for
+   * a name that matches nothing (`zzzz…`) left /home with NO staff cards — the
+   * ready anchor — and every later file failed "Home did not become ready".
+   * A fresh app per file used to hide it; a grouped worker does not.
+   * Returns whether anything was cleared.
+   */
+  async clearSearches(): Promise<boolean> {
+    let cleared = false;
+    for (const loc of [HomeIds.staffSearchInput, HomeIds.serviceSearchInput]) {
+      let el: WebdriverIO.Element;
+      try {
+        el = await this.find(loc, { timeout: Timeouts.ANIMATION, visible: true });
+      } catch {
+        continue;
+      }
+      if ((await el.getValue()) === '') continue;
+      await el.click();
+      await browser.keys(['Control', 'a']);
+      await browser.keys(['Backspace']);
+      cleared = true;
+    }
+    if (cleared) await settle(Timeouts.DEBOUNCE);
+    return cleared;
   }
 
   /** Switch staff group tab. `'all'` is the default tab. */
@@ -455,6 +525,23 @@ export class HomePage extends BasePage {
   }
 
   /**
+   * Attach a customer by TYPING their phone into the search box and picking
+   * the "Customers Found" row — the keypad-free path.
+   *
+   * Used on a Quick Checkout order, where the keypad's bottom row ("0") sits
+   * under the "Checkin Today" panel and is not clickable (1.1.86). Returns
+   * false when no row matches the phone, leaving the box as typed.
+   */
+  async attachCustomerBySearch(phone: string): Promise<boolean> {
+    await logStep(`Home: search customer ${phone}`);
+    await this.setValue(HomeIds.customerSearchInput, phone);
+    if (!(await this.isVisible(customerSearchResult(phone), Timeouts.MEDIUM))) return false;
+    await this.click(customerSearchResult(phone));
+    await this.waitGone(HomeIds.customerSearchInput);
+    return true;
+  }
+
+  /**
    * Is the "Add new customer" quick-add form up?
    *
    * `confirmCustomerPhone()` opens it when the typed number matches nobody, so
@@ -515,8 +602,22 @@ export class HomePage extends BasePage {
    * selecting a staff member created an order — and its absence, after a delete,
    * that the order was discarded.
    */
-  hasActiveDraft(): Promise<boolean> {
-    return this.isVisible(HomeIds.orderDeleteBtn);
+  hasActiveDraft(timeout = 2_000): Promise<boolean> {
+    // 2s, not SHORT: the till is already rendered when this is asked, and most
+    // callers expect NO draft — proving that by waiting 5s was 11 min of a full run.
+    return this.isVisible(HomeIds.orderDeleteBtn, timeout);
+  }
+
+  /**
+   * Cleanup: delete the open draft, if there is one.
+   *
+   * Called on a till that is already rendered, where a draft's Remove button is
+   * either there or not — so it looks for {@link DRAFT_CLEANUP_PROBE_MS}, not the
+   * SHORT timeout `hasActiveDraft()` keeps for assertions. Waiting 5s to prove
+   * "no draft" before every payment case was ~3 min per charge matrix.
+   */
+  async discardDraftIfAny(): Promise<void> {
+    if (await this.isVisible(HomeIds.orderDeleteBtn, DRAFT_CLEANUP_PROBE_MS)) await this.deleteOrder();
   }
 
   /**

@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc module 12-perm (PERM-*) — action gates, the 30-minute skip, View Phone
  * Number, the matrix debounce and the Vietnamese guard. `@mutation` / `@settings`.
  *

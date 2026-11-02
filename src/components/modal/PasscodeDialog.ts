@@ -2,7 +2,7 @@ import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { CommonIds, passcodeDigit } from '../../constants/testids.js';
 import { locator } from '../../helpers/selectors.js';
 import type { Locator } from '../../helpers/selectors.js';
-import { capturePasscodeGrant, refreshGrant } from '../../support/passcodeGrant.js';
+import { capturePasscodeGrant, readPasscodeGrant, refreshGrant } from '../../support/passcodeGrant.js';
 import { settle } from '../../helpers/wait.js';
 import { BaseComponent } from '../BaseComponent.js';
 
@@ -37,6 +37,14 @@ import { BaseComponent } from '../BaseComponent.js';
  * this and that value is proven against a running till, so it is kept.
  */
 const KEY_PRESS_MS = 150;
+/**
+ * How long {@link PasscodeDialog.unlockForRun} looks for the guard while a
+ * 30-minute grant is live. The grant names a staff id a real unlock captured, so
+ * the route guard lets it through; this look is only a backstop, and each poll
+ * tries two selectors, so the real cost runs ~1.5x this. 1.5s here measured
+ * ~2.3s a call × ~9 calls a gated spec.
+ */
+const GRANTED_PROBE_MS = 500;
 
 /**
  * One digit key.
@@ -98,7 +106,15 @@ export class PasscodeDialog extends BaseComponent {
    * inside that root is what separates the guard from its neighbours.
    */
   async isPrompting(timeout: number = Timeouts.SHORT): Promise<boolean> {
-    if (!(await this.isOpen(timeout))) return false;
+    // With a live 30-minute grant the guard does not mount at all — route guards
+    // and inline action guards both read it — so probing the full timeout for an
+    // absent dialog was 42 min of a 7-hour full run (dead-time.jsonl, 2026-10-31).
+    // A dialog that IS coming shows well inside GRANTED_PROBE_MS. Gate tests clear
+    // the grant before they probe, so they keep their full wait.
+    const live = await readPasscodeGrant();
+    const probe =
+      live && live.expiresAt - Date.now() > 60_000 ? Math.min(timeout, GRANTED_PROBE_MS) : timeout;
+    if (!(await this.isOpen(probe))) return false;
     return this.hasKeypad();
   }
 
@@ -175,7 +191,14 @@ export class PasscodeDialog extends BaseComponent {
    * still enters the passcode correctly and returns `false`.
    */
   async unlockForRun(passcode: string, options: PasscodeEntryOptions = {}): Promise<boolean> {
-    if (!(await this.isPrompting(options.timeout ?? Timeouts.SHORT))) {
+    // With a live grant the guard never mounts, so waiting the full SHORT probe
+    // burned ~5s on EVERY gated navigation of a run. The route guard checks the
+    // grant against the local DB, so a dialog that is coming shows well inside
+    // GRANTED_PROBE_MS; without a grant keep the patient probe.
+    const live = options.timeout === undefined ? await readPasscodeGrant() : null;
+    const probe =
+      options.timeout ?? (live && live.expiresAt - Date.now() > 60_000 ? GRANTED_PROBE_MS : Timeouts.SHORT);
+    if (!(await this.isPrompting(probe))) {
       // Already unlocked — a grant is active, or this till has no guard at all.
       // Re-stamp from the cached staff id so a lane longer than 30 minutes does
       // not fall off the edge halfway through.

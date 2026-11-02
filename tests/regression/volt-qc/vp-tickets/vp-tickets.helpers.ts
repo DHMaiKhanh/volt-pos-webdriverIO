@@ -61,7 +61,7 @@ export function manualRows(rows: readonly ManualRow[]): void {
 export async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 /**
