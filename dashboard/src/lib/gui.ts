@@ -72,6 +72,8 @@ export interface RunRequest {
   titles?: string[];
   label?: string;
   retries?: number;
+  /** ⚡ Chạy nhanh: attach to the pre-warmed app, launch only payment / customer-display files; skips manual/@broken. */
+  fast?: boolean;
 }
 
 export interface Schedule {
@@ -119,14 +121,47 @@ export function useCatalog(): { features: Feature[]; error: string | null; refre
 
 /* ── Live run state + log ───────────────────────────────────────────────── */
 
+/** The runner's pre-warmed app (dashboard/server/warm.mjs). */
+export type WarmState = 'off' | 'cold' | 'warming' | 'ready' | 'busy' | 'error';
+
+export interface WarmStatus {
+  enabled: boolean;
+  state: WarmState;
+  detail: string;
+  preflightOk: boolean;
+  launched: boolean;
+  at: string | null;
+}
+
+/** Parallel app copies (docs/parallel-instances.md): which exist, which are signed in. */
+export interface LanesStatus {
+  max: number;
+  copies: Array<{ n: number; signedIn: boolean }>;
+}
+
+/** Freezing the user's other apps during a sweep (scripts/freeze-apps.ps1). */
+export interface FreezeStatus {
+  enabled: boolean;
+  /** Processes frozen right now — 0 between runs. */
+  frozen: number;
+}
+
 export interface GuiRunner {
   online: boolean;
   running: boolean;
   run: RunInfo | null;
   results: LiveResult[];
   log: string;
+  warm: WarmStatus | null;
+  lanes: LanesStatus | null;
+  freeze: FreezeStatus | null;
   start: (req: RunRequest) => Promise<string | null>;
   stop: () => Promise<string | null>;
+  /** `true`/`false` switches the pre-warm; omitted retries it now. */
+  setWarm: (enabled?: boolean) => Promise<void>;
+  /** Open copy `n` on screen with its QR login, for the one-time device sign-in. */
+  signInCopy: (n: number) => Promise<string | null>;
+  setFreeze: (enabled: boolean) => Promise<void>;
   clearLog: () => void;
 }
 
@@ -141,6 +176,9 @@ export function useGuiRunner(onFinished?: (run: RunInfo) => void): GuiRunner {
   const [run, setRun] = useState<RunInfo | null>(null);
   const [results, setResults] = useState<LiveResult[]>([]);
   const [log, setLog] = useState('');
+  const [warm, setWarmState] = useState<WarmStatus | null>(null);
+  const [lanes, setLanes] = useState<LanesStatus | null>(null);
+  const [freeze, setFreezeState] = useState<FreezeStatus | null>(null);
   const version = useRef(-1);
   const logOffset = useRef(0);
   const wasRunning = useRef(false);
@@ -149,12 +187,20 @@ export function useGuiRunner(onFinished?: (run: RunInfo) => void): GuiRunner {
 
   const poll = useCallback(async (): Promise<boolean> => {
     try {
-      const s = await json<{ running: boolean; run: RunInfo | null; results?: LiveResult[] }>(
-        `/api/gui/state?since=${version.current}`,
-      );
+      const s = await json<{
+        running: boolean;
+        run: RunInfo | null;
+        results?: LiveResult[];
+        warm?: WarmStatus | null;
+        lanes?: LanesStatus | null;
+        freeze?: FreezeStatus | null;
+      }>(`/api/gui/state?since=${version.current}`);
       setOnline(true);
       setRunning(s.running);
       setRun(s.run);
+      setWarmState(s.warm ?? null);
+      setLanes(s.lanes ?? null);
+      setFreezeState(s.freeze ?? null);
       if (s.results) setResults(s.results);
       if (s.run) version.current = s.run.version;
 
@@ -215,9 +261,55 @@ export function useGuiRunner(onFinished?: (run: RunInfo) => void): GuiRunner {
     }
   }, [poll]);
 
+  const setWarm = useCallback(async (enabled?: boolean): Promise<void> => {
+    try {
+      const r = await json<{ warm: WarmStatus }>(
+        '/api/gui/warm',
+        post(enabled === undefined ? { now: true } : { enabled }),
+      );
+      setWarmState(r.warm);
+    } catch {
+      /* the next poll shows whatever the server has */
+    }
+  }, []);
+
+  const signInCopy = useCallback(async (n: number): Promise<string | null> => {
+    try {
+      const r = await json<{ lanes: LanesStatus }>('/api/gui/lanes/signin', post({ n }));
+      setLanes(r.lanes);
+      return null;
+    } catch (err) {
+      return err instanceof Error ? err.message : String(err);
+    }
+  }, []);
+
+  const setFreeze = useCallback(async (enabled: boolean): Promise<void> => {
+    try {
+      const r = await json<{ freeze: FreezeStatus }>('/api/gui/freeze', post({ enabled }));
+      setFreezeState(r.freeze);
+    } catch {
+      /* the next poll shows whatever the server has */
+    }
+  }, []);
+
   const clearLog = useCallback(() => setLog(''), []);
 
-  return { online, running, run, results, log, start, stop, clearLog };
+  return {
+    online,
+    running,
+    run,
+    results,
+    log,
+    warm,
+    lanes,
+    freeze,
+    start,
+    stop,
+    setWarm,
+    signInCopy,
+    setFreeze,
+    clearLog,
+  };
 }
 
 /* ── Schedules ──────────────────────────────────────────────────────────── */

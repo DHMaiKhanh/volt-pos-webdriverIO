@@ -48,7 +48,7 @@ describe('VP-1873 — Reload App', () => {
 
   after(async () => {
     await returnToHome();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
   });
 
   it(title('TC-01 The sidebar offers a Reload action', Tag.REGRESSION), async () => {

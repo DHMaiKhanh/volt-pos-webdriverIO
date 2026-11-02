@@ -29,6 +29,23 @@ import { Tag, title } from '../../../src/types/testTags.js';
 
 const otherUnit = (unit: TipUnit): TipUnit => (unit === 'percent' ? 'amount' : 'percent');
 
+/**
+ * A tip value no row holds yet. A fixed "37" broke the whole dialog block once a
+ * 37 option existed: the dialog refused it ("This tip value already exists"),
+ * Add stayed disabled, and the dialog left open took every later case down.
+ * Read BEFORE opening the dialog — the table sits behind it.
+ */
+async function unusedTipValue(): Promise<string> {
+  const taken = new Set((await chargeFeePage.tipAmountCells()).map((cell) => Number.parseFloat(cell)));
+  const free = [37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97].find((n) => !taken.has(n));
+  if (free === undefined) {
+    throw new Error(
+      `Every candidate tip value is already a row (${[...taken].join(', ')}) — delete a few test rows.`,
+    );
+  }
+  return String(free);
+}
+
 describe('Settings — Tipping: tip options & signature', () => {
   let initialUnit: TipUnit = 'amount';
   let initialSignature = false;
@@ -133,10 +150,11 @@ describe('Settings — Tipping: tip options & signature', () => {
   });
 
   it(title('Entering a value enables Add (TC-CHF-11)', Tag.REGRESSION), async () => {
+    const value = await unusedTipValue();
     await chargeFeePage.openAddTipDialog();
     const before = await chargeFeePage.readAddTipAmount();
 
-    await chargeFeePage.typeAddTipAmount('37');
+    await chargeFeePage.typeAddTipAmount(value);
 
     expect(await chargeFeePage.readAddTipAmount()).not.toBe(before);
     expect(await chargeFeePage.isAddTipAddEnabled()).toBe(true);
@@ -146,9 +164,10 @@ describe('Settings — Tipping: tip options & signature', () => {
 
   it(title('Escape closes the dialog and adds no row (TC-CHF-12)', Tag.REGRESSION), async () => {
     const rowsBefore = await chargeFeePage.tipRowCount();
+    const value = await unusedTipValue();
 
     await chargeFeePage.openAddTipDialog();
-    await chargeFeePage.typeAddTipAmount('37');
+    await chargeFeePage.typeAddTipAmount(value);
     await chargeFeePage.closeAddTipDialog();
 
     expect(await chargeFeePage.isAddTipDialogShown()).toBe(false);

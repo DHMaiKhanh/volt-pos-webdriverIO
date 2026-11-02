@@ -63,6 +63,14 @@ describe('Settings — Receipt', () => {
     await discardChanges();
   });
 
+  // Every case reads the screen `before` opened. A failed case sends the app to
+  // /home (the root afterEach recovery), and each later case then failed on a
+  // missing control — run 5: TC-RCP-07 failed, 11 cases after it cascaded.
+  beforeEach(async function (this: Mocha.Context): Promise<void> {
+    this.timeout(Timeouts.MOCHA_HOOK);
+    if (!(await receiptSettingsPage.isActive())) await discardChanges();
+  });
+
   after(async function (this: Mocha.Context): Promise<void> {
     this.timeout(Timeouts.MOCHA_HOOK);
     // Belt-and-braces: never leave the form dirty. Leaving the screen drops it.

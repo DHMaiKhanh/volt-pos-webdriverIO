@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc port — 06 PEND: Pending Orders page and pending-order lifecycle (WRITE cases).
  *
  * Source: volt-qc `e2e/tests/06-pending/pend-plan-page.spec.ts` (PEND-T02, T03, T05…T09, T11),

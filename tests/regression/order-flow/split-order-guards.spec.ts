@@ -37,13 +37,13 @@ describe('Payment flows — Split Order', () => {
     assertWritesAllowed('build a draft to probe the split eligibility gate');
     await returnToHome();
     await homePage.waitForReady();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
   });
 
   after(async () => {
     await returnToHome();
     await homePage.waitForReady();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
   });
 
   it(title('Split is gated behind a Total above $5 (SPL-01)', Tag.REGRESSION, Tag.WRITE), async () => {

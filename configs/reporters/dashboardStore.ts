@@ -34,12 +34,38 @@ const LATEST_FILE = path.join(Paths.DASHBOARD_DATA, 'latest.json');
  */
 let runStartedAt = new Date();
 
+/**
+ * One GUI ⚡ run is several `wdio run`s in a row (an attach phase, then a launch
+ * phase) that must land as ONE history entry — split, "Lịch sử" shows half-runs
+ * and the last entry's failures miss the first phase's. dashboard/server/fast-run.mjs
+ * passes `DASHBOARD_RUN_PHASE=i/n`: a later phase keeps the fragments and the
+ * start time, and only the last one folds them in. Unset = a run of its own.
+ */
+function runPhase(): { index: number; count: number } {
+  const match = /^(\d+)\/(\d+)$/.exec(process.env.DASHBOARD_RUN_PHASE ?? '');
+  return match ? { index: Number(match[1]), count: Number(match[2]) } : { index: 1, count: 1 };
+}
+
+/** Not `.json`, so {@link readFragments} never mistakes it for a spec. */
+const START_STAMP = path.join(Paths.DASHBOARD_TMP, '_run-started-at.txt');
+
 /** `onPrepare`: clear last run's fragments and stamp this run's start. */
 export function beginDashboardRun(): void {
   runStartedAt = new Date();
+  if (runPhase().index > 1) {
+    // A later phase of the same GUI run: keep the earlier phases' fragments.
+    try {
+      const stamped = new Date(fs.readFileSync(START_STAMP, 'utf8').trim());
+      if (!Number.isNaN(stamped.getTime())) runStartedAt = stamped;
+    } catch {
+      /* first phase never stamped — this phase's start will do */
+    }
+    return;
+  }
   try {
     fs.rmSync(Paths.DASHBOARD_TMP, { recursive: true, force: true });
     fs.mkdirSync(Paths.DASHBOARD_TMP, { recursive: true });
+    fs.writeFileSync(START_STAMP, runStartedAt.toISOString());
   } catch {
     // Non-fatal — a stale fragment at worst duplicates a spec in this run's view.
   }
@@ -59,6 +85,8 @@ export interface RunSummary {
  * stay quiet rather than print an empty run.
  */
 export function finalizeDashboardRun(): RunSummary | null {
+  const { index, count } = runPhase();
+  if (index < count) return null; // a later phase of this GUI run folds everything in
   const specs = readFragments();
   if (specs.length === 0) return null;
 
@@ -74,7 +102,8 @@ export function finalizeDashboardRun(): RunSummary | null {
     durationMs: Math.max(0, finishedAt.getTime() - runStartedAt.getTime()),
     env: {
       name: env.ENV,
-      mode: env.MODE,
+      // A multi-phase GUI run is "attach+launch", not just its last phase's mode.
+      mode: process.env.DASHBOARD_RUN_MODES || env.MODE,
       merchant: env.MERCHANT_ID,
       app: env.APP_PATH ? path.basename(env.APP_PATH) : '(unresolved)',
       upstream: env.UPSTREAM_BASE_URI,

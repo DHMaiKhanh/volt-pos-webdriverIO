@@ -101,8 +101,9 @@ export class AppointmentPage extends BasePage {
     return this.isVisible(AppointmentIds.dialog, Timeouts.SHORT);
   }
 
+  /** Cleanup: an open dialog is already on screen, so a short look is enough (SHORT stays for assertions). */
   async closeDialog(): Promise<void> {
-    if (!(await this.isDialogOpen())) return;
+    if (!(await this.isVisible(AppointmentIds.dialog, Timeouts.ANIMATION))) return;
     await browser.keys(['Escape']);
     await this.waitGone(AppointmentIds.dialog, Timeouts.SHORT);
   }

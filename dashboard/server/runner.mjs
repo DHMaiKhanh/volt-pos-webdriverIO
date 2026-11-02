@@ -35,22 +35,27 @@
  */
 
 import { createServer } from 'node:http';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import {
   appendFileSync,
   closeSync,
+  copyFileSync,
   createReadStream,
   existsSync,
   mkdirSync,
   openSync,
   readFileSync,
   readSync,
+  readdirSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { fastGrep, laneClass, needsLaunch, planFast, planLanes, specSourceWithKits } from './fast-plan.mjs';
 import { buildCatalog } from './catalog.mjs';
+import { createWarm } from './warm.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root = two levels up from dashboard/server/. npm scripts run from here. */
@@ -66,6 +71,14 @@ const RUN_LOG = path.join(path.dirname(LIVE_FILE), 'run.log');
 const RUN_JOB = path.join(__dirname, 'run-job.mjs');
 const CRASH_LOG = path.join(TMP, 'runner-crash.log');
 const SCHEDULE_FILE = path.join(TMP, 'gui-schedules.json');
+/** Every run — ⚡ or not — goes through fast-run.mjs with one of these. */
+const PLAN_FILE = path.join(TMP, 'gui-fast-plan.json');
+/** The live files of the last runs, one folder per run id (see archiveLastRun). */
+const RUNS_ARCHIVE = path.join(REPO_ROOT, 'reports', '.gui-runs');
+const RUNS_KEPT = 10;
+/** warm.mjs's state file; fast-run.mjs reads it to wait for / skip ahead of the pre-warm. */
+const WARM_FILE = path.join(TMP, 'gui-warm.json');
+const FAST_RUN = path.join(__dirname, 'fast-run.mjs');
 export const PORT = Number(process.env.RUNNER_PORT ?? 4322);
 
 /* ── Never die from a stray error ───────────────────────────────────────── */
@@ -90,6 +103,72 @@ const ENVS = {
   prod: 'configs/wdio/wdio.prod.conf.ts',
 };
 
+/**
+ * `key` as a run of `env` will see it: the process env first, then the env files
+ * in configs/env/loadEnv.ts's order (dotenv never overrides, so the first wins).
+ */
+function envFileValue(env, key) {
+  if ((process.env[key] ?? '').trim()) return process.env[key].trim();
+  for (const file of [`.env.${env}`, '.env.local', '.env.example']) {
+    let text;
+    try {
+      text = readFileSync(path.join(REPO_ROOT, 'configs', 'env', file), 'utf8');
+    } catch {
+      continue;
+    }
+    const m = text.match(new RegExp(`^\\s*${key}\\s*=\\s*(.*)$`, 'm'));
+    if (m) return m[1].replace(/\s+#.*$/, '').replace(/^["']|["']$/g, '').trim();
+  }
+  return '';
+}
+
+/* ── Freeze the user's other apps while a run needs the RAM ─────────────── */
+
+/** On/off, kept across restarts. */
+const FREEZE_SETTING = path.join(TMP, 'gui-freeze.json');
+/** What scripts/freeze-apps.ps1 froze; run-job.mjs thaws it when the run ends. */
+const FREEZE_STATE = path.join(TMP, 'frozen-apps.json');
+const FREEZE_SCRIPT = path.join(REPO_ROOT, 'scripts', 'freeze-apps.ps1');
+
+function freezeEnabled() {
+  try {
+    return JSON.parse(readFileSync(FREEZE_SETTING, 'utf8')).enabled !== false;
+  } catch {
+    return true;
+  }
+}
+
+function setFreezeEnabled(enabled) {
+  mkdirSync(TMP, { recursive: true });
+  writeFileSync(FREEZE_SETTING, JSON.stringify({ enabled }));
+}
+
+/** How many processes sit frozen right now (0 when none). */
+function frozenCount() {
+  try {
+    const list = JSON.parse(readFileSync(FREEZE_STATE, 'utf8'));
+    return Array.isArray(list) ? list.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+const freezeStatus = () => ({ enabled: freezeEnabled(), frozen: frozenCount() });
+
+/** `Freeze` or `Thaw`; returns the script's one-line summary for the run log. */
+function freezeApps(action) {
+  if (process.platform !== 'win32') return '';
+  if (action === 'Thaw' && !existsSync(FREEZE_STATE)) return '';
+  const r = spawnSync(
+    'powershell.exe',
+    ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', FREEZE_SCRIPT, '-Action', action, '-StateFile', FREEZE_STATE],
+    { encoding: 'utf8', windowsHide: true, timeout: 60_000 },
+  );
+  const out = `${r.stdout ?? ''}${r.stderr ?? ''}`.trim();
+  if (r.status !== 0) logCrash(`freeze-apps ${action}`, new Error(out || `exit ${r.status}`));
+  return out;
+}
+
 /* ── Catalogue (cached, rebuilt when asked) ─────────────────────────────── */
 
 let catalog = null;
@@ -107,6 +186,8 @@ function getCatalog(refresh = false) {
  * The log lives in RUN_LOG, the persisted half of this in RUN_STATE.
  */
 let current = null;
+/** The pre-warm (warm.mjs), created once the run state below exists. */
+let warm = null;
 /** A fresh UI gets at most the log's tail. */
 const MAX_LOG_BYTES = 3_000_000;
 
@@ -144,6 +225,31 @@ function freshRunState(saved) {
     specsDone: new Set(),
     version: 0,
   };
+}
+
+/**
+ * Copy the previous run's live files — per-test timeline, log, state, plan — to
+ * reports/.gui-runs/<run id>/ before a new run truncates them. They are the only
+ * record of which lane ran what and when; a 15-minute smoke started after the
+ * 5-hour run 5 wiped its timeline before it had been analysed.
+ */
+function archiveLastRun() {
+  let id;
+  try {
+    id = JSON.parse(readFileSync(RUN_STATE, 'utf8')).id;
+  } catch {
+    return;
+  }
+  if (!id) return;
+  const dir = path.join(RUNS_ARCHIVE, String(id).replace(/[:.]/g, '-'));
+  mkdirSync(dir, { recursive: true });
+  for (const file of [LIVE_FILE, RUN_STATE, RUN_LOG, PLAN_FILE]) {
+    if (existsSync(file)) copyFileSync(file, path.join(dir, path.basename(file)));
+  }
+  const runs = readdirSync(RUNS_ARCHIVE).sort();
+  for (const old of runs.slice(0, Math.max(0, runs.length - RUNS_KEPT))) {
+    rmSync(path.join(RUNS_ARCHIVE, old), { recursive: true, force: true });
+  }
 }
 
 function saveRunState() {
@@ -196,6 +302,11 @@ function refreshExit() {
   ingestLive();
   current.activeSpec = null;
   current.version += 1;
+  // run-job.mjs thaws on a normal end; a killed job never got the chance.
+  const thawed = freezeApps('Thaw');
+  if (thawed) appendLog(`\n${thawed}\n`);
+  // The machine is free again: have an app booted before the next Run.
+  warm?.request('sau lần chạy');
 }
 
 /** Re-adopt the last run on startup — still running or not — so a restart loses nothing. */
@@ -309,6 +420,9 @@ function statePayload(sinceVersion = -1) {
         }
       : null,
     logLength: current ? logSize() : 0,
+    warm: warm?.status() ?? null,
+    lanes: lanesStatus(),
+    freeze: freezeStatus(),
   };
   // Results only when they moved — the UI polls every second or so.
   if (current && current.version !== sinceVersion) base.results = [...current.results.values()];
@@ -342,6 +456,207 @@ function estimate(specs) {
   return specs.reduce((ms, s) => ms + (last.get(s) || 60_000), 0);
 }
 
+/* ── ⚡ Chạy nhanh (fast mode) ────────────────────────────────────────────── */
+
+/**
+ * One generated wdio config for the GUI: base conf + these specs/grep, Allure off.
+ * `specs` entries may themselves be arrays: each inner array runs in ONE worker
+ * (one session), so launch mode starts the app once per group, not per file.
+ */
+function writeGuiConf(file, baseConfPath, specs, grep, retries) {
+  const rel = (p) => path.relative(TMP, path.join(REPO_ROOT, p)).replace(/\\/g, '/');
+  const abs = (s) => (Array.isArray(s) ? s.map(abs) : path.join(REPO_ROOT, s));
+  writeFileSync(
+    file,
+    [
+      '// Generated by dashboard/server/runner.mjs for one GUI run — do not edit.',
+      `import { config as base } from ${JSON.stringify(rel(baseConfPath).replace(/\.ts$/, '.js'))};`,
+      `import DashboardReporter from ${JSON.stringify(rel('configs/reporters/DashboardReporter.js'))};`,
+      'export const config: WebdriverIO.Config = {',
+      '  ...base,',
+      `  specs: ${JSON.stringify(specs.map(abs))},`,
+      '  exclude: [],',
+      // Drop Allure for GUI runs: it logs every WebDriver command as a step and
+      // screenshots each one — real per-command overhead the GUI never reads (it
+      // renders DashboardReporter's live events). spec + DashboardReporter stay.
+      "  reporters: [['spec', { symbols: { passed: '[PASS]', failed: '[FAIL]', skipped: '[SKIP]' } }], [DashboardReporter, {}]],",
+      grep ? `  mochaOpts: { ...base.mochaOpts, grep: ${JSON.stringify(grep)}, invert: false },` : '',
+      `  specFileRetries: ${String(retries)},`,
+      '};',
+      '',
+    ].join('\n'),
+  );
+}
+
+/** A grouped worker skips the ~15 s app boot every other file would pay. */
+const BOOT_SAVING_MS = 15_000;
+
+/**
+ * ⚡ runs scale every blind settle() pause by this (see src/helpers/wait.ts, which
+ * floors debounce-sized waits at the app's debounce). Blind pauses were 76 min of
+ * a 7-hour full run at 0.5 (dead-time.jsonl, 2026-10-31).
+ */
+const FAST_SETTLE_SCALE = 0.35;
+
+/**
+ * Spec files per ⚡ group = per app launch. Smaller limits how far a wedged app
+ * cascades; larger saves boots. 25 ≈ 8 launches for the whole suite.
+ */
+const FAST_GROUP_SIZE = 25;
+
+/* ── Parallel app instances (docs/parallel-instances.md) ────────────────── */
+
+/** Where `scripts/make-instance.mjs` puts the copies: <root>\i<N>\volt-pos-i<N>.exe. */
+const INSTANCE_ROOT = process.env.VOLT_INSTANCE_ROOT || 'D:\\VoltE2E';
+/**
+ * Apps per ⚡ run, the installed one included. Each app + worker ≈ 1.3 GB: three
+ * fit this 16 GB machine once browsers / chat apps are closed; a copy that is
+ * not signed in yet simply gets no lane. `GUI_LANES=1` turns the lanes off.
+ */
+const MAX_LANES = Math.max(1, Number(process.env.GUI_LANES ?? 3) || 1);
+/** Lanes pay a second app's boot: only worth it for a sweep, not a handful of files. */
+const LANES_MIN_FILES = 20;
+/** Smaller than FAST_GROUP_SIZE: the lanes pull groups off one queue, so small ones even out the finish. */
+const LANE_GROUP_SIZE = 10;
+/** A parked copy must keep rendering while out of sight. */
+const ANTI_THROTTLE =
+  '--disable-features=CalculateNativeWinOcclusion --disable-backgrounding-occluded-windows ' +
+  '--disable-renderer-backgrounding --disable-background-timer-throttling';
+
+/** Everything instance N's processes need to stay out of instance 0's way (src/support/process.ts). */
+function instanceEnv(n) {
+  const dir = path.join(INSTANCE_ROOT, `i${n}`);
+  return {
+    VOLT_INSTANCE: String(n),
+    APP_PATH: path.join(dir, `volt-pos-i${n}.exe`),
+    APP_IDENTIFIER: `VoltP${String(n).padStart(2, '0')}`,
+    APP_IMAGES: `volt-pos-i${n}.exe`,
+    DRIVER_IMAGES: `tauri-driver-i${n}.exe,msedgedriver-i${n}.exe`,
+    MSEDGEDRIVER_PATH: path.join(dir, `msedgedriver-i${n}.exe`),
+    TAURI_DRIVER_PATH: path.join(dir, `tauri-driver-i${n}.exe`),
+    REMOTE_DEBUG_PORT: String(9222 + 10 * n),
+    DRIVER_PORT: String(4444 + 10 * n),
+    TAURI_NATIVE_PORT: String(4445 + 10 * n),
+    APP_BROWSER_ARGS: ANTI_THROTTLE,
+    APP_WINDOW_SEED: path.join(dir, 'window-offscreen.json'),
+  };
+}
+
+/**
+ * Instance 0 plus every copy on disk that has been signed in once, up to
+ * MAX_LANES. A copy fresh from make-instance.mjs sits on its QR login and has no
+ * `credentials` file in its data folder yet (only its existence is checked).
+ */
+function laneInstances() {
+  const found = [{ n: 0, env: {} }];
+  for (let n = 1; found.length < MAX_LANES && n <= 9; n += 1) {
+    const env = instanceEnv(n);
+    const signedIn = existsSync(path.join(process.env.APPDATA ?? '', env.APP_IDENTIFIER, 'credentials'));
+    if (existsSync(env.APP_PATH) && existsSync(env.MSEDGEDRIVER_PATH) && signedIn) found.push({ n, env });
+  }
+  return found;
+}
+
+/** The installed app the copies are made from (the GUI runs outside the Claude package, so this is the real one). */
+const INSTALLED_APP = path.join(process.env.LOCALAPPDATA ?? '', 'Volt POS', 'volt-pos.exe');
+
+/**
+ * Remake copy N (scripts/make-instance.mjs) when the installed app changed under
+ * it. A 1.1.85 copy beside a freshly installed 1.1.86 signed itself out and
+ * never got a lane again. make-instance.mjs stamps `source.json` with the
+ * installed exe it was made from; a copy that is running keeps its exe locked,
+ * so it is left for the next run. Returns what happened, for the run log.
+ */
+function syncCopyBuild(n) {
+  const dir = path.join(INSTANCE_ROOT, `i${n}`);
+  if (!existsSync(path.join(dir, `volt-pos-i${n}.exe`)) || !existsSync(INSTALLED_APP)) return 'none';
+  const st = statSync(INSTALLED_APP);
+  try {
+    const stamp = JSON.parse(readFileSync(path.join(dir, 'source.json'), 'utf8'));
+    if (stamp.size === st.size && stamp.mtimeMs === st.mtimeMs) return 'same';
+  } catch {
+    /* no stamp yet: remake it once */
+  }
+  const running = spawnSync('tasklist', ['/FI', `IMAGENAME eq volt-pos-i${n}.exe`, '/NH'], {
+    encoding: 'utf8',
+  });
+  if ((running.stdout ?? '').toLowerCase().includes(`volt-pos-i${n}.exe`)) return 'busy';
+  const r = spawnSync(process.execPath, [path.join(REPO_ROOT, 'scripts', 'make-instance.mjs'), String(n)], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
+  return r.status === 0 ? 'rebuilt' : `failed: ${(r.stderr || r.stdout || '').trim().split(/\r?\n/).pop()}`;
+}
+
+/** For the GUI pill: the copies on disk (up to MAX_LANES) and whether each is signed in. */
+function lanesStatus() {
+  const copies = [];
+  for (let n = 1; n < MAX_LANES && n <= 9; n += 1) {
+    const env = instanceEnv(n);
+    if (!existsSync(env.APP_PATH)) continue;
+    copies.push({
+      n,
+      signedIn: existsSync(path.join(process.env.APPDATA ?? '', env.APP_IDENTIFIER, 'credentials')),
+    });
+  }
+  return { max: MAX_LANES, copies };
+}
+
+/**
+ * Open copy N on screen with its QR login (`launch.cmd visible`), for the one-time
+ * device sign-in. From here, NOT from a shell inside the Claude app: that one is
+ * an MSIX package whose children get a virtualised AppData, so a sign-in made
+ * there would never reach the runs.
+ */
+function openCopyForSignIn(n) {
+  const launcher = path.join(INSTANCE_ROOT, `i${n}`, 'launch.cmd');
+  if (!existsSync(launcher))
+    return { ok: false, error: `Không có ${launcher} — chạy node scripts/make-instance.mjs ${n}` };
+  spawn('cmd.exe', ['/c', launcher, 'visible'], {
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+  }).unref();
+  return { ok: true };
+}
+
+/**
+ * The lanes plan for fast-run.mjs: every queued group gets one generated config
+ * per instance allowed to take it (`….i<N>.conf.ts` — the name is how
+ * activeWdioRuns tells the lanes' processes apart).
+ */
+function writeLanePlan(plan, instances, userTags, retries) {
+  for (const old of readdirSync(TMP))
+    if (/^gui-lane-.*\.conf\.ts$/.test(old)) rmSync(path.join(TMP, old), { force: true });
+  // A `@lane-split` group (fast-plan.mjs planLanes) runs one half of its files' tests.
+  const grepFor = (only) =>
+    fastGrep({
+      exclude: only === 'shared' ? ['@broken', '@exclusive'] : ['@broken'],
+      userTags,
+      require: only === 'exclusive' ? ['@exclusive'] : [],
+    });
+  const queues = {};
+  for (const [cls, q] of Object.entries(plan.queues)) {
+    queues[cls] = {};
+    for (const mode of ['attach', 'launch']) {
+      queues[cls][mode] = q[mode].map(({ files, only }, k) => {
+        const id = `${cls}-${mode}-${k + 1}${only ? `-${only}` : ''}`;
+        const confs = {};
+        for (const inst of cls === 'any' ? instances : instances.slice(0, 1)) {
+          const conf = path.join(TMP, `gui-lane-${id}${inst.n ? `.i${inst.n}` : ''}.conf.ts`);
+          const base =
+            mode === 'attach' ? 'configs/wdio/wdio.bulk-attach.conf.ts' : 'configs/wdio/wdio.bulk.conf.ts';
+          writeGuiConf(conf, base, [files], grepFor(only), retries);
+          confs[String(inst.n)] = conf;
+        }
+        // `specs` is for after-the-fact analysis: the confs are rewritten by the next run.
+        return { id, files: files.length, specs: files, confs, ...(only ? { only } : {}) };
+      });
+    }
+  }
+  return { instances, queues };
+}
+
 function startRun(body) {
   refreshExit();
   if (current && current.exitCode === null) return { ok: false, error: 'Đang có một lần chạy khác.' };
@@ -361,50 +676,135 @@ function startRun(body) {
 
   mkdirSync(TMP, { recursive: true });
   mkdirSync(path.dirname(LIVE_FILE), { recursive: true });
+  archiveLastRun();
   writeFileSync(LIVE_FILE, '');
-  // Relative + `.js` so tsx resolves it to the .ts config, same as the repo's own imports.
-  const baseConf = path
-    .relative(TMP, path.join(REPO_ROOT, ENVS[env]))
-    .replace(/\\/g, '/')
-    .replace(/\.ts$/, '.js');
-  const dashReporter = path
-    .relative(TMP, path.join(REPO_ROOT, 'configs', 'reporters', 'DashboardReporter.js'))
-    .replace(/\\/g, '/');
   // Default retries OFF for GUI runs (fail once, re-run reds with the "Test lỗi
   // lần trước" button), unless the UI asks for more.
   const retries = Number.isInteger(body.retries) && body.retries > 0 ? body.retries : 0;
-  writeFileSync(
-    GUI_CONF,
-    [
-      '// Generated by dashboard/server/runner.mjs for one GUI run — do not edit.',
-      `import { config as base } from ${JSON.stringify(baseConf)};`,
-      `import DashboardReporter from ${JSON.stringify(dashReporter)};`,
-      'export const config: WebdriverIO.Config = {',
-      '  ...base,',
-      `  specs: ${JSON.stringify(specs.map((s) => path.join(REPO_ROOT, s)))},`,
-      '  exclude: [],',
-      // Drop Allure for GUI runs: it logs every WebDriver command as a step and
-      // screenshots each one — real per-command overhead the GUI never reads (it
-      // renders DashboardReporter's live events). spec + DashboardReporter stay.
-      "  reporters: [['spec', { symbols: { passed: '[PASS]', failed: '[FAIL]', skipped: '[SKIP]' } }], [DashboardReporter, {}]],",
-      grep ? `  mochaOpts: { ...base.mochaOpts, grep: ${JSON.stringify(grep)} },` : '',
-      `  specFileRetries: ${String(retries)},`,
-      '};',
-      '',
-    ].join('\n'),
+
+  // Which files can ATTACH to the pre-warmed app (no boot at all) and which must
+  // launch their own (payments / customer display — see fast-plan.mjs).
+  const byPath = new Map(
+    getCatalog()
+      .flatMap((f) => f.files)
+      .map((f) => [f.path, f]),
   );
+  const launchOnly = (p) =>
+    needsLaunch(byPath.get(p) ?? { path: p, tests: [] }, specSourceWithKits(REPO_ROOT, p));
 
-  const planned = getCatalog()
-    .flatMap((f) => f.files)
-    .filter((f) => specs.includes(f.path))
-    .reduce((n, f) => {
-      const tags = body.tags ?? [];
-      if (body.titles?.length) return n + f.tests.filter((t) => body.titles.includes(t.title)).length;
-      if (!tags.length) return n + f.tests.length;
-      return n + f.tests.filter((t) => t.tags.some((g) => tags.includes(g))).length;
-    }, 0);
-
-  const cmd = `npm run preflight && npx wdio run "${GUI_CONF}"`;
+  // Fast mode is a dev-lane sweep of whole files; a single-title run stays plain.
+  // A sweep is always ⚡ (and so gets the parallel copies): pressing Run on a full
+  // selection without the toggle used to fall back to one app booting per file.
+  const fast = (!!body.fast || specs.length >= LANES_MIN_FILES) && env === 'dev' && !body.titles?.length;
+  const copyBuilds =
+    fast && specs.length >= LANES_MIN_FILES
+      ? Array.from({ length: MAX_LANES - 1 }, (_, i) => `i${i + 1} ${syncCopyBuild(i + 1)}`)
+      : [];
+  const instances = fast ? laneInstances() : [];
+  let phases;
+  let lanes;
+  let planned;
+  let estimateMs;
+  if (fast && instances.length > 1 && specs.length >= LANES_MIN_FILES) {
+    const userTags = body.tags ?? [];
+    // Asked several times per file below; reading a spec + its kits is the slow part.
+    const lanesOf = new Map();
+    const opts = { voltTestCardSet: envFileValue(env, 'VOLT_TEST_GIFT_CARD') !== '' };
+    const laneOf = (p) => {
+      if (!lanesOf.has(p))
+        lanesOf.set(
+          p,
+          laneClass(byPath.get(p) ?? { path: p, tests: [] }, specSourceWithKits(REPO_ROOT, p), opts),
+        );
+      return lanesOf.get(p);
+    };
+    const plan = planLanes(getCatalog(), specs, userTags, LANE_GROUP_SIZE, {
+      needsLaunch: launchOnly,
+      laneOf,
+    });
+    planned = plan.planned;
+    if (!plan.files.length) {
+      return {
+        ok: false,
+        error: 'Chạy nhanh: không còn test tự động nào trong lựa chọn (toàn case kiểm tay/@broken).',
+      };
+    }
+    lanes = writeLanePlan(plan, instances, userTags, retries);
+    // A `@lane-split` file is estimated whole in its lane: its exclusive tests are the small part.
+    const filesOf = (cls) => plan.files.filter((p) => laneOf(p).replace(/^split:/, '') === cls);
+    const [alone, primary, any] = ['alone', 'primary', 'any'].map((cls) => estimate(filesOf(cls)));
+    estimateMs = alone + Math.max(primary, (primary + any) / instances.length);
+    phases = Object.entries(plan.queues).map(([cls, q]) => ({ name: cls, mode: 'lanes', files: q.files }));
+  } else if (fast) {
+    const userTags = body.tags ?? [];
+    const plan = planFast(getCatalog(), specs, userTags, FAST_GROUP_SIZE, { needsLaunch: launchOnly });
+    planned = plan.planned;
+    if (!plan.files.length) {
+      return {
+        ok: false,
+        error: 'Chạy nhanh: không còn test tự động nào trong lựa chọn (toàn case kiểm tay/@broken).',
+      };
+    }
+    const grepFast = fastGrep({ exclude: ['@broken'], userTags });
+    phases = [];
+    // Attach first: the pre-warmed app is already past its splash, so the run is
+    // testing within seconds of Run. Grouped like launch, so later files of a
+    // group get the webview reset of rootHooks.isolateGroupedFiles.
+    if (plan.attachGroups.length) {
+      const conf = path.join(TMP, 'wdio.gui.fast-attach.conf.ts');
+      writeGuiConf(conf, 'configs/wdio/wdio.bulk-attach.conf.ts', plan.attachGroups, grepFast, retries);
+      phases.push({ name: 'attach', mode: 'attach', conf, files: plan.attachFiles.length });
+    }
+    // Then launch mode (both windows real — payments and the customer display
+    // work), grouped so the app boots once per group instead of once per file.
+    if (plan.launchGroups.length) {
+      const conf = path.join(TMP, 'wdio.gui.fast.conf.ts');
+      writeGuiConf(conf, 'configs/wdio/wdio.bulk.conf.ts', plan.launchGroups, grepFast, retries);
+      phases.push({
+        name: 'launch',
+        mode: 'launch',
+        conf,
+        files: plan.files.length - plan.attachFiles.length,
+      });
+    }
+    const launchFiles = plan.files.length - plan.attachFiles.length;
+    estimateMs = Math.max(
+      0,
+      estimate(plan.files) -
+        (plan.attachFiles.length + launchFiles - plan.launchGroups.length) * BOOT_SAVING_MS,
+    );
+  } else {
+    // A plain dev run (one test, "Test lỗi lần trước") attaches too when none of
+    // its files needs the customer display — the same fast start, one worker per file.
+    const attach = env === 'dev' && specs.every((p) => !launchOnly(p));
+    writeGuiConf(GUI_CONF, attach ? 'configs/wdio/wdio.attach.conf.ts' : ENVS[env], specs, grep, retries);
+    const mode = attach ? 'attach' : 'launch';
+    phases = [{ name: mode, mode, conf: GUI_CONF, files: specs.length }];
+    planned = getCatalog()
+      .flatMap((f) => f.files)
+      .filter((f) => specs.includes(f.path))
+      .reduce((n, f) => {
+        const tags = body.tags ?? [];
+        if (body.titles?.length) return n + f.tests.filter((t) => body.titles.includes(t.title)).length;
+        if (!tags.length) return n + f.tests.length;
+        return n + f.tests.filter((t) => t.tags.some((g) => tags.includes(g))).length;
+      }, 0);
+    estimateMs = Math.max(0, estimate(specs) - (attach ? specs.length * BOOT_SAVING_MS : 0));
+  }
+  writeFileSync(
+    PLAN_FILE,
+    JSON.stringify(
+      lanes
+        ? { lanes, settleScale: FAST_SETTLE_SCALE, warmFile: WARM_FILE }
+        : { phases, settleScale: fast ? FAST_SETTLE_SCALE : undefined, warmFile: WARM_FILE },
+      null,
+      2,
+    ),
+  );
+  const cmd = `node "${FAST_RUN}" "${PLAN_FILE}"`;
+  const phaseLine = lanes
+    ? `${lanes.instances.length} app song song: ` + phases.map((p) => `${p.name} ${p.files} file`).join(' · ')
+    : phases.map((p) => `${p.name} ${p.files} file`).join(' → ');
   current = freshRunState({
     id: new Date().toISOString(),
     env,
@@ -416,10 +816,24 @@ function startRun(body) {
     finishedAt: null,
     exitCode: null,
     planned,
-    estimateMs: estimate(specs),
+    estimateMs,
   });
-  writeFileSync(RUN_LOG, `$ ENV=${env} ${cmd}\n# ${specs.length} spec${grep ? `, grep ${grep}` : ''}\n`);
+  writeFileSync(
+    RUN_LOG,
+    `$ ENV=${env} ${cmd}\n# ${specs.length} spec${grep ? `, grep ${grep}` : ''}${fast ? ' · ⚡ chạy nhanh' : ''}` +
+      ` · ${phaseLine} · app mở sẵn: ${warm?.status().state ?? 'off'}` +
+      (copyBuilds.length ? ` · bản sao: ${copyBuilds.join(', ')}` : '') +
+      (fast && instances.length < MAX_LANES && specs.length >= LANES_MIN_FILES
+        ? ' · chạy 1 app: bản sao chưa đăng nhập (chip "Mở QR" trên GUI)'
+        : '') +
+      '\n',
+  );
   saveRunState();
+  // A sweep needs the RAM (three apps ≈ 4 GB): freeze browsers / chat apps until it ends.
+  if (freezeEnabled() && specs.length >= LANES_MIN_FILES) {
+    const frozen = freezeApps('Freeze');
+    if (frozen) appendLog(`${frozen}\n`);
+  }
 
   // Detached + output to a file: the run must not depend on this process staying alive.
   const out = openSync(RUN_LOG, 'a');
@@ -429,7 +843,14 @@ function startRun(body) {
       detached: true,
       windowsHide: true,
       stdio: ['ignore', out, out],
-      env: { ...process.env, ENV: env, GUI_LIVE_FILE: LIVE_FILE, FORCE_COLOR: '0' },
+      env: {
+        ...process.env,
+        ENV: env,
+        GUI_LIVE_FILE: LIVE_FILE,
+        FORCE_COLOR: '0',
+        FREEZE_SCRIPT,
+        FREEZE_STATE,
+      },
     });
     child.on('error', (err) => logCrash('run-job spawn', err));
     child.unref();
@@ -452,6 +873,8 @@ function stopRun() {
     return { ok: false, error: String(err) };
   }
   appendLog('\n[runner] stop requested\n');
+  const thawed = freezeApps('Thaw');
+  if (thawed) appendLog(`${thawed}\n`);
   return { ok: true };
 }
 
@@ -482,7 +905,13 @@ function tickSchedules() {
     if (Array.isArray(s.days) && s.days.length && !s.days.includes(now.getDay())) continue;
     s.lastSlot = slot;
     changed = true;
-    const r = startRun({ env: s.env, specs: s.specs, tags: s.tags, label: `⏰ ${s.name}` });
+    const r = startRun({
+      env: s.env,
+      specs: s.specs,
+      tags: s.tags,
+      label: `⏰ ${s.name}`,
+      fast: s.fast !== false,
+    });
     s.lastResult = r.ok ? `started ${now.toISOString()}` : `skipped: ${r.error}`;
   }
   if (changed) saveSchedules(list);
@@ -598,6 +1027,26 @@ async function handle(req, res) {
     const result = stopRun();
     return sendJson(res, result.ok ? 200 : 409, result);
   }
+  // { enabled: boolean } switches the pre-warm; { now: true } retries it right away.
+  if (pathname === '/api/gui/warm' && req.method === 'POST') {
+    const body = await readBody(req);
+    if (typeof body.enabled === 'boolean') warm.setEnabled(body.enabled);
+    else if (body.now) warm.request('bấm tay');
+    return sendJson(res, 200, { warm: warm.status() });
+  }
+  // { enabled: boolean } — freeze the user's other apps during a sweep.
+  if (pathname === '/api/gui/freeze' && req.method === 'POST') {
+    const body = await readBody(req);
+    if (typeof body.enabled === 'boolean') setFreezeEnabled(body.enabled);
+    return sendJson(res, 200, { freeze: freezeStatus() });
+  }
+  if (pathname === '/api/gui/lanes/signin' && req.method === 'POST') {
+    const body = await readBody(req);
+    const n = Number(body.n);
+    if (!Number.isInteger(n) || n < 1 || n > 9) return sendJson(res, 400, { error: 'n phải là 1–9' });
+    const r = openCopyForSignIn(n);
+    return sendJson(res, r.ok ? 200 : 400, r.ok ? { lanes: lanesStatus() } : { error: r.error });
+  }
   if (pathname === '/api/gui/schedules') {
     if (req.method === 'GET') return sendJson(res, 200, { schedules: loadSchedules() });
     if (req.method === 'PUT') {
@@ -619,6 +1068,13 @@ export function listen() {
     server.listen(PORT, '127.0.0.1', () => {
       console.log(`[runner] Volt POS GUI runner on http://127.0.0.1:${PORT}`);
       console.log(`[runner] repo root: ${REPO_ROOT}`);
+      // Apps left frozen by a run that ended while no server was up.
+      if (!isRunning()) {
+        const thawed = freezeApps('Thaw');
+        if (thawed) console.log(thawed);
+      }
+      // Boot an app now, while the user is still picking specs.
+      warm.request('khởi động');
       resolve();
     });
   });
@@ -629,6 +1085,16 @@ export const isRunning = () => {
   return !!current && current.exitCode === null;
 };
 
+/** Close the app the pre-warm opened (desktop.mjs, when the window closes). */
+export const releaseWarm = () => warm?.release();
+
+warm = createWarm({
+  repoRoot: REPO_ROOT,
+  tmp: TMP,
+  // Plain state read, not isRunning(): this is called from inside refreshExit.
+  isRunning: () => !!current && current.exitCode === null,
+  logCrash,
+});
 adoptLastRun();
 
 // `node server/runner.mjs` → listen right away; importing (desktop.mjs) leaves it to the caller.

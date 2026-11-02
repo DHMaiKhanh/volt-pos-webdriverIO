@@ -157,6 +157,10 @@ export class TimeTrackingPage extends BasePage {
     await this.waitForReady();
     await this.find(PayrollIds.table, { visible: true, timeout: Timeouts.MEDIUM });
     await settle();
+    // `open()` promises the full list. A staff search left in the box by an
+    // earlier case survives navigation and hides every row — the 2026-10-30
+    // TC-TT-05 failure was exactly that ("zzqa-no-such-staff-9" from TC-TT-03).
+    if ((await this.value(PayrollIds.searchStaff).catch(() => '')) !== '') await this.search('');
     return this;
   }
 
@@ -413,7 +417,7 @@ export class TimeTrackingPage extends BasePage {
   }
 
   async setNote(note: string): Promise<void> {
-    await this.setValue(TimeTrackingIds.noteInput, note);
+    await this.replaceValue(TimeTrackingIds.noteInput, note);
   }
 
   async noteValue(): Promise<string> {
@@ -531,9 +535,31 @@ export class TimeTrackingPage extends BasePage {
     await this.waitGone(timeTrackingRowByNote(marker), timeout);
   }
 
-  /** Wait until a row whose note contains `marker` is rendered. */
-  async waitRecord(marker: string, timeout: number = Timeouts.MEDIUM): Promise<void> {
-    await this.find(timeTrackingRowByNote(marker), { timeout });
+  /**
+   * Wait until a row whose note contains `marker` is rendered.
+   *
+   * `reopen`: right after Add the list does not always refetch — seen live on
+   * 2026-10-30, the toast said "added" and the row only showed once the page was
+   * opened again — so give up on the stale list half-way, reopen today's page
+   * once, then wait the full timeout. Opt-in: a caller filtered to another date
+   * would lose its filter.
+   */
+  async waitRecord(
+    marker: string,
+    timeout: number = Timeouts.MEDIUM,
+    { reopen = false }: { reopen?: boolean } = {},
+  ): Promise<void> {
+    if (!reopen) {
+      await this.find(timeTrackingRowByNote(marker), { timeout });
+      return;
+    }
+    try {
+      await this.find(timeTrackingRowByNote(marker), { timeout: timeout / 2 });
+    } catch {
+      this.log.warn(`${this.name}: no row for "${marker}" yet — reopening the list once`);
+      await this.open();
+      await this.find(timeTrackingRowByNote(marker), { timeout });
+    }
   }
 
   /* --------------------------------------------------------------------- *

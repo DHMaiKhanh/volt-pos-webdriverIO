@@ -80,13 +80,13 @@ export async function clickCategoryAt(index: number): Promise<void> {
   await settle(600);
 }
 
-/** Name + price of every rendered service tile (`li` with `span.block`). */
+/** Name + price of every rendered service tile (`li` with `span.block`, or `span.line-clamp-2` on 1.1.8x). */
 export async function serviceTiles(): Promise<ServiceTile[]> {
   return P.exec<ServiceTile[]>(`
     return Array.prototype.filter.call(document.querySelectorAll('main li'), function (li) {
-      return !!li.querySelector('span.block');
+      return !!li.querySelector('span.block, span.line-clamp-2');
     }).map(function (li) {
-      var n = li.querySelector('span.block');
+      var n = li.querySelector('span.block, span.line-clamp-2');
       var p = li.querySelector('div.text-right');
       return { name: n ? (n.textContent || '').trim() : '', price: p ? (p.textContent || '').trim() : '' };
     });

@@ -439,7 +439,7 @@ export async function cardTurn(
 export async function voidDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 /** Put a named staff on the current draft (opens a draft when none). */

@@ -37,7 +37,7 @@ describe('Order flow — Checkout tenders', () => {
     this.timeout(Timeouts.MOCHA_HOOK);
 
     await returnToHome();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
 
     await createOrder();
     await checkoutPage.waitForReady();
@@ -48,7 +48,7 @@ describe('Order flow — Checkout tenders', () => {
     // returnToHome walks back and the draft (if any) is voided.
     await returnToHome();
     await homePage.waitForReady();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
   });
 
   // These probes share ONE order, and they mutate the entry field (a preset here,

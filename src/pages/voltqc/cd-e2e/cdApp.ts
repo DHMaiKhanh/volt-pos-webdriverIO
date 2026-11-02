@@ -277,7 +277,7 @@ class CdApp {
     const staff = preferred && names.includes(preferred) ? preferred : (names[0] ?? '');
     const staff2 = names.find((n) => n !== staff) ?? '';
     const services = await P.exec<string[]>(
-      'return Array.prototype.filter.call(document.querySelectorAll("main li"), function (li) { return !!li.querySelector("span.block") && li.getClientRects().length > 0; }).map(function (li) { return (li.querySelector("span.block").textContent || "").trim(); });',
+      'return Array.prototype.filter.call(document.querySelectorAll("main li"), function (li) { return !!li.querySelector("span.block, span.line-clamp-2") && li.getClientRects().length > 0; }).map(function (li) { return (li.querySelector("span.block, span.line-clamp-2").textContent || "").trim(); });',
     );
     const service = services.find(Boolean) ?? '';
     if (!staff || !service) {

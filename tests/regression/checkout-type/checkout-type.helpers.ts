@@ -54,9 +54,11 @@ import {
   payInCash,
   payWithCard,
   payWithGiftCard,
+  payWithOther,
   returnToHome,
 } from '../../../src/flows/index.js';
 import { checkoutPage, type PaymentSuccessPage } from '../../../src/pages/index.js';
+import type { TipChoice } from '../../../src/pages/pos/CustomerDisplayPage.js';
 import {
   CHECKOUT_TYPE_CHECKINS_FILE,
   readCheckoutTypeCheckins,
@@ -71,7 +73,10 @@ export const loyalty = new LoyaltyService();
 /** Opt-in for real card charges — same contract as card-payment.spec.ts. */
 export const CARD_SETTLE_ENABLED = process.env.CARD_SETTLE === '1';
 
-export type PointsTender = 'cash' | 'card' | 'gift-card';
+export type PointsTender = 'cash' | 'card' | 'gift-card' | 'other';
+
+/** The label an `other` tender is recorded under (Portal Point Config "Other"). */
+export const OTHER_TENDER_NAME = process.env.OTHER_TENDER_NAME ?? 'Zelle';
 
 /** `gci` — the customer's kiosk check-in order (default); `pos` — a fresh Quick Checkout order. */
 export type OrderSource = 'gci' | 'pos';
@@ -94,6 +99,14 @@ export interface CompleteOptions {
   reward?: string;
   /** Add this cashier tip, in cents, on the checkout before paying. */
   tipCents?: number;
+  /**
+   * The tip the CUSTOMER picks on their display when the tender pushes a tip
+   * screen (card always; cash on a merchant that tips cash, e.g. #14).
+   * Default `'none'`.
+   */
+  customerTip?: TipChoice;
+  /** `pos` orders only: build it via Pending Orders → Quick Checkout (see `createOrder`). */
+  quickCheckout?: boolean;
 }
 
 export interface PointsRun {
@@ -182,14 +195,20 @@ export function liveSetting(): Promise<LivePointSetting> {
   return step('Read merchant_point_payment_config', () => loyalty.pointSetting());
 }
 
-async function pay(tender: PointsTender, orderId: string): Promise<PaymentSuccessPage> {
+async function pay(
+  tender: PointsTender,
+  orderId: string,
+  tip: TipChoice = 'none',
+): Promise<PaymentSuccessPage> {
   switch (tender) {
     case 'cash':
-      return payInCash(orderId);
+      return payInCash(orderId, { tip });
     case 'card':
-      return payWithCard(orderId);
+      return payWithCard(orderId, { tip });
     case 'gift-card':
-      return payWithGiftCard(orderId, requireGiftCardCode());
+      return payWithGiftCard(orderId, requireGiftCardCode(), tip);
+    case 'other':
+      return payWithOther(orderId, OTHER_TENDER_NAME, undefined, tip);
   }
 }
 
@@ -231,7 +250,7 @@ export async function completeAndMeasure(
   phone: string,
   tender: PointsTender,
   setting: LivePointSetting,
-  { source = 'gci', reward, tipCents }: CompleteOptions = {},
+  { source = 'gci', reward, tipCents, customerTip, quickCheckout }: CompleteOptions = {},
 ): Promise<PointsRun> {
   if (reward !== undefined && source !== 'gci') {
     throw new Error('completeAndMeasure: `reward` is only wired for kiosk (gci) orders.');
@@ -253,12 +272,12 @@ export async function completeAndMeasure(
       );
     }
   } else {
-    ({ orderId } = await createOrder({ customerPhone: phone }));
+    ({ orderId } = await createOrder({ customerPhone: phone, quickCheckout }));
   }
   if (tipCents !== undefined) {
     await step(`Add a cashier tip of ${String(tipCents)}¢`, () => checkoutPage.addCashierTip(tipCents));
   }
-  const success = await pay(tender, orderId);
+  const success = await pay(tender, orderId, customerTip);
   await success.continueToNextOrder();
   await success.waitForFlowToEnd();
 

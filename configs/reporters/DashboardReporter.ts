@@ -44,8 +44,24 @@ export default class DashboardReporter extends WDIOReporter {
     return true;
   }
 
+  /**
+   * Spec file the running tests belong to. One worker normally runs one file,
+   * but a GROUPED worker (`specs: [[a, b, c]]` — the GUI's ⚡ launch phase, one
+   * app launch for many files) runs several, so track it per top-level suite.
+   */
+  private currentFile = '';
+
   override onRunnerStart(runner: RunnerStats): void {
-    emitLive({ t: 'spec-start', file: runner.specs[0] ?? '' });
+    this.currentFile = runner.specs[0] ?? '';
+    emitLive({ t: 'spec-start', file: this.currentFile });
+  }
+
+  override onSuiteStart(suite: SuiteStats): void {
+    // runner.specs are `file:///D:/…` URLs, suite.file is `D:…` — compare as paths.
+    if (!suite.file || samePath(suite.file, this.currentFile)) return;
+    emitLive({ t: 'spec-end', file: this.currentFile, failures: 0 });
+    this.currentFile = suite.file;
+    emitLive({ t: 'spec-start', file: this.currentFile });
   }
 
   // Live per-test events for the GUI runner (dashboard/server/runner.mjs). Only
@@ -68,7 +84,7 @@ export default class DashboardReporter extends WDIOReporter {
     if (hook.state !== 'failed' && !err) return;
     emitLive({
       t: 'test',
-      file: this.specs[0] ?? '',
+      file: this.currentFile || (this.specs[0] ?? ''),
       title: hook.title,
       fullTitle: hook.title,
       state: 'failed',
@@ -82,7 +98,7 @@ export default class DashboardReporter extends WDIOReporter {
     const err = test.error ?? test.errors?.[0];
     emitLive({
       t: 'test',
-      file: this.specs[0] ?? '',
+      file: this.currentFile || (this.specs[0] ?? ''),
       title: test.title,
       fullTitle: test.fullTitle,
       state,
@@ -93,7 +109,11 @@ export default class DashboardReporter extends WDIOReporter {
   }
 
   override onRunnerEnd(runner: RunnerStats): void {
-    emitLive({ t: 'spec-end', file: runner.specs[0] ?? '', failures: runner.failures ?? 0 });
+    emitLive({
+      t: 'spec-end',
+      file: this.currentFile || (runner.specs[0] ?? ''),
+      failures: runner.failures ?? 0,
+    });
     try {
       this.persist(runner);
     } catch (error) {
@@ -109,13 +129,40 @@ export default class DashboardReporter extends WDIOReporter {
     // `describe` is a child of it; by runner:end each has been popped back off
     // `currentSuites`, so the root is all that remains and holds the whole tree.
     const root = this.currentSuites[0];
-    const suites = (root?.suites ?? []).map((s) => this.toSuite(s)).filter(hasContent);
+    const fallback = runner.specs[0] ?? this.specs[0] ?? 'unknown-spec';
+    // A grouped worker ran several files: write one result per file, timed from
+    // its own suites, so history/ETA stay per spec. A normal worker is one group.
+    const byFile = new Map<string, SuiteStats[]>();
+    for (const s of root?.suites ?? []) {
+      const key = s.file || fallback;
+      byFile.set(key, [...(byFile.get(key) ?? []), s]);
+    }
+    if (byFile.size <= 1) {
+      this.writeResult(runner, fallback, root?.suites ?? [], runner.start, runner.end, runner.duration);
+      return;
+    }
+    for (const [file, group] of byFile) {
+      const start = group[0]?.start;
+      const end = group[group.length - 1]?.end;
+      const ms = start && end ? end.getTime() - start.getTime() : 0;
+      this.writeResult(runner, file, group, start, end, ms);
+    }
+  }
+
+  private writeResult(
+    runner: RunnerStats,
+    file: string,
+    rawSuites: SuiteStats[],
+    startAt: Date | undefined,
+    endAt: Date | undefined,
+    duration: number | undefined,
+  ): void {
+    const suites = rawSuites.map((s) => this.toSuite(s)).filter(hasContent);
 
     const totals = tallyTree(suites);
-    const file = runner.specs[0] ?? this.specs[0] ?? 'unknown-spec';
-    const durationMs = runner.duration ?? 0;
-    const end = runner.end ?? new Date();
-    const start = runner.start ?? new Date(end.getTime() - durationMs);
+    const durationMs = duration ?? 0;
+    const end = endAt ?? new Date();
+    const start = startAt ?? new Date(end.getTime() - durationMs);
 
     const result: DashboardSpecResult = {
       cid: runner.cid,
@@ -146,7 +193,7 @@ export default class DashboardReporter extends WDIOReporter {
       // suite entirely and the run read as a green pass while a whole spec file
       // had failed. Surface each failed hook as a synthetic failed test so it is
       // counted and its error reaches the drawer.
-      tests: [...suite.tests.map((t) => this.toTest(t)), ...this.failedHooks(suite.hooks)],
+      tests: [...onePerTest(suite.tests).map((t) => this.toTest(t)), ...this.failedHooks(suite.hooks)],
       suites: suite.suites.map((s) => this.toSuite(s)).filter(hasContent),
     };
   }
@@ -175,7 +222,9 @@ export default class DashboardReporter extends WDIOReporter {
       title: test.title,
       fullTitle: test.fullTitle,
       state,
-      durationMs: test.duration ?? 0,
+      // A skipped test never ran; WDIO times it from a start it never had (~26 min
+      // of "duration" per skip in one grouped full run).
+      durationMs: state === 'skipped' ? 0 : (test.duration ?? 0),
       retries: test.retries ?? 0,
     };
     if (state !== 'failed') return base;
@@ -191,6 +240,13 @@ export default class DashboardReporter extends WDIOReporter {
   }
 }
 
+const normPath = (p: string): string =>
+  p
+    .replace(/^file:\/\/\/?/, '')
+    .replace(/\\/g, '/')
+    .toLowerCase();
+const samePath = (a: string, b: string): boolean => normPath(a) === normPath(b);
+
 /** Append one JSON line to the GUI runner's live-event file, if a GUI run set one. */
 function emitLive(event: Record<string, unknown>): void {
   const file = process.env.GUI_LIVE_FILE;
@@ -204,6 +260,20 @@ function emitLive(event: Record<string, unknown>): void {
 
 const hasContent = (suite: DashboardSuite): boolean =>
   suite.tests.length > 0 || suite.suites.some(hasContent);
+
+/**
+ * Each test once. When a hook fails, the tests it takes down reach the reporter
+ * as a SECOND `test:pending` for a test already listed — one full run counted
+ * 1891 tests for 1627 results. A run state (passed/failed) wins over the skip.
+ */
+function onePerTest(tests: readonly TestStats[]): TestStats[] {
+  const byTitle = new Map<string, TestStats>();
+  for (const test of tests) {
+    const prev = byTitle.get(test.fullTitle);
+    if (!prev || normaliseState(prev.state) === 'skipped') byTitle.set(test.fullTitle, test);
+  }
+  return [...byTitle.values()];
+}
 
 /** Mocha `pending` is a skip for counting purposes; everything else passes through. */
 function normaliseState(state: TestStats['state']): TestState {

@@ -147,8 +147,15 @@ export function pickMoney(t: string, label: string): number {
   return money(new RegExp(`\\| ${escapeRe(label)} \\| (-?\\$[\\d,.]+)`).exec(t)?.[1]);
 }
 
+/**
+ * Add `service` in reopen. Reopen disables every staff card by design (the app's
+ * `staff-items.tsx`, `isDisabledForReopen`): the order's own staff stays selected, so
+ * its service goes straight in — tapping its card only ever hit "click intercepted"
+ * (14 run-5 failures). Another staff is reachable only through a line's Change Staff,
+ * so a case that adds a NEW staff in reopen still taps the card and reports that.
+ */
 export async function addServiceInReopen(service: string, staff = vqEnv.testStaff): Promise<void> {
-  await app.pickStaff(staff);
+  if (staff !== vqEnv.testStaff) await app.pickStaff(staff);
   await app.addService(service);
 }
 

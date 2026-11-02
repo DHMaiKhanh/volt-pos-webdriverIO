@@ -33,6 +33,10 @@ export const VqpsHome = {
   noteButton: btn('Note', 0),
   orderNoteDialog: { role: 'dialog', hasText: 'Order Note', nth: -1 } as VqcQuery,
   customerPlaceholder: 'Enter Customer Phone, Name or Email',
+  /** The customer box as input / as collapsed text — old copy and the 1.1.8x 'Phone, name or email'. */
+  customerInputCss:
+    'input[placeholder="Enter Customer Phone, Name or Email"], input[placeholder="Phone, name or email"]',
+  customerTextRe: '^(Enter Customer Phone, Name or Email|Phone, name or email)$',
   pendingSidebar: { role: 'complementary', name: 'Pending Orders sidebar' } as VqcQuery,
   appliedToast: { css: '[data-sonner-toast]', hasText: 'Promo & Rewards applied successfully' } as VqcQuery,
   removeCustomerDialog: { role: 'dialog', name: 'Remove Customer Phone', nth: -1 } as VqcQuery,

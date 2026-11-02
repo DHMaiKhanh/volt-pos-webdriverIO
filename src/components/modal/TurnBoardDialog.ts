@@ -94,6 +94,22 @@ async function textContentOf(el: WebdriverIO.Element): Promise<string> {
   return typeof raw === 'string' ? raw.trim() : '';
 }
 
+/**
+ * Trimmed `textContent` of many elements in ONE round trip. The date picker's
+ * year listbox holds ~200 options; reading them one `getProperty` at a time
+ * made every `pickDate` cost ~12s.
+ */
+async function textContentsOf(els: readonly WebdriverIO.Element[]): Promise<string[]> {
+  if (els.length === 0) return [];
+  const texts = await browser.execute(
+    function (...nodes: HTMLElement[]) {
+      return nodes.map((node) => (node.textContent ?? '').trim());
+    },
+    ...(els as unknown as HTMLElement[]),
+  );
+  return texts;
+}
+
 const parseNumber = (text: string): number => {
   const match = /-?\d+(?:\.\d+)?/.exec(text.replace(/,/g, ''));
   return match ? Number.parseFloat(match[0]) : 0;
@@ -462,8 +478,7 @@ export class TurnBoardDialog extends BaseComponent {
       if (!trigger) throw new Error(`Date picker dropdown ${index} not found.`);
       await trigger.click();
       const options = await this.findAll(TurnBoardIds.openListboxOptions, { timeout: Timeouts.SHORT });
-      const texts: string[] = [];
-      for (const o of options) texts.push(await textContentOf(o));
+      const texts = await textContentsOf(options);
       const at = pickOption(texts);
       const option = options[at];
       if (at < 0 || !option) {

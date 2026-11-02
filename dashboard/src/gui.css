@@ -102,8 +102,73 @@
     opacity: 0.3;
   }
 }
+/* Pre-warmed app (warm.mjs): same pill shape, the dot says whether Run starts at once. */
+.warm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+.warm-pill label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.warm-pill input {
+  margin: 0;
+}
+.warm-pill i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.warm-pill.ready i {
+  background: var(--pass);
+}
+.warm-pill.warming i {
+  background: var(--series);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.warm-pill.busy i {
+  background: var(--flaky);
+}
+.warm-pill.error i {
+  background: var(--fail);
+}
+.warm-pill.off {
+  opacity: 0.7;
+}
+.warm-retry {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font-size: 13px;
+  cursor: pointer;
+  color: inherit;
+}
 .eta {
   font-size: 13px;
+}
+.fast-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fast-toggle.disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 .btn.big {
   padding: 9px 16px;
@@ -527,6 +592,34 @@
 }
 .d.time {
   background: var(--series);
+}
+/* Why a run stopped short (ResultsTab stopReason). */
+.stop-reason {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--fail);
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.stop-reason ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.stop-reason li + li {
+  margin-top: 4px;
+}
+.stop-reason code {
+  white-space: normal;
+  word-break: break-word;
+}
+.stop-reason pre {
+  margin: 6px 0 0;
+  max-height: 180px;
+  overflow: auto;
+  font-size: 12px;
+  white-space: pre-wrap;
 }
 .progress {
   height: 6px;

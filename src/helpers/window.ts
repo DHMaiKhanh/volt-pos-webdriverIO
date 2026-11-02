@@ -20,7 +20,12 @@ export interface WindowInfo {
   handle: string;
   title: string;
   url: string;
+  /** The Tauri window label (`main` / `customer`), `null` where the page does not say. */
+  label: string | null;
 }
+
+/** Where the customer display lives — what {@link restoreCustomerWindow} navigates back to. */
+const CUSTOMER_URL = 'http://tauri.localhost/customer/';
 
 type WindowRole = 'main' | 'customer';
 
@@ -50,6 +55,11 @@ const isCustomerPath = (url: string): boolean => pathOf(url).startsWith(Routes.C
  * window ever sits under `/customer`.
  */
 function score(role: WindowRole, info: WindowInfo): number {
+  // The Tauri label is the one signal a navigation cannot change: a case cut by a
+  // timeout once drove the customer window onto a staff route, after which title
+  // and path both said "main" for BOTH windows.
+  if (info.label === 'main' || info.label === 'customer') return info.label === role ? 3 : 0;
+
   const titleMatches = normalize(info.title) === normalize(ROLE_TITLE[role]);
   const onCustomer = isCustomerPath(info.url);
 
@@ -86,7 +96,14 @@ export async function listWindows(): Promise<WindowInfo[]> {
   for (const handle of handles) {
     try {
       await browser.switchToWindow(handle);
-      found.push({ handle, title: await browser.getTitle(), url: await browser.getUrl() });
+      const label = await browser
+        .execute(
+          () =>
+            (window as { __TAURI_INTERNALS__?: { metadata?: { currentWindow?: { label?: string } } } })
+              .__TAURI_INTERNALS__?.metadata?.currentWindow?.label ?? null,
+        )
+        .catch(() => null);
+      found.push({ handle, title: await browser.getTitle(), url: await browser.getUrl(), label });
     } catch (error) {
       // A window can close between `getWindowHandles()` and the switch — the
       // customer display does exactly that during an update install. Reporting
@@ -178,4 +195,22 @@ export async function withCustomerWindow<T>(fn: () => Promise<T>): Promise<T> {
       log.warn(`Could not return from the customer window: ${(error as Error).message}`);
     }
   }
+}
+
+/**
+ * Load the customer display afresh: a refresh where it is, or back to
+ * `/customer/` when something navigated it onto a staff route — a refresh would
+ * only reload that route, and every payment that pushes the tip screen then waits
+ * on a display that never shows it (run 7: turn-count 11 of 12 failed so).
+ */
+export async function reloadCustomerWindow(): Promise<void> {
+  await withCustomerWindow(async () => {
+    const url = await browser.getUrl();
+    if (isCustomerPath(url)) {
+      await browser.refresh();
+      return;
+    }
+    log.warn(`The customer window was on ${url} — sending it back to ${CUSTOMER_URL}`);
+    await browser.url(CUSTOMER_URL);
+  });
 }

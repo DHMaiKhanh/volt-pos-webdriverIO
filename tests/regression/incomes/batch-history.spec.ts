@@ -60,16 +60,22 @@ describe('Batch History', () => {
       },
     );
 
-    it(title('TC-BATCH-02: default preset is This Week, range Monday → today', Tag.REGRESSION), async () => {
-      await batchHistoryPage.open();
+    it(
+      title('TC-BATCH-02: default preset is Last 7 Days, range today − 6 → today', Tag.REGRESSION),
+      async () => {
+        await batchHistoryPage.open();
 
-      expect(DATE_PRESETS.thisWeek as readonly string[]).toContain(await batchHistoryPage.presetText());
+        // The app's designed default, not "This Week" as the scanned case table had it:
+        // volt-pos `batch-history/-shared/batch-history.schema.ts` defaults `from` to
+        // PRESET_VALUES.LAST_7_DAYS (= startOfDay(today − 6)) since 0.1.406, Apr 2026.
+        expect(DATE_PRESETS.last7Days as readonly string[]).toContain(await batchHistoryPage.presetText());
 
-      const today = new Date();
-      const monday = new Date(today);
-      monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-      expect(rangeText(monday, today)).toContain(await batchHistoryPage.dateRangeText());
-    });
+        const today = new Date();
+        const sixDaysAgo = new Date(today);
+        sixDaysAgo.setDate(today.getDate() - 6);
+        expect(rangeText(sixDaysAgo, today)).toContain(await batchHistoryPage.dateRangeText());
+      },
+    );
 
     it(
       title('TC-BATCH-03: the preset combobox lists exactly the 10 presets in order', Tag.REGRESSION),

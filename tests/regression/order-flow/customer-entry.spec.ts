@@ -32,7 +32,7 @@ const UNMATCHED_PHONE = '5550101234';
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 describe('Order flow — Customer entry', () => {

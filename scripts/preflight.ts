@@ -22,13 +22,25 @@
  */
 
 import fs from 'node:fs';
+import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { Paths, merchantDbDir } from '../configs/constants/paths.js';
 import { loadEnv } from '../configs/env/loadEnv.js';
 import { resolveAppCandidates } from '../configs/env/resolveApp.js';
 import { resolveMsEdgeDriver, resolveTauriDriver } from '../src/support/services/TauriDriverService.js';
-import { APP_IMAGE_NAMES, DRIVER_IMAGE_NAMES, runningImages } from '../src/support/process.js';
-import { isPortOpen } from '../src/support/net.js';
+import {
+  APP_IMAGE_NAMES,
+  DRIVER_IMAGE_NAMES,
+  MSEDGEDRIVER_IMAGE,
+  TAURI_DRIVER_IMAGE,
+  activeWdioRuns,
+  appWindowTitles,
+  killStaleProcesses,
+  waitForImagesGone,
+  runningImages,
+} from '../src/support/process.js';
+import { instanceSuffix } from '../src/support/instance.js';
+import { isPortOpen, waitForPortFree } from '../src/support/net.js';
 
 /** Minimum for `node:sqlite`, which the DB helpers use to inspect the app's databases. */
 const MIN_NODE = { major: 22, minor: 5 } as const;
@@ -228,7 +240,7 @@ function checkProcesses(attachMode: boolean): void {
       appRunning.length ? `running: ${appRunning.join(', ')}` : 'no app running to attach to',
       appRunning.length ? undefined : 'npm run app:launch   (starts the app with WebView2 CDP enabled)',
     );
-    const edgeDriverUp = driversRunning.includes('msedgedriver.exe');
+    const edgeDriverUp = driversRunning.includes(MSEDGEDRIVER_IMAGE);
     add(
       'Driver process',
       edgeDriverUp ? 'OK' : 'FAIL',
@@ -248,6 +260,65 @@ function checkProcesses(attachMode: boolean): void {
           'so the driver would own a session against a process it never started.'
       : undefined,
   );
+}
+
+/**
+ * Written by the GUI runner while it holds a pre-warmed app: dashboard/server/warm.mjs
+ * for the installed app, fast-run.mjs (`gui-warm-i<N>.json`) for a parallel instance.
+ */
+const GUI_WARM_MARKER = path.join(Paths.ROOT, '.tmp', `gui-warm${instanceSuffix()}.json`);
+
+/**
+ * Close the GUI runner's PRE-WARMED app before a launch lane checks for strays.
+ *
+ * The GUI keeps an app booted with CDP on so its ⚡ attach phase starts in
+ * seconds. A launch lane cannot use that app — tauri-driver must start its own —
+ * and the stale-process + driver-port checks below would otherwise FAIL on it
+ * and stop a perfectly good run. It is ours to close: the marker says the GUI
+ * launched it, and the open CDP port proves it is that app, not a person's own
+ * window (which never has remote debugging on). The GUI re-warms after its next run.
+ */
+async function releaseGuiWarmApp(host: string, driverPort: number, cdpPort: number): Promise<void> {
+  let marker: { state?: string } = {};
+  try {
+    marker = JSON.parse(fs.readFileSync(GUI_WARM_MARKER, 'utf8')) as { state?: string };
+  } catch {
+    marker = {}; // no GUI runner, or it never warmed
+  }
+  const guiRun = process.env.PREFLIGHT_CLEAN_LEFTOVERS === '1';
+  const warmApp = marker.state === 'ready' && (await isPortOpen(host, cdpPort));
+  // The GUI's own runs (fast-run.mjs) also clear what a closed app leaves behind:
+  // the windowless helper volt-pos.exe and a lone msedgedriver. Never with a
+  // tauri-driver up (another launch lane is mid-run) or a titled window open
+  // (someone's own app) — those still FAIL below, as they always did.
+  const leftovers =
+    guiRun &&
+    runningImages([TAURI_DRIVER_IMAGE]).length === 0 &&
+    !appWindowTitles().some(Boolean) &&
+    runningImages([...APP_IMAGE_NAMES, MSEDGEDRIVER_IMAGE]).length > 0;
+  if (!warmApp && !leftovers) return;
+  // A run attached to that app right now (a GUI attach phase, or between its
+  // phases) owns it: closing it would kill that run mid-test. Let the checks below
+  // FAIL instead, as they did before the pre-warm existed. The GUI's own job
+  // wrapper is not counted for the GUI's own preflight — that is this run.
+  const busy = activeWdioRuns({ includeGuiJobs: !guiRun });
+  if (busy.length) {
+    line(
+      ` [INFO] Not closing the app: a run is using it (${String(busy.length)} wdio/GUI process(es) alive).`,
+    );
+    return;
+  }
+
+  const killed = killStaleProcesses({ app: true, drivers: true });
+  // taskkill returns before the kernel has torn the tree down: the checks below
+  // then still saw a dying msedgedriver and FAILED the run they were clearing for.
+  waitForImagesGone([...APP_IMAGE_NAMES, ...DRIVER_IMAGE_NAMES], 10_000);
+  await waitForPortFree(host, driverPort, 5_000).catch(() => undefined);
+  if (killed.length) {
+    line(
+      ` [INFO] Closed ${warmApp ? "the GUI runner's pre-warmed app" : 'leftovers of a closed app'} for this launch lane: ${killed.join(', ')}`,
+    );
+  }
 }
 
 async function checkPorts(
@@ -426,6 +497,8 @@ async function main(): Promise<number> {
   line(` Reset DB          ${String(env.RESET_DB)}`);
   line('='.repeat(78));
   line();
+
+  if (!attachMode) await releaseGuiWarmApp(env.DRIVER_HOST, env.DRIVER_PORT, env.REMOTE_DEBUG_PORT);
 
   checkNode();
   checkPlatform();

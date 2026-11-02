@@ -20,6 +20,9 @@ import { BasePage } from '../BasePage.js';
  */
 export type TipChoice = 10 | 15 | 20 | 25 | 'none' | 'custom';
 
+/** How long to look for a signature pad on a tip screen that is already rendered (it is part of that screen). */
+export const SIGNATURE_IN_TIP_SCREEN_MS = 1_000;
+
 /** `PAYMENT_TYPE` values, as the customer-facing method buttons spell them. */
 export type CustomerPaymentMethod = 'card' | 'cash' | 'gift_card' | 'other';
 
@@ -253,8 +256,13 @@ export class CustomerDisplayPage extends BasePage {
     });
   }
 
-  isSignaturePadShown(): Promise<boolean> {
-    return withCustomerWindow(() => this.isVisible(CustomerDisplayIds.signaturePad));
+  /**
+   * Is a signature pad on screen? Pass a short `timeout` when the screen that
+   * would carry it (the tip screen) is already rendered — the pad is part of it,
+   * so waiting the full SHORT on a merchant that never signs is dead time.
+   */
+  isSignaturePadShown(timeout: number = Timeouts.SHORT): Promise<boolean> {
+    return withCustomerWindow(() => this.isVisible(CustomerDisplayIds.signaturePad, timeout));
   }
 
   /** Draw a signature on the pad. */

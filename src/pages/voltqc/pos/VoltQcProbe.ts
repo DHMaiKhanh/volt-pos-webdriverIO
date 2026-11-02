@@ -281,12 +281,23 @@ export class VoltQcProbe extends UiObject {
   /** Real WebDriver click on the first hit (waits for it to appear). */
   async clickQ(chain: VqcChain, timeout: number = Timeouts.MEDIUM): Promise<void> {
     await this.waitFor(chain, timeout);
-    const token = `t${String((tokenSeq += 1))}`;
-    if (!(await this.run<boolean>('mark', chain, token))) {
-      throw new Error(`clickQ(): nothing matches ${JSON.stringify(chain)}`);
+    // React can swap the node between the mark and the click — the re-render drops
+    // the attribute and the click fails "element wasn't found" (16 failures of one
+    // full run). Mark the fresh node again rather than fail on a stale token.
+    for (let attempt = 1; ; attempt += 1) {
+      const token = `t${String((tokenSeq += 1))}`;
+      if (!(await this.run<boolean>('mark', chain, token))) {
+        throw new Error(`clickQ(): nothing matches ${JSON.stringify(chain)}`);
+      }
+      try {
+        await (await $(`[data-vqc-hit="${token}"]`).getElement()).click();
+        break;
+      } catch (error) {
+        if (attempt >= 3 || !/wasn't found|stale element|no such element/i.test((error as Error).message))
+          throw error;
+        await settle(200);
+      }
     }
-    const el = await $(`[data-vqc-hit="${token}"]`).getElement();
-    await el.click();
     await settle(150);
   }
 

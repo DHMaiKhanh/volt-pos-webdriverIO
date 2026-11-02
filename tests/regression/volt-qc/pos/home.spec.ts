@@ -287,7 +287,10 @@ describe('volt-qc 02 HOME — read-only', () => {
       expect(await P.noHorizontalScroll()).toBe(true);
 
       const box = await P.info(VqcHome.customerInput);
-      expect(box?.attrs.placeholder).toBe('Enter Customer Phone, Name or Email');
+      // The copy changed on 1.1.8x ('Phone, name or email'); "not clipped" is the case.
+      expect(['Enter Customer Phone, Name or Email', 'Phone, name or email']).toContain(
+        box?.attrs.placeholder,
+      );
       expect(box?.scrollFits).toBe(true);
 
       const side = (await P.texts([VqcHome.pendingSidebar, { role: 'button' }])).map((t) => t.trim());

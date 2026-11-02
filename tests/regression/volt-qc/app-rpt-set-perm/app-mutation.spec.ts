@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc module 01-app (APP-*) — the `@mutation` / `@settings` cases plus the
  * remaining rows that can run on a live till.
  *

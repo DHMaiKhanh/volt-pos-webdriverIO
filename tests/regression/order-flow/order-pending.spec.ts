@@ -82,7 +82,7 @@ async function reopenFromQueue(code: string): Promise<void> {
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 describe('Order flow — Pending Orders queue (/order-pending)', () => {
@@ -121,7 +121,7 @@ describe('Order flow — Pending Orders queue (/order-pending)', () => {
       await orderPendingPage.clearSearch().catch(() => undefined);
       if (await orderPendingPage.isOrderListed(orderCode).catch(() => false)) {
         await reopenFromQueue(orderCode);
-        if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+        await homePage.discardDraftIfAny();
       }
     }
     await returnToHome();

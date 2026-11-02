@@ -27,7 +27,7 @@ if (process.argv.includes('--build') || !existsSync(path.join(DASH_ROOT, 'dist',
   if (r.status !== 0) process.exit(r.status ?? 1);
 }
 
-const { listen, isRunning, PORT } = await import('./runner.mjs');
+const { listen, isRunning, releaseWarm, PORT } = await import('./runner.mjs');
 const url = `http://127.0.0.1:${PORT}/`;
 
 try {
@@ -72,6 +72,8 @@ if (!edge) {
       return;
     }
     console.log('[desktop] window closed — bye.');
+    // The pre-warmed app was opened for this window's runs; it goes with it.
+    releaseWarm();
     process.exit(0);
   });
 }

@@ -191,7 +191,7 @@ export interface PaidOrder {
 export async function freshTill(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 /** Build the cart from `lines` on an empty till (does not press Pay). */

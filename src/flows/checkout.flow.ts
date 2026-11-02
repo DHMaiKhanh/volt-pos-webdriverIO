@@ -1,3 +1,4 @@
+import { browser } from '@wdio/globals';
 import { Timeouts } from '../../configs/constants/timeouts.js';
 import { assertWritesAllowed, env } from '../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../components/index.js';
@@ -5,7 +6,7 @@ import { step } from '../helpers/steps.js';
 import { checkoutPage, customerDisplayPage, paymentSuccessPage } from '../pages/index.js';
 import type { PaymentSuccessPage } from '../pages/index.js';
 import { CardChargeState } from '../pages/pos/CheckoutPage.js';
-import type { TipChoice } from '../pages/pos/CustomerDisplayPage.js';
+import { SIGNATURE_IN_TIP_SCREEN_MS, type TipChoice } from '../pages/pos/CustomerDisplayPage.js';
 
 /**
  * Taking an order that is already on `/order/{id}/checkout` through to settled.
@@ -148,6 +149,7 @@ export async function payWithCard(orderId: string, payment: CardPayment = {}): P
   return step('Pay by card', async () => {
     await requireCheckoutFor(orderId, 'card');
     await checkoutPage.selectTender('card');
+    await failFastOnDownTerminal();
 
     await checkoutPage.pressCompletePayment();
     await clearPasscodeGuard();
@@ -162,7 +164,7 @@ export async function payWithCard(orderId: string, payment: CardPayment = {}): P
     } else {
       await customerDisplayPage.chooseTip(payment.tip ?? 'none');
     }
-    if (await customerDisplayPage.isSignaturePadShown()) {
+    if (await customerDisplayPage.isSignaturePadShown(SIGNATURE_IN_TIP_SCREEN_MS)) {
       await customerDisplayPage.sign();
     }
     await customerDisplayPage.pressContinue();
@@ -204,7 +206,11 @@ export async function payWithCard(orderId: string, payment: CardPayment = {}): P
  * the tender is refused offline (the dialog only renders while `isOnline`), and
  * a BEFORE-style tip flow pushes the tip screen to the customer display first.
  */
-export async function payWithGiftCard(orderId: string, code: string): Promise<PaymentSuccessPage> {
+export async function payWithGiftCard(
+  orderId: string,
+  code: string,
+  tip: TipChoice = 'none',
+): Promise<PaymentSuccessPage> {
   assertWritesAllowed('take a gift-card payment');
 
   if (code.trim() === '') {
@@ -225,7 +231,7 @@ export async function payWithGiftCard(orderId: string, code: string): Promise<Pa
     // absent) before the scan dialog, which only opens once the tip is resolved.
     // The wait dialog rides the settle API round-trip and can take longer than the
     // cash path's, so give its appearance the MEDIUM budget.
-    await completeCustomerTipIfPrompted('none', undefined, Timeouts.MEDIUM);
+    await completeCustomerTipIfPrompted(tip, undefined, Timeouts.MEDIUM);
 
     await checkoutPage.waitForGiftCardScanDialog(Timeouts.MEDIUM);
     await checkoutPage.enterGiftCardCode(code);
@@ -364,6 +370,7 @@ export async function payWithOther(
   orderId: string,
   methodName: string,
   amountCents?: number,
+  tip: TipChoice = 'none',
 ): Promise<PaymentSuccessPage> {
   assertWritesAllowed('take an "other" payment');
 
@@ -386,7 +393,7 @@ export async function payWithOther(
     // customer display, so "other" must drive that handoff exactly as cash does —
     // without it the settle sits on the wait dialog until the API timeout. A
     // no-op on a merchant that settles "other" straight to the receipt.
-    await completeCustomerTipIfPrompted('none');
+    await completeCustomerTipIfPrompted(tip);
 
     return settle(orderId, 'other');
   });
@@ -424,6 +431,30 @@ async function requireCheckoutFor(orderId: string, tender: string): Promise<void
  */
 async function clearPasscodeGuard(): Promise<void> {
   await passcodeDialog.enterIfPresent(env.STAFF_PASSCODE);
+}
+
+/** How long Complete Payment may stay greyed out on the Card tender before the device warning counts. */
+const CARD_READY_MS = 5_000;
+
+/**
+ * Throw at once when the terminal is down. A disconnected terminal keeps Complete
+ * Payment greyed out on the Card tender for good, and the press then sat out its
+ * full click wait with only "not clickable" to show for it — every card case after
+ * the 01/11 restart. Only the button staying disabled WITH the header's device
+ * warning up counts; a disabled button on its own falls through to the press.
+ */
+async function failFastOnDownTerminal(): Promise<void> {
+  const enabled = await browser
+    .waitUntil(() => checkoutPage.isCompletePaymentEnabled().catch(() => false), {
+      timeout: CARD_READY_MS,
+      interval: 250,
+    })
+    .catch(() => false);
+  if (enabled || !(await checkoutPage.hasDeviceWarning().catch(() => false))) return;
+  throw new Error(
+    'Complete Payment stays disabled on the Card tender and the header shows the red "!" device ' +
+      'warning: the card terminal is most likely not connected (check the header Devices popover).',
+  );
 }
 
 /**
@@ -470,7 +501,7 @@ export async function completeCustomerTipIfPrompted(
   }
   // A cash tip screen carries no signature on 20258, but a merchant that signs
   // renders the pad inside this same screen — sign it when it is there.
-  if (await customerDisplayPage.isSignaturePadShown()) {
+  if (await customerDisplayPage.isSignaturePadShown(SIGNATURE_IN_TIP_SCREEN_MS)) {
     await customerDisplayPage.sign();
   }
   await customerDisplayPage.pressContinue();

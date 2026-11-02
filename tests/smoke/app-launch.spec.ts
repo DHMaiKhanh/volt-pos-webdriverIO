@@ -18,7 +18,9 @@ describe('App launch', () => {
     const windows = await listWindows();
     expect(windows.length).toBeGreaterThanOrEqual(1);
 
-    for (const window of windows) {
+    // Attach mode also lists the customer window as a bare `about:blank` CDP
+    // target with an empty title — it is not a window the app rendered.
+    for (const window of windows.filter((w) => w.url !== 'about:blank')) {
       // Containment, not equality. `tauri.conf.json` gives the two windows
       // different native titles, but WebDriver's Get Title returns
       // `document.title`, and the app ships ONE index.html — so on some WebView2

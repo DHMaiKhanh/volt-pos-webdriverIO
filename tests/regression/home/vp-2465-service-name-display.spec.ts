@@ -30,7 +30,7 @@ const long = (): ServiceCardLayout[] => cards.filter((c) => c.truncated);
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 /** Fail with the offending card names, not just "expected true". */

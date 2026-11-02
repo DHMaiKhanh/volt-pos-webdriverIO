@@ -1,3 +1,4 @@
+import { browser } from '@wdio/globals';
 import { Timeouts } from '../../configs/constants/timeouts.js';
 import { env } from '../../configs/env/loadEnv.js';
 import { appNav, hasHeaderNav, passcodeDialog } from '../components/index.js';
@@ -5,13 +6,15 @@ import { Routes } from '../constants/routes.js';
 import { step } from '../helpers/steps.js';
 import { waitUntilPath } from '../helpers/wait.js';
 import {
+  accessibilitySettingsPage,
   checkoutPage,
+  customerDisplayPage,
   homePage,
   orderHistoryPage,
   paymentSuccessPage,
   settingsPage,
 } from '../pages/index.js';
-import type { HomePage, OrderHistoryPage, SettingsPage } from '../pages/index.js';
+import type { HomePage, OrderHistoryPage, PasscodeGate, SettingsPage } from '../pages/index.js';
 
 /**
  * Getting between screens.
@@ -87,7 +90,13 @@ export async function returnToHome(): Promise<HomePage> {
     for (let hop = 0; hop < MAX_HOPS; hop += 1) {
       const path = await appNav.currentPath();
 
-      if (path.startsWith(Routes.HOME)) return homePage.waitForReady(Timeouts.MEDIUM);
+      if (path.startsWith(Routes.HOME)) {
+        // A dialog left open blocks every click; a filter left in the search
+        // boxes hides the staff cards the ready check waits for.
+        await homePage.dismissOpenDialogs();
+        await homePage.clearSearches();
+        return homePage.waitForReady(Timeouts.MEDIUM);
+      }
 
       if (isPreAuth(path)) {
         throw new Error(
@@ -117,10 +126,22 @@ export async function returnToHome(): Promise<HomePage> {
 
       // A dirty settings form blocks the router with a leave guard — possibly
       // already up from the case that failed. Discard it on either side of the hop.
-      const inSettings = path.startsWith(Routes.SETTINGS);
-      if (inSettings) await settingsPage.confirmLeaveGuardIfShown();
-      await appNav.goHome();
-      if (inSettings) await settingsPage.confirmLeaveGuardIfShown();
+      // A guard already up is on screen at once, so a short look is enough; one
+      // the logo click raises blocks goHome's path wait, so it is handled there.
+      // (Two full SHORT probes here cost ~10s on every settings test's way home.)
+      if (!path.startsWith(Routes.SETTINGS)) {
+        // A modal the failed case left open (Adjust Tip on order history, …)
+        // sits over the logo: 13 recoveries in one full run died on exactly that.
+        await homePage.dismissOpenDialogs();
+        await appNav.goHome();
+        continue;
+      }
+      await settingsPage.confirmLeaveGuardIfShown(Timeouts.ANIMATION);
+      try {
+        await appNav.goHome();
+      } catch (error) {
+        if (!(await settingsPage.confirmLeaveGuardIfShown(Timeouts.ANIMATION))) throw error;
+      }
     }
 
     throw new Error(
@@ -198,6 +219,25 @@ export async function goToSettings(): Promise<SettingsPage> {
   });
 }
 
+/**
+ * Is this passcode gate switched ON in Settings → Accessibility → Passcode Setting?
+ *
+ * A gate test only means something while its gate is on. With it off the app
+ * opens the screen straight away BY DESIGN — `resolvePasscodeBypass` in
+ * volt-pos `use-passcode-verification.ts` (per-gate settings, app #2618) — and a
+ * missing prompt would read as a regression it is not. Ends back on the till.
+ */
+export async function isPasscodeGateOn(gate: PasscodeGate): Promise<boolean> {
+  return step(`Read the "${gate}" passcode gate`, async () => {
+    await goToSettings();
+    await settingsPage.openSection('ACCESSIBILITY');
+    await accessibilitySettingsPage.waitForReady(Timeouts.MEDIUM);
+    const on = await accessibilitySettingsPage.isGateOn(gate);
+    await returnToHome();
+    return on;
+  });
+}
+
 /* --------------------------------------------------------------------- *
  * Internals
  * --------------------------------------------------------------------- */
@@ -223,6 +263,38 @@ async function leavePaymentSuccess(): Promise<void> {
 }
 
 /**
+ * Sign on the customer display when the till waits for it. Returns whether that
+ * let the till go (it moves on to payment-success).
+ *
+ * A card payment that went through but whose spec died before the customer
+ * signed parks the till on "Payment Successful! Customer is adding signature.
+ * Please wait…" — a modal with no button over the back arrow; only the customer
+ * display releases it. One launch group of a full run spent every remaining test
+ * on that screen. Launch mode only: an attached session cannot reach the customer
+ * window.
+ */
+async function signToReleaseTill(): Promise<boolean> {
+  const waiting = await browser.execute(function () {
+    return Array.from(document.querySelectorAll('[data-slot="dialog-content"],[role="dialog"]')).some(
+      function (el) {
+        return /adding (a )?signature|chữ ký/i.test(el.textContent || '');
+      },
+    );
+  });
+  if (!waiting || env.MODE === 'attach') return false;
+  try {
+    await customerDisplayPage.signAndContinue();
+    await waitUntilPath((path) => !isCheckout(path), {
+      timeout: Timeouts.NAVIGATION,
+      message: 'Signing on the customer display did not release the till',
+    });
+    return true;
+  } catch {
+    return false; // the back arrow attempt below reports the stuck screen
+  }
+}
+
+/**
  * Back out of checkout, leaving the draft order intact.
  *
  * Deliberately does NOT delete the draft. A recovery helper that discarded an
@@ -232,6 +304,10 @@ async function leavePaymentSuccess(): Promise<void> {
  * `create-order.spec.ts` does.
  */
 async function leaveCheckout(): Promise<void> {
+  // A spec that failed mid-tip leaves the modal tip-wait dialog over the back button.
+  await checkoutPage.cancelCustomerTipWaitIfShown();
+  // Paid, but the customer never signed: the till is past checkout already.
+  if (await signToReleaseTill()) return;
   await checkoutPage.pressBack();
   await waitUntilPath((path) => !isCheckout(path), {
     timeout: Timeouts.NAVIGATION,

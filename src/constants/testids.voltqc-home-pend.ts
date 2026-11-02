@@ -47,8 +47,12 @@ export const VqhOrder = {
   /** Staff name spans on the staff grid (excludes the sidebar, which is an <aside>). */
   staffNameCss: 'main span.col-span-2.text-xl',
   staffTile: (name: string): VqcQuery => ({ css: 'main span.col-span-2.text-xl', text: name, nth: 0 }),
-  /** Service tile name span (`li > … span.block`). Clicking it bubbles to the tile. */
-  serviceTile: (name: string): VqcQuery => ({ css: 'main li span.block', text: name, nth: 0 }),
+  /** Service tile name span (`li > … span.block`; `span.line-clamp-2` on 1.1.8x). Clicking it bubbles to the tile. */
+  serviceTile: (name: string): VqcQuery => ({
+    css: 'main li span.block, main li span.line-clamp-2',
+    text: name,
+    nth: 0,
+  }),
   /** One order line row. */
   lineCss: 'main div.pr-11',
   /** Line row whose name span is exactly `name`. */
@@ -72,8 +76,11 @@ export const VqhOrder = {
   orderNoteLabel: [MAIN, { css: 'strong', hasText: 'Order Note:', nth: 0 }] as readonly VqcQuery[],
   selectStaffFirst: { role: 'dialog', hasText: 'Select Staff First', nth: -1 } as VqcQuery,
   selectStaffFirstText: 'Please select a staff before choosing services.',
-  /** The customer field while an order has staff: collapsed text, not the input. */
-  customerSlot: [MAIN, { text: 'Enter Customer Phone, Name or Email', nth: 0 }] as readonly VqcQuery[],
+  /** The customer field while an order has staff: collapsed text, not the input. Old copy or 1.1.8x's. */
+  customerSlot: [
+    MAIN,
+    { textRe: '^(Enter Customer Phone, Name or Email|Phone, name or email)$', nth: 0 },
+  ] as readonly VqcQuery[],
   back: [MAIN, btn('Back', 0)] as readonly VqcQuery[],
   errorToast: { css: '[data-sonner-toast][data-type="error"]' } as VqcQuery,
 } as const;

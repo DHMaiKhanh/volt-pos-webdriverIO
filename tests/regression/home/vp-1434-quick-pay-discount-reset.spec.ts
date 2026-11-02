@@ -24,7 +24,7 @@ const AMOUNT_20 = 2_000;
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 /** Fresh draft with a staff and the Quick Pay dialog open on `amount`. */

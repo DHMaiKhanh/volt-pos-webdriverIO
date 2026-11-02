@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc 10-reports / 11-settings — the last rows of the APP/RPT/SET/PERM port,
  * written from the TC rows (no volt-qc test exists for them):
  *

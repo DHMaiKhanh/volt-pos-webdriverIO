@@ -1,4 +1,7 @@
 /**
+ * @lane-split — each `@exclusive` case restores what it changed in `finally`, so only those wait
+ * for the alone phase; the other cases run in a parallel lane (dashboard/server/fast-plan.mjs).
+ *
  * volt-qc port — 13 CD deep: the customer display step by step through one
  * order, Tax only at checkout, gift card + Service Fee, tip choice kept when the
  * tip screen comes back, Show Point / Show Reward independence.

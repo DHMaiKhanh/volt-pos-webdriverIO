@@ -1,5 +1,6 @@
 import { $, $$, browser } from '@wdio/globals';
 import { Timeouts } from '../../configs/constants/timeouts.js';
+import { recordAbsent } from '../helpers/deadTime.js';
 import { candidates, type Locator } from '../helpers/selectors.js';
 import { moduleLogger } from '../utils/logger.js';
 
@@ -93,20 +94,24 @@ export abstract class UiObject {
 
   /** Non-throwing presence check. Use for optional UI (a toast, an empty state). */
   protected async exists(loc: Locator, timeout: number = Timeouts.SHORT): Promise<boolean> {
+    const started = Date.now();
     try {
       await this.find(loc, { timeout });
       return true;
     } catch {
+      recordAbsent(`${this.constructor.name} › ${loc.name}`, Date.now() - started);
       return false;
     }
   }
 
   /** Presence AND visibility. */
   protected async isVisible(loc: Locator, timeout: number = Timeouts.SHORT): Promise<boolean> {
+    const started = Date.now();
     try {
       const el = await this.find(loc, { timeout, visible: true });
       return await el.isDisplayed();
     } catch {
+      recordAbsent(`${this.constructor.name} › ${loc.name}`, Date.now() - started);
       return false;
     }
   }
@@ -131,13 +136,67 @@ export abstract class UiObject {
    *
    * `setValue` clears first, which is what almost every caller wants. The app's
    * virtual keyboard mirrors the real DOM input, so a WebDriver-level value set
-   * is picked up by React's change handler the same way a tap is.
+   * is picked up by React's change handler the same way a tap is — EXCEPT the
+   * clear itself (see {@link notifyReact}): an empty `value` types no key, so it
+   * is always finished through React, or the "cleared" box keeps its old filter.
    */
   protected async setValue(loc: Locator, value: string, opts: FindOptions = {}): Promise<void> {
     const el = await this.find(loc, { visible: true, ...opts });
     await el.waitForEnabled({ timeout: opts.timeout ?? Timeouts.MEDIUM });
     this.log.debug(`setValue ${loc.name} = ${value}`);
     await el.setValue(value);
+    if (value === '') await this.notifyReact(el, '');
+  }
+
+  /**
+   * Replace a React-controlled input's value and make sure it took.
+   *
+   * The keys of {@link setValue} can land after the OLD text when React
+   * re-renders it between the clear and the typing (see {@link notifyReact}).
+   * Seen live on 2026-10-30, by timing: the tax field went "100" + "5" → "1005",
+   * clamped back to "100" (TC-CHF-20), and a note became "QA-SCAN-…QA-SCAN-…
+   * edited" (TC-TT-06). So type as usual, read it back, and when the value did
+   * not take, set it through React — which still runs the component's own
+   * onChange (clamping, stripping). Not for masked/currency inputs, whose
+   * formatting is keystroke-driven: those keep {@link setValue}.
+   */
+  protected async replaceValue(loc: Locator, value: string, opts: FindOptions = {}): Promise<void> {
+    await this.setValue(loc, value, opts);
+    const el = await this.find(loc, { visible: true, ...opts });
+    const typed = (await el.getValue()) ?? '';
+    // A prefix is the field CUTTING the input (maxLength) — the behaviour a
+    // length test asserts on, not the stale-text bug. Leave it alone.
+    if (typed === value || value.startsWith(typed)) return;
+    this.log.debug(
+      `replaceValue ${loc.name}: read "${typed}" after typing "${value}" — setting it through React`,
+    );
+    await this.notifyReact(el, value);
+  }
+
+  /**
+   * Put `value` in a React-controlled input in a way React cannot miss.
+   *
+   * WebDriver's Element Clear does `element.value = ''`. React wraps that setter
+   * to remember the last value it saw (its `_valueTracker`), so the clear also
+   * tells React "the value is already empty" — and the `change` event that
+   * follows reads as no change: no onChange, the component's state keeps the old
+   * text, and the next render puts it back. So: write through the PROTOTYPE's
+   * setter (React's wrapper never sees it), knock the tracker off the new value
+   * so it must register a change, then fire the `input` event React listens to.
+   * Typing skips nothing a script would, so maxLength is applied by hand.
+   */
+  private async notifyReact(el: WebdriverIO.Element, value: string): Promise<void> {
+    await browser.execute(
+      (input: HTMLInputElement, next: string) => {
+        const capped = input.maxLength > 0 ? next.slice(0, input.maxLength) : next;
+        Reflect.set(Object.getPrototypeOf(input) as object, 'value', capped, input);
+        const tracker = (input as unknown as { _valueTracker?: { setValue(v: string): void } })._valueTracker;
+        tracker?.setValue(`${capped}\u0000`);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      },
+      el as unknown as HTMLInputElement,
+      value,
+    );
   }
 
   /** Append to an input without clearing it. */

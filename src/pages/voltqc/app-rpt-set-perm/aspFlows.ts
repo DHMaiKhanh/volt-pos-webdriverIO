@@ -33,7 +33,7 @@ import {
 } from '../../index.js';
 import permissionsSettingsPage from '../../settings/PermissionsSettingsPage.js';
 import type { PasscodeGateState } from '../../index.js';
-import { ensurePasscodeGrant } from '../../../support/passcodeGrant.js';
+import { ensurePasscodeGrant, readPasscodeGrant } from '../../../support/passcodeGrant.js';
 import { moduleLogger } from '../../../utils/logger.js';
 import { gateProbe } from '../app-perm/GateProbe.js';
 import { vqProbe } from '../settings-devm/VqProbe.js';
@@ -61,11 +61,17 @@ export function qcTag(): string {
 export async function goAnyLang(route: string): Promise<void> {
   await gateProbe.dismiss();
   await gateProbe.routerNavigate(route);
-  if (await gateProbe.waitOpen(2_500)) {
+  // A live 30-minute grant keeps the guard from mounting at all; waiting 2.5s for
+  // it on every navigation was dead time (see PasscodeDialog.isPrompting).
+  const grant = await readPasscodeGrant();
+  const gateWait = grant && grant.expiresAt - Date.now() > 60_000 ? 500 : 2_500;
+  if (await gateProbe.waitOpen(gateWait)) {
     const r = await gateProbe.submit(ownerCode());
     if (r.result !== 'allowed') throw new Error(`goAnyLang(${route}): owner code refused — ${r.error}`);
   }
-  if ((await gateProbe.path()).startsWith('/settings')) await settingsPage.confirmLeaveGuardIfShown();
+  // The leave guard comes up with the navigation itself, never later.
+  if ((await gateProbe.path()).startsWith('/settings'))
+    await settingsPage.confirmLeaveGuardIfShown(Timeouts.ANIMATION);
   await waitUntilPath((p) => p === route || p.startsWith(`${route}/`), {
     timeout: Timeouts.NAVIGATION,
     message: `goAnyLang(): never reached ${route}`,
@@ -171,7 +177,7 @@ export async function cleanTill(): Promise<void> {
   await gateProbe.dismiss();
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 /** A draft on /home (staff + `lines` services), NOT taken to checkout. */

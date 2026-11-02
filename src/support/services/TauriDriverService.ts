@@ -6,6 +6,7 @@ import { Paths } from '../../../configs/constants/paths.js';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { loadEnv } from '../../../configs/env/loadEnv.js';
 import { moduleLogger } from '../../utils/logger.js';
+import { seedWindowState } from '../instance.js';
 import { waitForPortFree, waitForPortOpen } from '../net.js';
 
 const log = moduleLogger('TauriDriverService');
@@ -99,6 +100,9 @@ export default class TauriDriverService {
     const native = resolveMsEdgeDriver(env.MSEDGEDRIVER_PATH);
     const args = ['--port', String(env.DRIVER_PORT)];
     if (native) args.push('--native-driver', native);
+    // A parallel instance's msedgedriver must not collide with the default 4445.
+    if (env.TAURI_NATIVE_PORT > 0) args.push('--native-port', String(env.TAURI_NATIVE_PORT));
+    seedWindowState();
 
     // A previous session's socket can linger in TIME_WAIT on Windows.
     await waitForPortFree(env.DRIVER_HOST, env.DRIVER_PORT, Timeouts.SHORT).catch((error: unknown) => {

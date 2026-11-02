@@ -1,6 +1,7 @@
 import { browser } from '@wdio/globals';
 import { Timeouts } from '../../configs/constants/timeouts.js';
 import { pathOf } from '../constants/routes.js';
+import { recordSettle } from './deadTime.js';
 import { moduleLogger } from '../utils/logger.js';
 
 const log = moduleLogger('wait');
@@ -100,7 +101,25 @@ export async function retry<T>(fn: () => Promise<T>, opts: RetryOptions = {}): P
  * close handler has already run, so the next click lands on a dying dialog.
  * Centralising it means `grep -rn 'browser.pause'` over `src/pages` and `tests`
  * stays empty and every deliberate pause is visible as `settle()` in review.
+ *
+ * `SETTLE_SCALE` (default 1) multiplies every pause — the GUI's ⚡ fast mode
+ * lowers it. Floored at 100ms so an exit animation still gets a frame or two.
  */
+const SETTLE_SCALE = (() => {
+  const n = Number(process.env.SETTLE_SCALE);
+  return Number.isFinite(n) && n > 0 && n <= 1 ? n : 1;
+})();
+
+/**
+ * Floor for a scaled DEBOUNCE wait: the app's search inputs debounce ~300ms
+ * (volt-pos `useDebounce(…, 300)`), so a scaled-down settle must still outlast
+ * that or the next read sees the unfiltered list.
+ */
+const DEBOUNCE_FLOOR_MS = 400;
+
 export async function settle(ms: number = Timeouts.ANIMATION): Promise<void> {
-  await browser.pause(ms);
+  const floor = ms >= Timeouts.DEBOUNCE ? DEBOUNCE_FLOOR_MS : 100;
+  const scaled = SETTLE_SCALE === 1 ? ms : Math.max(floor, Math.round(ms * SETTLE_SCALE));
+  recordSettle(scaled);
+  await browser.pause(scaled);
 }

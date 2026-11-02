@@ -116,7 +116,12 @@ export const VqcHome = {
   orderHeading: inMain({ textRe: '^#OD\\d{6}-\\d+' }),
   staffSearch: inMain({ css: 'input', placeholder: 'Search staff' }),
   serviceSearch: inMain({ css: 'input', placeholder: 'Search service' }),
-  customerInput: { css: 'input', placeholder: 'Enter Customer Phone, Name or Email', nth: 0 } as VqcQuery,
+  // The customer box's placeholder changed: 'Enter Customer Phone, Name or Email' on the
+  // builds these cases were written for, 'Phone, name or email' on 1.1.8x — accept both.
+  customerInput: {
+    css: 'input[placeholder="Enter Customer Phone, Name or Email"], input[placeholder="Phone, name or email"]',
+    nth: 0,
+  } as VqcQuery,
   doneButton: inMain(btn('Done', 0)),
   pendingSidebar: { role: 'complementary', name: 'Pending Orders sidebar' } as VqcQuery,
   checkinToday: inMain(btnRe('^Checkin Today \\(\\d+\\)')),
@@ -269,7 +274,18 @@ export const VqcTurn = {
     'On: turn counts can include decimals (e.g. 1.6). Off: turn counts are whole numbers.',
   ],
   savedToast: { css: '[data-sonner-toast]', hasText: 'Turn value saved' } as VqcQuery,
-  chargeFeeTurnCard: { css: '[data-slot="card"]', hasText: 'Turn Settings', nth: 0 } as VqcQuery,
+  /**
+   * Settings › Charge & Fee › Turn Settings. The page's sections are the app's
+   * `SectionCard` (a plain `div.rounded-xl` with an `h4` title, no `data-slot`), so
+   * `[data-slot="card"]` alone never matched: TURN-060 / TURN-061 failed on it every
+   * run. Last hit = the card itself rather than a wrapper that also holds the text.
+   */
+  chargeFeeTurnCard: {
+    css: '[data-slot="card"], div.rounded-xl',
+    hasText: 'Turn Settings',
+    hasCss: 'h4',
+    nth: -1,
+  } as VqcQuery,
 } as const;
 
 /* ------------------------------------------------------------------------- *

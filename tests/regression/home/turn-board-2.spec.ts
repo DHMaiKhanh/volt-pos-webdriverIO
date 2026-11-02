@@ -49,6 +49,9 @@ import {
 
 const BASELINE = { serviceBased: true, decimal: true, turnValueCents: 10_000 } as const;
 
+/** Most extra staff `zeroRow` clocks in looking for one with no turns today. */
+const MAX_EXTRA_CHECK_INS = 4;
+
 /** Rounded to the 2 decimals the board shows. */
 const r2 = (n: number): number => Math.round(n * 100) / 100;
 const byStaff = (rows: TurnRow[]): Map<string, number> => new Map(rows.map((r) => [r.staff, r.turnCount]));
@@ -83,14 +86,29 @@ describe('Turn board — Adjust Manual Turn', () => {
     unreverted.set(staff, (unreverted.get(staff) ?? 0) - 1);
   }
 
-  /** A roster row whose Current is 0 (freshly clocked in, no sales today). */
+  /**
+   * A roster row whose Current is 0 (freshly clocked in, no sales today), with the
+   * Adjust dialog open. Late in a day of runs the first check-in candidates have
+   * all sold something — an order counts once its staff clocks in (TURN-014) — and
+   * 6 cases failed on it in the 01/11 runs; so clock more staff in, one at a time,
+   * until one starts at 0. `after` clocks them out with the rest of the roster.
+   */
   async function zeroRow(): Promise<string> {
-    const rows = await turnBoardDialog.adjustRows();
-    const row =
-      rows.find((r) => roster.includes(r.staff) && r.current === 0) ?? rows.find((r) => r.current === 0);
-    if (!row)
-      throw new Error("No Adjust row with Current: 0 — every staff on today's board already has turns.");
-    return row.staff;
+    for (let extra = 0; ; extra += 1) {
+      const rows = await turnBoardDialog.adjustRows();
+      const row =
+        rows.find((r) => roster.includes(r.staff) && r.current === 0) ?? rows.find((r) => r.current === 0);
+      if (row) return row.staff;
+      if (extra === MAX_EXTRA_CHECK_INS) {
+        throw new Error(
+          `No Adjust row with Current: 0 — every staff on today's board already has turns, ` +
+            `${String(MAX_EXTRA_CHECK_INS)} more check-ins included.`,
+        );
+      }
+      await turnBoardDialog.closeAdjust();
+      roster.push(...(await clockInRoster(1)));
+      await openAdjustOnToday();
+    }
   }
 
   /** Set only when the merchant had the turn feature OFF and this block had to switch it on. */

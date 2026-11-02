@@ -24,7 +24,7 @@ describe('Order flow — Payment success', () => {
     this.timeout(Timeouts.MOCHA_HOOK);
 
     await returnToHome();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
 
     const { orderId } = await createOrder();
     await checkoutPage.waitForReady();

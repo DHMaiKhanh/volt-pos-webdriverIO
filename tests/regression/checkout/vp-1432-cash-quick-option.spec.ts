@@ -33,7 +33,7 @@ const expectedAfter = (before: number, preset: number): number => (ADDITIVE ? be
 async function voidAnyDraft(): Promise<void> {
   await returnToHome();
   await homePage.waitForReady();
-  if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+  await homePage.discardDraftIfAny();
 }
 
 let orderId = '';
@@ -64,7 +64,7 @@ describe('VP-1432 — Pay by Cash quick option', () => {
   after(async () => {
     await returnToHome();
     await homePage.waitForReady();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
   });
 
   it(

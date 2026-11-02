@@ -87,7 +87,7 @@ describe('PROBE — Split per-check payment UI (for SPL-R1/R4/R5)', () => {
 
     await returnToHome();
     await homePage.waitForReady();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
 
     // A single default-priced line clears the $5 split floor; Equally needs no
     // second line. If the default service is under $5 this will need a price bump.
@@ -122,6 +122,6 @@ describe('PROBE — Split per-check payment UI (for SPL-R1/R4/R5)', () => {
     // Cleanup — never completed a payment; drop the draft so the till is clean.
     await returnToHome();
     await homePage.waitForReady();
-    if (await homePage.hasActiveDraft()) await homePage.deleteOrder();
+    await homePage.discardDraftIfAny();
   });
 });

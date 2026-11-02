@@ -43,6 +43,17 @@ describe('isDrivableTarget — attach self-heal health classifier', () => {
     }
   });
 
+  it('does not count the customer display as the staff window', () => {
+    for (const url of ['http://tauri.localhost/customer/', 'http://tauri.localhost/customer']) {
+      assert.equal(isDrivableTarget(page(url)), false, url);
+    }
+    assert.equal(
+      isDrivableTarget(page('http://tauri.localhost/customers')),
+      true,
+      'a staff route that merely starts with "customer"',
+    );
+  });
+
   it('rejects a non-app or blank target', () => {
     assert.equal(isDrivableTarget(page('about:blank')), false, 'about:blank');
     assert.equal(isDrivableTarget(page('')), false, 'empty url');
