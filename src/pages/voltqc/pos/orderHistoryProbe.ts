@@ -8,9 +8,14 @@ import { voltQcProbe as P } from './VoltQcProbe.js';
  * (volt-qc `src/flows/order-history.ts`). Reads and filters only.
  */
 
-/** react-day-picker `data-day` key on this screen: `M/D/YYYY` (en-US toLocaleDateString). */
+/**
+ * react-day-picker gridcell key: the `<td data-day>` is ISO `YYYY-MM-DD`. The day
+ * BUTTON's own `data-day` follows the OS locale (`02/11/2026` on a dd/MM machine),
+ * so day cells are always reached as `td[data-day="…"] button`.
+ */
 export const dayKey = (d: Date): string =>
-  `${String(d.getMonth() + 1)}/${String(d.getDate())}/${String(d.getFullYear())}`;
+  `${String(d.getFullYear())}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dayCellCss = (d: Date): string => `td[data-day="${dayKey(d)}"] button`;
 export const mdy = (d: Date): string =>
   `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${String(d.getFullYear())}`;
 export const addDays = (d: Date, n: number): Date => {
@@ -89,7 +94,7 @@ export async function dateRangeText(): Promise<string> {
 
 /** The day button for `d`, paging months (by the days shown, not by today) until it renders. */
 export async function dayButton(d: Date, maxMonths = 90): Promise<readonly VqcQuery[]> {
-  const q: readonly VqcQuery[] = [POP, { css: `button[data-day="${dayKey(d)}"]`, nth: 0 }];
+  const q: readonly VqcQuery[] = [POP, { css: dayCellCss(d), nth: 0 }];
   const target = startOfDay(d).getTime();
   for (let i = 0; i < maxMonths; i += 1) {
     if (await P.has(q)) return q;
@@ -99,9 +104,9 @@ export async function dayButton(d: Date, maxMonths = 90): Promise<readonly VqcQu
       });
       var pop = pops[pops.length - 1];
       if (!pop) return [];
-      return Array.prototype.map.call(pop.querySelectorAll('button[data-day]'), function (e) {
-        var p = (e.getAttribute('data-day') || '').split('/').map(Number);
-        return new Date(p[2], p[0] - 1, p[1]).getTime();
+      return Array.prototype.map.call(pop.querySelectorAll('td[data-day]'), function (e) {
+        var p = (e.getAttribute('data-day') || '').split('-').map(Number);
+        return new Date(p[0], p[1] - 1, p[2]).getTime();
       });
     `);
     const goBack = shown.length > 0 ? target < Math.min(...shown) : target < startOfDay(new Date()).getTime();
@@ -147,9 +152,9 @@ export async function dayCellCounts(d: Date): Promise<{ shown: number; lit: numb
       return Array.prototype.filter.call(pop.querySelectorAll(sel), function (e) { return e.getClientRects().length > 0; }).length;
     };
     var key = arguments[0];
-    return { shown: vis('button[data-day="' + key + '"]'), lit: vis('button[data-day="' + key + '"][data-range-end="true"]') };
+    return { shown: vis(key), lit: vis(key + '[data-range-end="true"]') };
   `,
-    dayKey(d),
+    dayCellCss(d),
   );
 }
 

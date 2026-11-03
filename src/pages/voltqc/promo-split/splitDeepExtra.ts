@@ -512,15 +512,26 @@ export const cardDialog: VqcQuery = { role: 'dialog', hasTextRe: CARD_DIALOG_RE,
 
 let terminalCache: { ok: boolean; at: number } | null = null;
 
-/** Header Devices popover text ("Devices | Terminal | Connected | Printer | …"). */
+/**
+ * Header Devices popover text ("Devices | Terminal | Connected | Printer | …").
+ * 1.1.94+ prints only the device name and a status dot; the status sits in the
+ * name's `title` (`[data-testid="device-row"] p[title="Connected"]`), so each row
+ * is appended as "Name | Status" to keep the older text shape.
+ */
 export async function devicesText(): Promise<string> {
   await app.go('/home', { passcode: false });
   await appShellProbe.clickDevices();
   const pop: VqcQuery = { css: '[data-radix-popper-content-wrapper]', hasText: 'Terminal', nth: -1 };
   await appears(pop, 5_000);
   const t = await flat(pop);
+  const rows = await P.exec<string>(
+    `return Array.prototype.map.call(document.querySelectorAll('[data-radix-popper-content-wrapper] [data-testid="device-row"]'), function (r) {
+       var p = r.querySelector('p[title]');
+       return ((p && p.textContent) || '').trim() + ' | ' + ((p && p.getAttribute('title')) || '');
+     }).join(' | ');`,
+  ).catch(() => '');
   await P.escape();
-  return t;
+  return rows ? `${t} | ${rows}` : t;
 }
 
 /** Header Devices reports "Terminal | Connected" (cached 5 min unless `fresh`). */

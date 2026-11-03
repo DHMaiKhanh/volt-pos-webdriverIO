@@ -926,7 +926,13 @@ export const CheckoutIds = {
     '//header//button[normalize-space()="Edit Order"]',
     buttonWithAnyText('Edit Order'),
   ),
-  tipBtn: locator('checkout tip button', 'checkout-tip-btn', 'button[class*="bg-[#2ED5FF]"]'),
+  // 1.1.78 dropped the `bg-[#2ED5FF]` class; the label is what survives a restyle.
+  tipBtn: locator(
+    'checkout tip button',
+    'checkout-tip-btn',
+    'button[class*="bg-[#2ED5FF]"]',
+    buttonWithAnyText('Tip', 'Tiền tip'),
+  ),
   /**
    * The keypad the Tip button opens (`-shared/cashier-tip-keypad-dialog.tsx`):
    * cashier-local, it never reaches the customer display. The tip it adds lands
@@ -1631,9 +1637,9 @@ export const passcodeDigit = (digit: string): Locator =>
     `${byRole('dialog')} ${buttonWithText(digit)}`,
   );
 
-/** One staff tile on `/home`. */
+/** One staff tile on `/home`. 1.1.88+ renamed the testid `staff-item-` → `staff-tile-`. */
 export const staffItem = (staffId: string): Locator =>
-  locator(`staff card ${staffId}`, `staff-item-${staffId}`);
+  locator(`staff card ${staffId}`, `staff-item-${staffId}`, `[data-testid="staff-tile-${staffId}"]`);
 
 /** One staff group tab on `/home`. `groupId` is `'all'` for the default tab. */
 export const staffGroupTab = (groupId: string): Locator =>

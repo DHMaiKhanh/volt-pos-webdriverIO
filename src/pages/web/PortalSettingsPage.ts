@@ -19,6 +19,18 @@ const EARN_ON_TIP_SWITCH =
 const SAVE_BUTTON = '//button[normalize-space(.)="Save"]';
 const SAVED_TOAST = '//*[normalize-space(.)="Point settings saved"]';
 
+/** Store Settings tabs are Radix tabs; `?tab=configuration` alone does not select it. */
+const CONFIGURATION_TAB = '//button[@role="tab"][normalize-space(.)="Configuration"]';
+/** Configuration → "Font size" card (VP-4809): radios valued small / medium / large. */
+const FONT_SIZE_GROUP = '[role="radiogroup"][aria-label="Font size"]';
+
+export interface FontSizeOption {
+  /** `small` | `medium` | `large` — the value saved to `merchant_theme_pos_style.font_size`. */
+  value: string;
+  label: string;
+  checked: boolean;
+}
+
 /**
  * Fastboy Portal — Store Settings → Payment & transactions (VP-4812).
  *
@@ -122,6 +134,29 @@ export class PortalSettingsPage {
       timeoutMsg: `${this.name}: no "Point settings saved" toast after Save.`,
     });
     return { changed: true };
+  }
+
+  /** Store Settings → Configuration tab, waiting for the Font size card. */
+  async openConfiguration(): Promise<this> {
+    await this.open();
+    await $(CONFIGURATION_TAB).click();
+    await $(FONT_SIZE_GROUP).waitForDisplayed({
+      timeout: Timeouts.LONG,
+      timeoutMsg: `${this.name}: no "Font size" radio group on the Configuration tab.`,
+    });
+    return this;
+  }
+
+  /** The Font size choices in render order, with the one the merchant has saved checked. Read-only. */
+  async fontSizeOptions(): Promise<FontSizeOption[]> {
+    return browser.execute((group: string) => {
+      const root = document.querySelector(group);
+      return Array.from(root?.querySelectorAll('[role="radio"]') ?? []).map((radio) => ({
+        value: radio.getAttribute('value') ?? '',
+        label: (radio.closest('label')?.querySelector('span')?.textContent ?? '').trim(),
+        checked: radio.getAttribute('aria-checked') === 'true',
+      }));
+    }, FONT_SIZE_GROUP);
   }
 }
 

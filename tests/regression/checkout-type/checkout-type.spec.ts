@@ -457,14 +457,8 @@ describe('Checkout Type — points on completion (VP-4591)', () => {
   });
 
   describe('5. One checkout per check-in / Refund / Cancel', () => {
-    it(title('CHK-POS-027: Manual Edit Order + re-complete adds nothing — PENDING (re-open is mutating)'));
-    it(title('CHK-POS-028: Auto Edit Order + re-complete adds no 2nd bonus — PENDING (re-open is mutating)'));
-    it(title('CHK-POS-029: Hybrid Edit Order + re-complete adds nothing — PENDING (re-open is mutating)'));
-    it(
-      title(
-        'CHK-POS-030: re-open to another customer, nobody earns — PENDING (re-open + 2nd customer fixture)',
-      ),
-    );
+    // CHK-POS-027..030 (Edit Order + re-complete, re-open to another customer) were dropped:
+    // Re-Open now only changes the staff — vp-4591-reopen-change-staff.spec.ts covers it.
     it(title('CHK-POS-031: Refund after checkout keeps the points — PENDING (needs a settled order)'));
     it(title('CHK-POS-032: Cancel/Void after checkout keeps the points — PENDING (needs a settled order)'));
 

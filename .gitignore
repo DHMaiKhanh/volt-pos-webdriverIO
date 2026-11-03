@@ -27,3 +27,4 @@ Thumbs.db
 
 # Fastboy Portal login session (QR-scanned once by `npm run portal:login`)
 .portal-profile/
+.gocheckin-profile/
