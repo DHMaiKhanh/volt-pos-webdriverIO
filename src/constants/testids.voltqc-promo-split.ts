@@ -17,8 +17,12 @@ export const VqpsMain: VqcQuery = { css: 'main' };
  * ------------------------------------------------------------------------- */
 
 export const VqpsHome = {
-  promoButton: btn('Promo & Rewards', 0),
+  // The count badge (VP-4802, 1.1.88+) is a child of the button, so its name reads
+  // "Promo & Rewards5" once a customer has offers — an exact name stops matching.
+  promoButton: btnRe('^Promo & Rewards\\s*(\\d+|99\\+)?$', 0),
   payButton: btn('Pay', 0),
+  /** Opens by itself when a customer with a note is attached; its overlay blocks the order panel. */
+  customerNoteDialog: { role: 'dialog', hasText: 'Customer Note', nth: -1 } as VqcQuery,
   removeOrder: btn('Remove', 0),
   deleteOrderDialog: { role: 'dialog', name: 'Delete Order', nth: -1 } as VqcQuery,
   removeItemDialog: { role: 'dialog', name: 'Remove Service Item', nth: -1 } as VqcQuery,

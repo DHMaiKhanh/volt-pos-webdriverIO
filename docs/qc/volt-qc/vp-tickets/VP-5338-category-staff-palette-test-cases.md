@@ -1,0 +1,79 @@
+---
+title: Đồng bộ bảng màu Category với Staff (Portal + POS) — test cases
+ticket: VP-5338 — https://linear.app/fastboy/issue/VP-5338/djong-bo-bang-mau-category-voi-staff
+spec-files: tests/regression/settings/vp-5338-category-staff-palette.spec.ts, tests/web/portal-vp-5338-category-palette.spec.ts
+imported-at: 2026-11-02
+updated-at: 2026-11-03
+---
+
+# Test Cases – Đồng bộ bảng màu Category với Staff
+
+**Ticket:** [VP-5338](https://linear.app/fastboy/issue/VP-5338/djong-bo-bang-mau-category-voi-staff) · PR fastboy-portal#934 (Portal) · volt-pos#3273 (POS + Android) · volt-pos-api#1609 (command remap màu category cũ)
+**Dev:** Ngan Huynh (`ngan_huynh`), Thanh Lam (`lam_doan`, BE) · **Bug con:** VP-5483 (category cũ chưa được đổi sang bảng màu Staff trên dev)
+
+## Điều kiện chung
+
+- Môi trường DEV, merchant #14 "Volt POS tiem test 14 v1".
+- Portal dev `v2.dev-fastboypay.com` (đăng nhập Google 2FA / QR) → Management → Services / Staff Members. Automation dùng Portal web lane: Edge với profile `.portal-profile` đã đăng nhập sẵn (`npm run portal:login` lần đầu).
+- POS Windows **≥ 1.1.88** (bản 1.1.87 build 05:05 UTC 02/11, **trước** khi merge PR volt-pos#3273 lúc 07:00 UTC → chưa có fix).
+- Bảng màu Staff (15 màu, đúng thứ tự) — tên trên POS / Portal:
+  Peach `#E3AA8A`, Pink `#F5A3B5`, Lavender `#B5ADEF`, Coral `#F4B6A0`, Mint/Aqua `#9DF5EC`, Sky Blue `#9DDDF9`, Blue `#96BDF5`, Purple/Violet `#E299F1`, Salmon `#F59992`, Teal/Mint `#83F0CC`, Yellow `#F8D885`, Light Green/Sage `#B7D5A1`, Green `#78D4A2`, Apricot `#F5A98A`, Periwinkle `#A0AFF0`.
+- Màu mặc định category mới / category không có màu: **Peach `#E3AA8A`** — cả POS lẫn Portal (QC 02/11: Portal cũng fallback Peach, **không** phải `#36BFF2` như mô tả PR).
+- 20 màu category cũ (trước VP-5338): `#36BFF2 #1FD69F #3A86EB #2EE4D9 #785EE1 #DB4B91 #E77653 #E9434A #3FB2F2 #E74F78 #CA7146 #9E6442 #C239DD #E66436 #0AA456 #546AD7 #70A950 #F2BB3B #6C64E9 #E363AC`.
+- BE: API không giới hạn bảng màu (chỉ check hex). Category cũ được đổi bằng 1 command (bảng map 20 màu cũ → màu Staff); thứ tự release: FE → BE chạy command (dry-run rồi apply) → chạy lại sau khi các máy POS update xong.
+- POS **không xoá được category** → mỗi lần chạy spec để lại 1 category `QC VP5338 <rand>` (0 service nên không hiện ở Home). Dọn trên Portal nếu cần.
+- Portal **cũng không có Delete category** (menu dòng chỉ có Move… / Edit) → spec Portal tạo `QC VP5338 Portal <rand>` rồi `after()` chuyển nó (và mọi `QC VP5338 Portal *` còn Active) sang **Inactive**.
+
+Chú thích trạng thái: ✅ tự động được trên POS Windows (mục 1 + TC-20: Portal web lane) · ⚠️ tự động được nhưng có điều kiện · 🧱 không tự động được ở đây · 📄 chỉ tài liệu.
+
+## 1. Portal
+
+| TC ID        | Title                                         | Priority | Precondition               | Test Data                   | Steps                                                                            | Expected Result                                                                                                                                                                                                                                           | Status |
+| ------------ | --------------------------------------------- | -------- | -------------------------- | --------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| TC-VP5338-01 | Portal: bảng màu New category giống New staff | High     | Đăng nhập Portal dev       | Tiệm 14                     | 1. Services → Add category → xem Color. 2. Staff Members → Add staff → xem Color | Picker Category có đúng **15 màu Staff**, cùng mã màu & thứ tự                                                                                                                                                                                            | ✅     |
+| TC-VP5338-02 | Portal: màu mặc định khi tạo category         | Medium   | Mở dialog New category     | —                           | 1. Mở dialog, không chọn màu                                                     | Mặc định chọn **Peach `#E3AA8A`**                                                                                                                                                                                                                         | ✅     |
+| TC-VP5338-03 | Portal: tạo category bằng màu Staff           | High     | Đăng nhập Portal dev       | "QC VP5338 Mint", màu Mint  | 1. Nhập tên. 2. Chọn Mint. 3. Create category                                    | Tạo thành công; chấm màu trong list = Mint `rgb(131,240,204)`                                                                                                                                                                                             | ✅     |
+| TC-VP5338-04 | Portal: mở Edit category vừa tạo              | Medium   | Có category TC-03          | —                           | 1. Edit category vừa tạo                                                         | Màu đã lưu (Mint) được chọn sẵn                                                                                                                                                                                                                           | ✅     |
+| TC-VP5338-05 | Portal: đổi màu category rồi Save             | Medium   | Có category TC-03          | Yellow                      | 1. Edit → chọn Yellow → Save                                                     | Lưu thành công, list cập nhật Yellow `rgb(248,216,133)`                                                                                                                                                                                                   | ✅     |
+| TC-VP5338-06 | Portal: Edit category cũ (màu cũ)             | Medium   | Category còn màu cũ        | vd "QC E2E cat 1102-114718" | 1. Edit category cũ                                                              | Không lỗi; màu cũ hiện thành 1 ô riêng ở đầu và đang được chọn; 15 màu Staff vẫn chọn được. Spec lấy category (Active trước, rồi Inactive) có `colorHex` ngoài bảng Staff qua API Portal; không còn → skip (03/11: "ZZ VP-5115 test" `#999999`, Inactive) | ⚠️     |
+| TC-VP5338-07 | Portal: category không có màu                 | Low      | Category `colorHex = null` | —                           | 1. Xem list category trên Portal                                                 | Chấm màu = **Peach `#E3AA8A`** (giống POS; không phải `#36BFF2`). Không có category Active `colorHex = null` → skip                                                                                                                                       | ⚠️     |
+
+## 2. POS — Settings → Services (dialog Create / Update Category)
+
+| TC ID        | Title                                              | Priority | Precondition                                                     | Test Data                                              | Steps                                                                                              | Expected Result                                                                                                       | Status |
+| ------------ | -------------------------------------------------- | -------- | ---------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------ |
+| TC-VP5338-08 | POS: dialog Create Category dùng đúng 15 màu Staff | High     | POS ≥ 1.1.88, đứng ở Settings → Services                         | Tiệm 14                                                | 1. ≡ → Version Update → Update Now (nếu cần). 2. Settings → Services → nút **+** (Create Category) | Đúng **15 ô màu**, cùng mã & thứ tự bảng Staff; không còn màu nào trong 20 màu cũ                                     | ✅     |
+| TC-VP5338-09 | POS: màu mặc định khi tạo category                 | Medium   | Dialog Create Category đang mở                                   | —                                                      | 1. Không chọn màu                                                                                  | Ô **Peach `#E3AA8A`** có dấu check                                                                                    | ✅     |
+| TC-VP5338-10 | POS: tạo category bằng màu Staff                   | High     | POS ≥ 1.1.88, WRITE_ALLOWED                                      | `QC VP5338 <rand>`, Teal `#83F0CC` (Portal gọi "Mint") | 1. Create Category. 2. Nhập tên. 3. Chọn Teal. 4. **Create**                                       | Toast tạo thành công, mở detail category mới; DB `category.colorHex = #83F0CC`                                        | ⚠️     |
+| TC-VP5338-11 | POS: Update Category chọn sẵn màu đã lưu           | Medium   | Có category TC-10                                                | —                                                      | 1. Bút chì (Update) của category TC-10                                                             | Dialog Update có **15 ô**, ô Teal được check                                                                          | ⚠️     |
+| TC-VP5338-12 | POS: đổi màu category sang Yellow rồi Update       | Medium   | Có category TC-10                                                | Yellow `#F8D885`                                       | 1. Update Category. 2. Chọn Yellow. 3. **Update**                                                  | Lưu thành công; DB `colorHex = #F8D885`; mở lại dialog thấy Yellow được check                                         | ⚠️     |
+| TC-VP5338-13 | POS: Update Category của category còn màu cũ       | Medium   | Còn category active có màu ngoài bảng Staff (trước khi BE remap) | Category màu cũ, vd Hand Care `#F2BB3B`                | 1. Mở category. 2. Bút chì Update                                                                  | Màu cũ hiện thành **1 ô riêng ở đầu** và đang được check, sau đó 15 màu Staff (tổng 16 ô). Hết category màu cũ → skip | ⚠️     |
+| TC-VP5338-14 | POS: thẻ Reorder dùng chữ ink                      | Low      | Đứng ở Settings → Services                                       | Tab Category + All services                            | 1. Reorder Categories or Services. 2. Xem tab Category. 3. Chuyển tab All services                 | Chữ trên các thẻ màu là **ink** (không còn chữ trắng), đọc được trên nền pastel                                       | ✅     |
+
+## 3. POS — Home
+
+| TC ID        | Title                                            | Priority | Precondition                                    | Test Data                                     | Steps                                                           | Expected Result                                                                                                                        | Status |
+| ------------ | ------------------------------------------------ | -------- | ----------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| TC-VP5338-15 | POS Home: tile category hiển thị đúng màu đã lưu | High     | Đứng ở Home                                     | Mọi category active có service                | 1. Mở Home. 2. So màu nền tile category với `colorHex` trong DB | Nền tile = `category.colorHex` (category không màu → Peach); Quick Pay / Gift Card giữ màu ghim                                        | ✅     |
+| TC-VP5338-16 | POS Home: category không có màu dùng Peach       | Low      | Có category active `colorHex = null` có service | —                                             | 1. Mở Home → tìm tile của category đó                           | Nền tile **Peach `#E3AA8A`** (trước VP-5338 là `#36BFF2`). Không có category như vậy → skip                                            | ⚠️     |
+| TC-VP5338-17 | POS Home: category cũ đồng bộ màu với Staff      | High     | BE đã chạy lệnh remap màu category cũ (VP-5483) | Hand Care, Artificial Nails, Specialty & Art… | 1. Mở Home. 2. So màu tile Category với bảng màu Staff          | Mọi tile category (trừ Quick Pay / Gift Card ghim) có nền thuộc **15 màu Staff**, không còn chỏi với tile Staff. Fail tới khi BE remap | ⚠️     |
+
+## 4. Bug VP-5483 — category cũ chưa được đổi sang bảng màu Staff
+
+| TC ID        | Title                                                  | Priority | Precondition                                    | Test Data                             | Steps                                                                                             | Expected Result                                                                                                                | Status |
+| ------------ | ------------------------------------------------------ | -------- | ----------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| TC-VP5338-18 | VP-5483: mọi category active dùng màu trong bảng Staff | High     | BE đã chạy command (volt-pos-api#1609) trên dev | 24 category Active còn màu cũ (02/11) | 1. Đọc `categoryList` trên POS (đã sync). 2. Lọc category active có `colorHex` ngoài 15 màu Staff | **0** category còn màu cũ (thực tế 02/11: 24 category, vd `#2EE4D9`, `#E74F78`, `#E363AC`, `#F2BB3B`…) — fail tới khi BE remap | ⚠️     |
+| TC-VP5338-19 | VP-5483: chạy lại command sau khi POS update xong      | Medium   | Máy POS cũ (< 1.1.88) tạo lại category màu cũ   | —                                     | 1. BE chạy lại command lần 2                                                                      | Category do POS cũ tạo bằng màu cũ cũng được đổi sang màu Staff                                                                | 🧱     |
+| TC-VP5338-20 | VP-5483: Portal hiển thị category cũ bằng màu Staff    | Medium   | BE đã remap                                     | Product, The Signature Spa Combo…     | 1. Portal → Services → list Active. 2. Edit category cũ                                           | Chấm màu thuộc 15 màu Staff; dialog Edit không còn ô màu cũ riêng ở đầu                                                        | ✅     |
+
+## Kết quả test tay (02/11/2026)
+
+- Portal dev (fastboy-portal#934): TC-01..06 PASS, TC-VP5338-18 FAIL → bug VP-5483.
+- POS: chưa verify được — bản dev mới nhất 1.1.87 chưa có PR #3273; đợi bản ≥ 1.1.88 + BE chạy lệnh remap.
+- Chiều 02/11: update POS lên 1.1.89, BE đã remap (08:00 UTC) → POS + Portal PASS, VP-5338 QC Completed, VP-5483 PASS. Portal fallback category không màu cũng là Peach (không phải `#36BFF2`).
+
+## Automation
+
+`npm run test:attach -- --spec tests/regression/settings/vp-5338-category-staff-palette.spec.ts` (cần `WRITE_ALLOWED=true` cho TC-10/12).
+Portal (TC-01..07, TC-20): `npm run portal:vp-5338` (`tests/web/portal-vp-5338-category-palette.spec.ts`, Edge `.portal-profile`; TC-03/05 ghi dữ liệu). PASS 8/8 ngày 03/11/2026.
+BE đã remap trên dev 02/11 → TC-17/18 bỏ tag `@broken`.

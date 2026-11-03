@@ -226,7 +226,16 @@ export const inPromo = (q: VqcQuery): readonly VqcQuery[] => [promoDlg, q];
 export const promoApply = inPromo(btn('Apply'));
 export const promoInput = inPromo({ role: 'textbox', nth: 0 });
 
+/** Close the "Customer Note" dialog an attached customer raises — its overlay eats the next click. */
+export async function dismissCustomerNote(): Promise<void> {
+  if (await waitUntil(() => visible(VqpsHome.customerNoteDialog), 1_500)) {
+    await P.clickQ([VqpsHome.customerNoteDialog, btn('Done', 0)]);
+    await settle(300);
+  }
+}
+
 export async function openPromo(): Promise<void> {
+  await dismissCustomerNote();
   await P.clickQ(VqpsHome.promoButton);
   await P.waitFor(promoDlg, 8_000, 'Promo & Rewards');
   await P.waitFor(inPromo({ textRe: VqpsPromo.loadedRe, nth: 0 }), 10_000, 'promo list loaded');
@@ -453,11 +462,20 @@ export async function customerEarnedPoints(
   return { earned, current, text: t };
 }
 
-/** Attach an EXISTING customer (keypad phone → Done; the app picks the first match). */
-export async function attachExistingCustomer(phone: string): Promise<void> {
+/**
+ * Attach an EXISTING customer (keypad phone → Done; the app picks the first match).
+ * With `name`, a phone shared by several customers is resolved by clicking that
+ * name in the "Customers Found" list instead.
+ */
+export async function attachExistingCustomer(phone: string, name?: string): Promise<void> {
   await app.clickCustomerField();
   for (const c of phone) await P.clickQ(inMain(btn(c, 0)));
-  await P.clickQ(inMain(btn('Done', 0)));
+  const found: VqcQuery = { css: '[role="dialog"]', hasText: 'Customers Found', nth: -1 };
+  if (name !== undefined && name !== '' && (await appears(found, 3_000))) {
+    await P.clickQ([found, { text: name, nth: 0 }]);
+  } else {
+    await P.clickQ(inMain(btn('Done', 0)));
+  }
   const sep = btn('Create Separately', 0);
   if (await appears(sep, 2_000)) await P.clickQ(sep);
   await P.waitFor(

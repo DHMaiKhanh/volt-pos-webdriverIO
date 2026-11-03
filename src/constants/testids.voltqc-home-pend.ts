@@ -174,6 +174,25 @@ export const VqhCustomer = {
   nameBox: { css: 'input', placeholder: 'Enter customer name', nth: 0 } as VqcQuery,
 } as const;
 
+/* ------------------------------------------------------------------------- *
+ * Customer group picker (quick-add → combobox → "Add group" popover) — VP-4566
+ * ------------------------------------------------------------------------- */
+
+export const VqhGroup = {
+  /** Popover header shown once the group combobox is open. */
+  popoverTitle: { text: 'Add group', nth: 0 } as VqcQuery,
+  /** Pencil on each group row; the row is its parent element. */
+  editCss: 'button[aria-label="Edit group name"]',
+  newDialog: {
+    css: '[role="dialog"]',
+    hasCss: 'input[placeholder="Enter group name"]',
+    nth: -1,
+  } as VqcQuery,
+  editDialog: { css: '[role="dialog"]', hasText: 'Edit Group', hasCss: 'input', nth: -1 } as VqcQuery,
+  nameInput: { css: 'input', nth: 0 } as VqcQuery,
+  required: { text: 'Group name is required.', nth: 0 } as VqcQuery,
+} as const;
+
 export const VqhPasscode = {
   skipLabel: 'Do not require passcode for the next 30 minutes',
   deleteOrderTitle: 'Enter staff code to access Delete Order',

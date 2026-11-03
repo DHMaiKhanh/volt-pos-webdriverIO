@@ -741,10 +741,15 @@ export const STAFF_SEARCH: VqcQuery = { css: 'input', placeholder: 'Search staff
  * Home editor extras (volt-qc `App.changeStaff`, `cannotContinueText`)
  * ------------------------------------------------------------------- */
 
-/** Change Staff on the open order → pick staff tile `staffIndex` → confirm "… to <name>?". */
-export async function changeStaffTo(staffIndex: number): Promise<void> {
-  await P.clickQ({ role: 'button', name: 'Change Staff', nth: 0 });
+/** Press Change Staff on staff column `column` (0 = top) and wait for "Change from …". */
+export async function enterChangeStaff(column = 0): Promise<void> {
+  await P.clickQ({ role: 'button', name: 'Change Staff', nth: column });
   await P.waitFor(inMain({ textRe: 'Change from', nth: 0 }), Timeouts.SHORT, 'change-staff mode');
+}
+
+/** Change Staff on column `column` → pick staff tile `staffIndex` → confirm "… to <name>?". */
+export async function changeStaffTo(staffIndex: number, column = 0): Promise<void> {
+  await enterChangeStaff(column);
   await homePage.selectStaffByIndex(staffIndex);
   const confirm: VqcQuery = { css: '[role="alertdialog"]', hasTextRe: 'to .+\\?', nth: -1 };
   await P.waitFor(confirm, Timeouts.SHORT, 'change-staff confirm');

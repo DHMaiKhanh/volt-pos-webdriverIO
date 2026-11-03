@@ -307,6 +307,7 @@ export class ServicesSettingsPage extends BasePage {
   }
 
   async openUpdateCategory(name: string): Promise<this> {
+    await this.scrollCategoryIntoList(name);
     await this.click(servicesCategoryUpdateButton(name));
     await this.dialog();
     return this;

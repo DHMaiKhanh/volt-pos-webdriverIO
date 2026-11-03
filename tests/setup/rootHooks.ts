@@ -36,7 +36,11 @@ import { installStepOverlay, logStep } from '../../src/helpers/steps.js';
 import { startUpdaterWatcher, stopUpdaterWatcher } from '../../src/helpers/updater.js';
 import { reloadCustomerWindow, switchToMain } from '../../src/helpers/window.js';
 import { settle } from '../../src/helpers/wait.js';
-import { ensureHealthyAttachedApp, resetCustomerWindow } from '../../src/support/attachApp.js';
+import {
+  ensureHealthyAttachedApp,
+  primeCustomerWindow,
+  resetCustomerWindow,
+} from '../../src/support/attachApp.js';
 import { restoreDeviceBaseline } from '../../src/support/deviceBaseline.js';
 import { ensurePasscodeGrant } from '../../src/support/passcodeGrant.js';
 import { killStaleProcesses } from '../../src/support/process.js';
@@ -195,6 +199,17 @@ export const mochaHooks: Mocha.RootHookObject = {
     // inherits `mochaOpts.timeout` (MOCHA_TEST), which would abort mid-boot on
     // a slow machine and report it as a hanging hook rather than a slow app.
     this.timeout(Timeouts.MOCHA_HOOK);
+
+    // Attaching msedgedriver to the running app blanks the customer window (seen
+    // 2026-11-03, Edge 156: /customer/ → about:blank the moment the session
+    // opens), so the prime attachApp does BEFORE the session is undone. Every
+    // payment that pushes a tip then waited on "Customer is adding a tip" for
+    // good. Prime again now that the session exists — a no-op when it is loaded.
+    if (loadEnv().MODE === 'attach') {
+      await primeCustomerWindow().catch((error: unknown) =>
+        log.warn(`Could not load the customer window: ${reason(error)}`),
+      );
+    }
 
     await ensureLoggedIn();
 
