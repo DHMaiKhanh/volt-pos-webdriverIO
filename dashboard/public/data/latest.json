@@ -1,8 +1,8 @@
 {
-  "runId": "2026-11-03T08-04-38-516Z",
-  "startedAt": "2026-11-03T08:04:38.516Z",
-  "finishedAt": "2026-11-03T08:05:59.878Z",
-  "durationMs": 81362,
+  "runId": "2026-11-05T09-58-36-857Z",
+  "startedAt": "2026-11-05T09:58:36.857Z",
+  "finishedAt": "2026-11-05T09:59:06.394Z",
+  "durationMs": 29537,
   "env": {
     "name": "dev",
     "mode": "attach",
@@ -11,8 +11,8 @@
     "upstream": "https://volt-pos.v2.dev-fastboypay.com"
   },
   "totals": {
-    "tests": 3,
-    "passed": 3,
+    "tests": 1,
+    "passed": 1,
     "failed": 0,
     "skipped": 0,
     "passRate": 100
@@ -21,50 +21,30 @@
   "specs": [
     {
       "cid": "0-0",
-      "file": "file:///D:/2.POS/e2e_volt_pos_webdriverIO/tests/regression/order-flow/vp-4375-fixed-discount-cap.spec.ts",
-      "specName": "vp-4375-fixed-discount-cap",
-      "startedAt": "2026-11-03T08:04:40.891Z",
-      "finishedAt": "2026-11-03T08:05:58.206Z",
-      "durationMs": 77315,
+      "file": "file:///D:/2.POS/e2e_volt_pos_webdriverIO/tests/regression/settings/vp-4815-passcode-gates.spec.ts",
+      "specName": "vp-4815-passcode-gates",
+      "startedAt": "2026-11-05T09:58:38.677Z",
+      "finishedAt": "2026-11-05T09:59:05.770Z",
+      "durationMs": 27093,
       "retry": 1,
       "suites": [
         {
-          "title": "VP-4375 — FIXED promo/reward above the discountable amount is shown and saved as applied",
-          "tests": [],
-          "suites": [
+          "title": "VP-4815 — passcode gates + customer status",
+          "tests": [
             {
-              "title": "6. Card tender",
-              "tests": [
-                {
-                  "title": "TC-VP4375-21: custom FIXED over budget paid by Card — Card $100.00, saved promo $20, discountAmount $20, staff fee $10 @regression @critical @write @payment",
-                  "fullTitle": "VP-4375 — FIXED promo/reward above the discountable amount is shown and saved as applied.6. Card tender.TC-VP4375-21: custom FIXED over budget paid by Card — Card $100.00, saved promo $20, discountAmount $20, staff fee $10 @regression @critical @write @payment",
-                  "state": "passed",
-                  "durationMs": 31437,
-                  "retries": 0
-                },
-                {
-                  "title": "TC-VP4375-22: reward FIXED over the line paid by Card — Card $100.00, saved reward = line price, no staff fee @regression @critical @write @payment",
-                  "fullTitle": "VP-4375 — FIXED promo/reward above the discountable amount is shown and saved as applied.6. Card tender.TC-VP4375-22: reward FIXED over the line paid by Card — Card $100.00, saved reward = line price, no staff fee @regression @critical @write @payment",
-                  "state": "passed",
-                  "durationMs": 34707,
-                  "retries": 0
-                },
-                {
-                  "title": "TC-VP4375-23: Re-Open → Re-Open Done on the Card order keeps promo $20, discountAmount $20, staff fee $10 @regression @write",
-                  "fullTitle": "VP-4375 — FIXED promo/reward above the discountable amount is shown and saved as applied.6. Card tender.TC-VP4375-23: Re-Open → Re-Open Done on the Card order keeps promo $20, discountAmount $20, staff fee $10 @regression @write",
-                  "state": "passed",
-                  "durationMs": 10535,
-                  "retries": 0
-                }
-              ],
-              "suites": []
+              "title": "TC-VP4815-07 Scanner → Add Funds asks Quick Checkout (Staff refused), then Sell Gift Card @regression @write @exclusive",
+              "fullTitle": "VP-4815 — passcode gates + customer status.TC-VP4815-07 Scanner → Add Funds asks Quick Checkout (Staff refused), then Sell Gift Card @regression @write @exclusive",
+              "state": "passed",
+              "durationMs": 12470,
+              "retries": 0
             }
-          ]
+          ],
+          "suites": []
         }
       ],
       "totals": {
-        "tests": 3,
-        "passed": 3,
+        "tests": 1,
+        "passed": 1,
         "failed": 0,
         "skipped": 0,
         "passRate": 100

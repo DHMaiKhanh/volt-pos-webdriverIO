@@ -32,8 +32,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const n = Number(process.argv[2]);
-if (!Number.isInteger(n) || n < 1 || n > 9) {
-  console.error('usage: node scripts/make-instance.mjs <1-9> [--app <path to installed volt-pos.exe>]');
+// Staging 14 → 1, 2 · 100004 → 21–23; prod 2949 → 31–33 · 20258 → 34–36 (dashboard/server/apps.mjs).
+if (!Number.isInteger(n) || n < 1 || n > 99) {
+  console.error('usage: node scripts/make-instance.mjs <1-99> [--app <path to installed volt-pos.exe>]');
   process.exit(2);
 }
 const appArg = process.argv.indexOf('--app');
@@ -119,12 +120,29 @@ const shown = {
 fs.writeFileSync(path.join(dir, 'window-offscreen.json'), JSON.stringify(win(parked), null, 2));
 fs.writeFileSync(path.join(dir, 'window-visible.json'), JSON.stringify(win(shown), null, 2));
 
-// Which install this copy was made from — the GUI remakes it when the installed exe changes.
+// Which build this copy was made from — the GUI remakes it when that exe changes, and only
+// from a build of the same env (the backend host is compiled in; see configs/env/loadEnv.ts).
+// dev and staging are one environment for this team (dashboard/server/apps.mjs).
+const BUILD_MARKERS = [
+  ['dev', 'v2.dev-fastboypay.com'],
+  ['dev', 'stage.volt-pos.fastboy.dev'],
+  ['prod', 'volt-pos.v2.fastboypay.com'],
+];
+let buildEnv = 'unknown';
+let bestHits = 0;
+for (const [name, host] of BUILD_MARKERS) {
+  let hits = 0;
+  for (let i = exe.indexOf(host); i !== -1 && hits < 50; i = exe.indexOf(host, i + 1)) hits += 1;
+  if (hits > bestHits) {
+    bestHits = hits;
+    buildEnv = name;
+  }
+}
 const src = fs.statSync(installed);
 fs.writeFileSync(
   path.join(dir, 'source.json'),
   JSON.stringify(
-    { installed, size: src.size, mtimeMs: src.mtimeMs, madeAt: new Date().toISOString() },
+    { installed, env: buildEnv, size: src.size, mtimeMs: src.mtimeMs, madeAt: new Date().toISOString() },
     null,
     2,
   ),

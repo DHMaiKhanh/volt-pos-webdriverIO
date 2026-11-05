@@ -21,6 +21,7 @@ import {
   QuickPayIds,
   ServiceCardParts,
 } from '../../constants/testids.vp.js';
+import { Vp4815Ids } from '../../constants/testids.vp-4815.js';
 import { byRole, locator, textIsAnyOf } from '../../helpers/selectors.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { logStep } from '../../helpers/steps.js';
@@ -866,6 +867,82 @@ export class HomePage extends BasePage {
   async closeQuickPayDialog(): Promise<this> {
     await browser.keys(['Escape']);
     await this.waitGone(HomeIds.quickPayAmountInput, Timeouts.SHORT);
+    return this;
+  }
+
+  /* --- VP-4815: raw taps that leave the passcode guard to the caller ---- */
+
+  /**
+   * Tap the Quick Pay tile WITHOUT answering the guard.
+   *
+   * {@link openQuickPay} unlocks the VP-3115 guard for the run; a gate spec has
+   * to see the guard itself, so this one stops at the tap.
+   */
+  async tapQuickPayTile(): Promise<this> {
+    await logStep('Home: tap the Quick Pay tile');
+    await this.click(HomeIds.serviceCategoryQuickPay);
+    return this;
+  }
+
+  /** Tap the pinned Gift Card tile (gated by `gift_card_sale`, and by `quick_checkout` on an empty cart). */
+  async tapGiftCardTile(): Promise<this> {
+    await logStep('Home: tap the Gift Card tile');
+    await this.click(Vp4815Ids.giftCardTile);
+    return this;
+  }
+
+  /**
+   * Press the line editor's Save without waiting for it to close — with the
+   * `edit_service_price` gate on, a changed price puts the passcode guard up
+   * first and the editor stays open behind it.
+   */
+  async pressServiceEditorSave(): Promise<this> {
+    await this.click(HomeIds.updateServiceSaveBtn);
+    return this;
+  }
+
+  isSellGiftCardOpen(timeout: number = Timeouts.SHORT): Promise<boolean> {
+    return this.isVisible(Vp4815Ids.sellGiftCardDialog, timeout);
+  }
+
+  /** Close Sell Gift Card with Escape, adding nothing. */
+  async closeSellGiftCard(): Promise<this> {
+    await browser.keys(['Escape']);
+    await this.waitGone(Vp4815Ids.sellGiftCardDialog, Timeouts.SHORT);
+    return this;
+  }
+
+  /** Type into the order panel's "Phone, name or email" box (names allowed, unlike the keypad). */
+  async typeCustomerSearch(text: string): Promise<this> {
+    await logStep(`Home: search customer "${text}"`);
+    if (!(await this.isVisible(HomeIds.customerSearchInput, Timeouts.ANIMATION))) {
+      await this.click(CustomerEntryIds.trigger);
+    }
+    await this.setValue(HomeIds.customerSearchInput, text);
+    return this;
+  }
+
+  /**
+   * Tap a "Customers Found" row by phone WITHOUT waiting for the attach —
+   * on an empty cart the `quick_checkout` gate puts its guard up first.
+   */
+  async tapCustomerSearchResult(phone: string): Promise<this> {
+    await logStep(`Home: tap customer row …${phone.slice(-4)}`);
+    await this.click(customerSearchResult(phone));
+    return this;
+  }
+
+  /** Open "Customer Information" from the order panel's edit (pencil) button. */
+  async openCustomerInformation(): Promise<this> {
+    await logStep('Home: open Customer Information');
+    await this.click(HomeIds.orderEditCustomerBtn);
+    await this.find(Vp4815Ids.customerInformationDialog, { visible: true, timeout: Timeouts.MEDIUM });
+    return this;
+  }
+
+  async closeCustomerInformation(): Promise<this> {
+    await browser.keys(['Escape']);
+    await this.waitGone(Vp4815Ids.customerInformationDialog, Timeouts.SHORT);
     return this;
   }
 

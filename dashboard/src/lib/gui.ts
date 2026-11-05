@@ -74,6 +74,8 @@ export interface RunRequest {
   retries?: number;
   /** ⚡ Chạy nhanh: attach to the pre-warmed app, launch only payment / customer-display files; skips manual/@broken. */
   fast?: boolean;
+  /** Apps for this run; omitted = the choice saved on the runner (AppsStatus.config). */
+  apps?: { count?: number; stores?: string[] };
 }
 
 export interface Schedule {
@@ -133,10 +135,45 @@ export interface WarmStatus {
   at: string | null;
 }
 
-/** Parallel app copies (docs/parallel-instances.md): which exist, which are signed in. */
-export interface LanesStatus {
+/** Environments / stores / apps (dashboard/server/apps.mjs, docs/parallel-instances.md). */
+/** `dev` is shown as "Staging": dev and staging are one environment (the dev build). */
+export type EnvName = 'dev' | 'prod';
+
+export interface StoreInfo {
+  id: string;
+  name?: string;
+}
+
+export interface EnvProfile {
+  label: string;
+  stores: StoreInfo[];
+  readOnly: boolean;
+  /** Most apps this env may run side by side. */
   max: number;
-  copies: Array<{ n: number; signedIn: boolean }>;
+}
+
+export interface AppSlot {
+  /** 1-based position: App 1, App 2, App 3. */
+  slot: number;
+  /** Instance number: 0 = the installed app, else the copy in <root>\i<n>. */
+  n: number;
+  store: string;
+  kind: 'installed' | 'copy';
+  exists: boolean;
+  signedIn: boolean;
+  /** Which build the copy was made from (dev / staging / prod), if known. */
+  buildEnv: string | null;
+  madeAt?: string | null;
+}
+
+export interface AppsStatus {
+  env: EnvName;
+  profiles: Record<EnvName, EnvProfile>;
+  config: Record<EnvName, { count: number; stores: string[] }>;
+  /** The build new copies of `env` are made from, and whether it IS that env. */
+  source: { path: string; env: string | null; matches: boolean };
+  slots: AppSlot[];
+  root: string;
 }
 
 /** Freezing the user's other apps during a sweep (scripts/freeze-apps.ps1). */
@@ -153,14 +190,16 @@ export interface GuiRunner {
   results: LiveResult[];
   log: string;
   warm: WarmStatus | null;
-  lanes: LanesStatus | null;
+  apps: AppsStatus | null;
   freeze: FreezeStatus | null;
   start: (req: RunRequest) => Promise<string | null>;
   stop: () => Promise<string | null>;
   /** `true`/`false` switches the pre-warm; omitted retries it now. */
   setWarm: (enabled?: boolean) => Promise<void>;
-  /** Open copy `n` on screen with its QR login, for the one-time device sign-in. */
-  signInCopy: (n: number) => Promise<string | null>;
+  /** Make copy `n` if needed and open it on screen with its QR login, for the one-time device sign-in. */
+  signInApp: (n: number) => Promise<string | null>;
+  /** Save how many apps the current env runs and which store each one tests. */
+  setApps: (patch: { count?: number; stores?: string[] }) => Promise<string | null>;
   setFreeze: (enabled: boolean) => Promise<void>;
   clearLog: () => void;
 }
@@ -170,14 +209,16 @@ export interface GuiRunner {
  * the server's version moved, and the log by byte offset so it grows in place.
  * `onFinished` fires once on the running → idle edge.
  */
-export function useGuiRunner(onFinished?: (run: RunInfo) => void): GuiRunner {
+export function useGuiRunner(env: string, onFinished?: (run: RunInfo) => void): GuiRunner {
   const [online, setOnline] = useState(false);
   const [running, setRunning] = useState(false);
   const [run, setRun] = useState<RunInfo | null>(null);
   const [results, setResults] = useState<LiveResult[]>([]);
   const [log, setLog] = useState('');
   const [warm, setWarmState] = useState<WarmStatus | null>(null);
-  const [lanes, setLanes] = useState<LanesStatus | null>(null);
+  const [apps, setAppsState] = useState<AppsStatus | null>(null);
+  const envRef = useRef(env);
+  envRef.current = env;
   const [freeze, setFreezeState] = useState<FreezeStatus | null>(null);
   const version = useRef(-1);
   const logOffset = useRef(0);
@@ -192,14 +233,14 @@ export function useGuiRunner(onFinished?: (run: RunInfo) => void): GuiRunner {
         run: RunInfo | null;
         results?: LiveResult[];
         warm?: WarmStatus | null;
-        lanes?: LanesStatus | null;
+        apps?: AppsStatus | null;
         freeze?: FreezeStatus | null;
-      }>(`/api/gui/state?since=${version.current}`);
+      }>(`/api/gui/state?since=${version.current}&env=${encodeURIComponent(envRef.current)}`);
       setOnline(true);
       setRunning(s.running);
       setRun(s.run);
       setWarmState(s.warm ?? null);
-      setLanes(s.lanes ?? null);
+      setAppsState(s.apps ?? null);
       setFreezeState(s.freeze ?? null);
       if (s.results) setResults(s.results);
       if (s.run) version.current = s.run.version;
@@ -273,15 +314,33 @@ export function useGuiRunner(onFinished?: (run: RunInfo) => void): GuiRunner {
     }
   }, []);
 
-  const signInCopy = useCallback(async (n: number): Promise<string | null> => {
+  const signInApp = useCallback(async (n: number): Promise<string | null> => {
     try {
-      const r = await json<{ lanes: LanesStatus }>('/api/gui/lanes/signin', post({ n }));
-      setLanes(r.lanes);
+      const r = await json<{ apps: AppsStatus }>('/api/gui/apps/signin', post({ n, env: envRef.current }));
+      setAppsState(r.apps);
       return null;
     } catch (err) {
       return err instanceof Error ? err.message : String(err);
     }
   }, []);
+
+  const setApps = useCallback(
+    async (patch: { count?: number; stores?: string[] }): Promise<string | null> => {
+      try {
+        const r = await json<{ apps: AppsStatus }>('/api/gui/apps', post({ env: envRef.current, ...patch }));
+        setAppsState(r.apps);
+        return null;
+      } catch (err) {
+        return err instanceof Error ? err.message : String(err);
+      }
+    },
+    [],
+  );
+
+  // Another env picked: show its apps now rather than at the next idle poll.
+  useEffect(() => {
+    void poll();
+  }, [env, poll]);
 
   const setFreeze = useCallback(async (enabled: boolean): Promise<void> => {
     try {
@@ -301,12 +360,13 @@ export function useGuiRunner(onFinished?: (run: RunInfo) => void): GuiRunner {
     results,
     log,
     warm,
-    lanes,
+    apps,
     freeze,
     start,
     stop,
     setWarm,
-    signInCopy,
+    signInApp,
+    setApps,
     setFreeze,
     clearLog,
   };

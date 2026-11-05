@@ -67,9 +67,13 @@ const GATE_LABEL: Record<(typeof PASSCODE_GATES)[number], string> = {
   delete_order: 'Delete Order',
   view_order_history: 'Order History',
   quick_pay: 'Quick Pay',
+  quick_checkout: 'Quick Checkout',
+  gift_card_sale: 'Sell Gift Card',
+  edit_service_price: 'Edit Service Price',
   open_cash_drawer: 'Open Cash Drawer',
   settings_page: 'POS Settings',
   time_tracking: 'Time Tracking',
+  calendar: 'Calendar',
 };
 
 describe('volt-qc PERM — passcode guard, skip, Passcode Setting, matrix (read-only)', () => {

@@ -1,8 +1,63 @@
 # Chạy song song nhiều app (parallel instances)
 
-GUI ⚡ chạy được **2 app Volt POS cùng lúc trên 1 máy**: app đã cài, cộng với một bản sao
-có identifier riêng. Hai app chia nhau các spec. Bản sao chạy **ngầm**: cửa sổ của nó bị dời ra ngoài
-màn hình, không che việc của người dùng.
+GUI chạy được **1, 2 hoặc 3 app Volt POS cùng lúc trên 1 máy**, ở môi trường **Staging hoặc
+Production**. Mỗi app là app đã cài hoặc một bản sao có identifier riêng. Các app chia nhau các spec.
+Bản sao chạy **ngầm**: cửa sổ của nó bị dời ra ngoài màn hình, không che việc của người dùng.
+
+## Chọn môi trường, số app, tiệm (thanh App trên GUI)
+
+Ngay dưới thanh trên cùng của GUI có 3 lựa chọn:
+
+1. **Môi trường**: Staging / Production. **Staging chính là bản dev** (`ENV=dev`, backend
+   `v2.dev-fastboypay.com`), dev và staging là một. Production là một bản build `.exe` khác.
+2. **Số app**: 1, 2 hoặc 3 app chạy song song.
+3. **Tiệm của từng app**: mỗi app chọn 1 tiệm của môi trường đó.
+
+| Môi trường | Tiệm   | App (instance `n`)       | Mặc định 3 app              |
+| ---------- | ------ | ------------------------ | --------------------------- |
+| Staging    | 14     | app đã cài (n=0), i1, i2 | 14 (app đã cài), 100004, 14 |
+| Staging    | 100004 | i21, i22, i23            |                             |
+| Production | 2949   | i31, i32, i33            | 2949, 20258, 2949           |
+| Production | 20258  | i34, i35, i36            |                             |
+
+Mỗi tiệm có sẵn danh sách số bản sao riêng (`PROFILES` trong `dashboard/server/apps.mjs`). App thứ k
+của một tiệm dùng số thứ k của tiệm đó. Vì vậy **mỗi bản sao chỉ đăng nhập 1 tiệm, 1 lần**. Đổi tiệm
+của "App 2" trên GUI chỉ là chọn bản sao khác, không đăng xuất gì cả. Lựa chọn được lưu ở
+`.tmp/gui-apps.json`, và lịch chạy cũng dùng nó.
+
+Mỗi thẻ app trên GUI có trạng thái:
+
+- **Đã đăng nhập**: sẵn sàng chạy.
+- **Chưa đăng nhập**: bấm **Mở QR**, quét bằng app GCI Business **đúng tiệm của thẻ đó**, rồi đóng cửa
+  sổ bản sao.
+- **Chưa có bản sao**: bấm **Tạo & mở QR**. GUI tạo bản sao từ bản nguồn rồi mở màn QR.
+
+**Bản nguồn** của bản sao là `APP_SOURCE` trong `configs/env/.env.dev` (Staging) /
+`configs/env/.env.prod` (Production). Không đặt thì dùng app đã cài. GUI đọc host backend trong file
+`.exe` để biết đó là bản nào (dev / prod), và **chỉ tạo hoặc cập nhật bản sao từ đúng bản của môi
+trường đó**. Ví dụ máy đang cài bản dev thì bản sao Production hiện có được giữ nguyên, và GUI hiện
+cảnh báo vàng. Cách có bản sao Production mà không phải cài đè bản dev: giải nén bản prod ra một thư
+mục, rồi đặt `APP_SOURCE` trong `.env.prod` trỏ tới `volt-pos.exe` trong đó.
+
+Khi chạy, mỗi bản sao nhận `MERCHANT_ID` (và `STORE_ID`, `PORTAL_MERCHANT_ID`) = tiệm của nó. App đã
+cài dùng `MERCHANT_ID` trong `.env.dev` (14). Dữ liệu riêng của từng tiệm (nhân viên, dịch vụ, khách
+loyalty…) đặt trong `configs/env/.env.<env>.<tiệm>` (git-ignored), ví dụ `.env.dev.100004`,
+`.env.prod.20258`. File này được đọc trước `.env.<env>`.
+
+Khi nào chạy song song:
+
+- **Staging, mọi app đều ở tiệm 14**: giữ cách cũ. 1 app = app đã cài. Chọn 2–3 app thì chỉ chạy song
+  song khi chọn từ 20 spec trở lên.
+- **Staging có app ở tiệm 100004**, hoặc **Production**: luôn chạy đúng các app đã chọn.
+- Chạy 1 test / 1 file thì chỉ dùng App 1.
+- Production vẫn **chỉ chạy được `tests/smoke`** (read-only).
+- Spec thẻ / gift card / lịch hẹn (`primary`) chạy trên app đã cài nếu nó có trong run, không thì trên
+  app đầu tiên khởi động được.
+
+**Hai tiệm thì phần "chạy riêng" cũng chia đôi.** Spec đổi cài đặt / đọc báo cáo của tiệm (`alone`)
+không được chạy cùng lúc với app khác **trên cùng tiệm**. Hai tiệm khác nhau thì không ảnh hưởng nhau,
+nên cuối run, mỗi tiệm có 1 app chạy phần `alone` của nó, 2 tiệm chạy song song. Các app còn lại được
+tắt để trả RAM.
 
 ## Vì sao 2 app không đụng nhau
 

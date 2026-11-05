@@ -1,3 +1,4 @@
+import { browser } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { CommonIds, passcodeDigit } from '../../constants/testids.js';
 import { locator } from '../../helpers/selectors.js';
@@ -224,6 +225,101 @@ export class PasscodeDialog extends BaseComponent {
       return false;
     }
     return true;
+  }
+
+  /**
+   * The guard's heading, e.g. "Enter staff code to access Quick Checkout".
+   *
+   * Read from the DOM rather than a testid: the dialog renders the title as a
+   * plain leaf, and the screen it protects is the only part that varies. `''`
+   * when no guard is up.
+   */
+  async promptTitle(): Promise<string> {
+    const title = await browser.execute(function () {
+      const re = /^(Enter staff code|Nhập mã nhân viên)/i;
+      const hits = Array.prototype.filter.call(
+        document.querySelectorAll('[role="dialog"] *'),
+        function (e: Element) {
+          const r = e.getBoundingClientRect();
+          return (
+            e.children.length === 0 &&
+            r.width > 0 &&
+            re.test(String((e as HTMLElement).innerText || '').trim())
+          );
+        },
+      ) as HTMLElement[];
+      const last = hits[hits.length - 1];
+      return last ? String(last.innerText).trim() : '';
+    });
+    return typeof title === 'string' ? title : '';
+  }
+
+  /**
+   * Type a passcode that SHOULD be refused and return the dialog's message.
+   *
+   * The negative twin of {@link enter}: a staff whose role lacks the gated
+   * permission gets an inline "You don't have permission…" and the guard stays
+   * up. Resolves `''` when the guard closed instead — i.e. the code was
+   * accepted, which the caller asserts against.
+   */
+  async enterExpectingRefusal(passcode: string, timeout: number = Timeouts.MEDIUM): Promise<string> {
+    await this.waitOpen(Timeouts.MEDIUM);
+    for (const digit of passcode) {
+      await this.tap(digitKey(digit));
+      await settle(KEY_PRESS_MS);
+    }
+
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+      const message = await this.rejectionMessage();
+      if (message) return message;
+      if (!(await this.isPrompting(Timeouts.ANIMATION))) return '';
+      await settle(KEY_PRESS_MS);
+    }
+    return this.rejectionMessage();
+  }
+
+  /**
+   * Wait until a guard whose title matches `title` is up (keypad mounted).
+   *
+   * Stronger than {@link isPrompting} for an action that opens the guard from
+   * ON TOP of another dialog (the line editor): there `isOpen()` already sees
+   * the editor's `[role="dialog"]` and the single keypad probe can run before
+   * the guard has mounted.
+   */
+  async waitForPrompt(title: RegExp, timeout: number = Timeouts.MEDIUM): Promise<boolean> {
+    try {
+      await browser.waitUntil(
+        async () => (await this.isPrompting(Timeouts.ANIMATION)) && title.test(await this.promptTitle()),
+        { timeout, interval: KEY_PRESS_MS },
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Type a passcode without judging the outcome — for a guard that is followed
+   * straight away by ANOTHER guard (Quick Checkout → Sell Gift Card), where
+   * {@link enter} would read the second prompt as "not accepted".
+   */
+  async typeCode(passcode: string): Promise<void> {
+    await this.waitOpen(Timeouts.MEDIUM);
+    for (const digit of passcode) {
+      await this.tap(digitKey(digit));
+      await settle(KEY_PRESS_MS);
+    }
+  }
+
+  /** Close the guard without unlocking (Escape — the dialog's X does the same). */
+  async dismiss(): Promise<void> {
+    if (!(await this.isPrompting(Timeouts.ANIMATION))) return;
+    await browser.keys(['Escape']);
+    await browser.waitUntil(async () => !(await this.isPrompting(Timeouts.ANIMATION)), {
+      timeout: Timeouts.SHORT,
+      timeoutMsg: 'The passcode guard did not close on Escape',
+    });
   }
 
   /** Does this dialog offer the 30-minute skip? Only when the caller passed `showSkipOption`. */

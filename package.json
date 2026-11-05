@@ -60,6 +60,7 @@
     "portal:earn-on-tip:off": "cross-env ENV=dev PORTAL_PROFILE=1 SPEC_RETRIES=0 PORTAL_EARN_ON_TIP=off wdio run configs/wdio/wdio.web.conf.ts --spec tests/web/portal-earn-on-tip.spec.ts",
     "portal:vp-5338": "cross-env ENV=dev PORTAL_PROFILE=1 SPEC_RETRIES=0 wdio run configs/wdio/wdio.web.conf.ts --spec tests/web/portal-vp-5338-category-palette.spec.ts",
     "portal:vp-4809": "cross-env ENV=dev PORTAL_PROFILE=1 SPEC_RETRIES=0 wdio run configs/wdio/wdio.web.conf.ts --spec tests/web/portal-vp-4809-font-size.spec.ts",
+    "portal:vp-4390": "cross-env ENV=dev PORTAL_PROFILE=1 SPEC_RETRIES=0 wdio run configs/wdio/wdio.web.conf.ts --spec tests/web/portal-vp-4390-receipt-business-phone.spec.ts",
     "test:earn-points-on-tip:full": "tsx scripts/earn-points-on-tip-full.ts",
     "//dashboard": "React run dashboard (separate package in dashboard/). The DashboardReporter feeds it after every test lane; these just start/build the viewer.",
     "dashboard:install": "npm --prefix dashboard install",

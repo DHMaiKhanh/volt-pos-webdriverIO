@@ -85,6 +85,22 @@ export class AppNav extends UiObject {
     });
   }
 
+  /**
+   * Press the header's Appointment link.
+   *
+   * Waits for the path only: with the VP-4815 Calendar gate on, the route mounts
+   * behind "Enter staff code to access Calendar", so the board itself is not a
+   * signal the caller can rely on here.
+   */
+  async goToAppointment(): Promise<void> {
+    await logStep('Nav: appointment');
+    await this.click(headerMenuItem(Routes.APPOINTMENT));
+    await waitUntilPath((path) => path.startsWith(Routes.APPOINTMENT), {
+      timeout: Timeouts.NAVIGATION,
+      message: 'The header Appointment link did not navigate',
+    });
+  }
+
   /** Press the header's Order History link. */
   async goToOrderHistory(): Promise<void> {
     await logStep('Nav: order history');

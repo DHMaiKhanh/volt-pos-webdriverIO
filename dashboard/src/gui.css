@@ -834,3 +834,153 @@
   margin-top: 3px;
   accent-color: var(--accent);
 }
+
+/* ── Apps bar: environment → number of apps → store per app (AppsBar.tsx) ── */
+.appsbar {
+  display: flex;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 8px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.appsbar.env-staging {
+  box-shadow: inset 3px 0 0 var(--series);
+}
+.appsbar.env-prod {
+  box-shadow: inset 3px 0 0 var(--fail);
+}
+.seg-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.seg-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.seg > button {
+  border: none;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  min-width: 34px;
+  cursor: pointer;
+}
+.seg > button + button {
+  border-left: 1px solid var(--border);
+}
+.seg > button:hover:not(:disabled) {
+  color: var(--ink);
+}
+.seg > button.on {
+  background: var(--accent);
+  color: #fff;
+}
+.seg > button.on.env-staging {
+  background: var(--series);
+}
+.seg > button.on.env-prod {
+  background: var(--fail);
+}
+.seg > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.app-cards {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.app-card {
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 12.5px;
+}
+.app-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.app-card-head code {
+  font-size: 11px;
+  color: var(--muted);
+}
+.app-store {
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+}
+select.app-store {
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.app-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+}
+.app-state i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+.app-card.ready .app-state i {
+  background: var(--pass);
+}
+.app-card.signin .app-state i {
+  background: var(--flaky);
+}
+.app-card.missing .app-state i {
+  background: var(--fail);
+}
+.app-state .btn {
+  margin-left: auto;
+}
+.apps-sum {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.apps-sum.ok {
+  color: var(--pass-text);
+}
+.apps-sum.warn {
+  color: var(--flaky);
+}
+.apps-note {
+  flex-basis: 100%;
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  overflow-wrap: anywhere;
+}
+.apps-note.warn {
+  background: var(--skip-wash);
+}
+.apps-note.bad {
+  background: var(--fail-wash);
+  color: var(--fail-text);
+}

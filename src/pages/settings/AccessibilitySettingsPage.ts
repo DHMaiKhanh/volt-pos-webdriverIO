@@ -25,9 +25,14 @@ export const PASSCODE_GATES = [
   'view_order_history',
   // Added in build 1.1.x, between Order History and Open Cash Drawer.
   'quick_pay',
+  // VP-4815 (build 1.1.99): Quick Checkout, Sell Gift Card, Edit Service Price, Calendar.
+  'quick_checkout',
+  'gift_card_sale',
+  'edit_service_price',
   'open_cash_drawer',
   'settings_page',
   'time_tracking',
+  'calendar',
 ] as const;
 
 export type PasscodeGate = (typeof PASSCODE_GATES)[number];
@@ -74,7 +79,13 @@ export class AccessibilitySettingsPage extends BasePage {
   /** Every gate's current state, for snapshot/restore around a mutating spec. */
   async readGates(): Promise<PasscodeGateState> {
     const state = {} as PasscodeGateState;
-    for (const gate of PASSCODE_GATES) state[gate] = await this.isGateOn(gate);
+    await this.find(AccessibilityIds.passcodeGateAll, { visible: true });
+    for (const gate of PASSCODE_GATES) {
+      // A build older than the gate (e.g. the VP-4815 four before 1.1.99) simply
+      // has no switch for it; leave it out of the snapshot rather than fail.
+      if (!(await this.exists(passcodeGate(gate), Timeouts.ANIMATION))) continue;
+      state[gate] = await this.isGateOn(gate);
+    }
     return state;
   }
 

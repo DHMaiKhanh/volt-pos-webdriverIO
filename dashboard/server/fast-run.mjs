@@ -5,7 +5,7 @@
  *   node fast-run.mjs <plan.json>
  *
  * plan.json = { phases: [{ name, conf, mode: 'attach' | 'launch' }], settleScale?, warmFile? }
- *           | { lanes: { instances, queues }, settleScale?, warmFile? }
+ *           | { lanes: { instances: [{ n, slot, store, env }], queues }, settleScale?, warmFile? }
  *
  * The attach phase drives the app the GUI keeps PRE-WARMED (dashboard/server/
  * warm.mjs) — already past its splash, so the first test starts seconds after
@@ -241,6 +241,18 @@ function resetDashboardFragments() {
   writeFileSync(path.join(dir, '_run-started-at.txt'), new Date().toISOString());
 }
 
+/**
+ * Parallel lanes: one per app in `plan.lanes.instances` (1–3, dashboard/server/apps.mjs).
+ *
+ *   1. Boot every app at once. Instance 0 (the installed dev app) attaches to the
+ *      pre-warmed app; a copy is killed, parked off-screen and warmed. A copy that
+ *      is signed out or fails to boot sits the run out — the others take its share.
+ *   2. Shared phase: `primary` work (card terminal / gift card / appointments) only
+ *      on the first live app, `any` work on whichever app is free.
+ *   3. `alone` phase (store-wide settings / reports): nothing else may touch that
+ *      store, so ONE app per store runs it — with two stores (staging 14 + 100004,
+ *      prod 2949 + 20258) the two halves run side by side.
+ */
 async function runLanes() {
   const { instances, queues } = plan.lanes;
   resetDashboardFragments();
@@ -248,35 +260,73 @@ async function runLanes() {
   const common = { ...phaseEnv, DASHBOARD_RUN_PHASE: '2/3', DASHBOARD_RUN_MODES: runModes };
   let failed = false;
 
-  // Instance 0 opens like a single-lane run: attach to the pre-warmed app.
+  const tagOf = (inst) => (inst.n ? `i${inst.n}` : '');
+  const pre = (inst) => (inst.n ? `[i${inst.n}] ` : '');
+  const kill = (inst) => shAsync('npm run app:kill', inst.env, tagOf(inst));
+  const describe = (inst) =>
+    `App ${inst.slot ?? 1} = ${inst.n ? `i${inst.n}` : 'app đã cài'}${inst.store ? ` · tiệm ${inst.store}` : ''}`;
+  console.log(`[fast-run] ${elapsed()} ${instances.map(describe).join(' | ')}`);
+
+  /* 1. Boot */
   const firstMode = queues.primary.attach.length || queues.any.attach.length ? 'attach' : 'launch';
-  const warm = await settledWarm();
-  if (!preflightFirst(warm, firstMode)) process.exit(1);
+  const installed = instances.find((inst) => !inst.n);
+  if (installed) {
+    const warm = await settledWarm();
+    if (!preflightFirst(warm, firstMode)) process.exit(1);
+    installed.mode = firstMode;
+  }
+  const copies = instances.filter((inst) => inst.n);
+  const booted = await Promise.all(
+    copies.map(async (inst) => {
+      // Always a fresh copy: one left open by hand (the QR sign-in) keeps a small,
+      // framed window, and tests then click outside its viewport. A fresh launch
+      // takes the seeded 1920×1080 frameless placement — the installed app's
+      // fullscreen viewport. Parked from the first frame, or it covers the screen.
+      await kill(inst);
+      inst.stopPark = parkWatcher(inst);
+      const warm = await warmInstance(inst);
+      if (warm.sitOut) {
+        inst.stopPark();
+        await kill(inst);
+        return false;
+      }
+      inst.mode = 'attach';
+      return true;
+    }),
+  );
+  const live = instances.filter((inst) => !inst.n || booted[copies.indexOf(inst)]);
+  if (!live.length) {
+    console.log(`[fast-run] ${elapsed()} không app nào sẵn sàng — dừng (xem lý do từng làn ở trên)`);
+    process.exit(1);
+  }
+  // The installed app owns the card terminal / gift-card work when it is in the run.
+  const primary = live.find((inst) => !inst.n) ?? live[0];
 
-  /** Copies still working (or about to): while one is, instance 0 leaves them the shared attach work. */
-  let activeCopies = instances.length - 1;
-
-  /**
-   * Next group for lane `n` in `mode`. Only instance 0 can take `primary`, so it
-   * takes no shared work while primary work is waiting: in run 5 it drained two
-   * shared attach groups (26 min) before its primary launch groups, and the copy
-   * then sat idle for the last 70 min of the parallel phase.
-   */
-  const take = (n, mode) => {
-    if (n !== 0) return queues.any[mode].shift() ?? null;
-    const own = queues.primary[mode].shift();
-    if (own) return own;
-    if (mode === 'attach' && queues.primary.launch.length && activeCopies > 0) return null;
-    return queues.any[mode].shift() ?? null;
-  };
-  const left = (n, mode) => queues.any[mode].length + (n === 0 ? queues.primary[mode].length : 0);
+  /** Switch a lane to launch mode once: close its attach app, preflight launch. */
+  async function toLaunch(inst) {
+    if (inst.mode === 'launch') return true;
+    if (inst.dead) return false;
+    await kill(inst);
+    const code = await shAsync(
+      'npm run preflight',
+      { ...inst.env, WDIO_MODE: 'launch', PREFLIGHT_CLEAN_LEFTOVERS: '1' },
+      tagOf(inst),
+    );
+    if (code !== 0) {
+      console.log(`[fast-run] ${pre(inst)}preflight launch FAIL — làn này dừng, phần còn lại để làn khác`);
+      failed = true;
+      inst.dead = true;
+      return false;
+    }
+    inst.mode = 'launch';
+    return true;
+  }
 
   async function runGroup(inst, group, mode) {
-    const tag = inst.n ? `i${inst.n}` : '';
     const started = Date.now();
-    console.log(
-      `\n[fast-run] ${elapsed()} ${tag ? `[${tag}] ` : ''}===== ${group.id} (${mode}, ${group.files} file) =====`,
-    );
+    // Attach after launch: no app is up, the first attach worker's self-heal boots one.
+    if (mode === 'attach') inst.mode = 'attach';
+    console.log(`\n[fast-run] ${elapsed()} ${pre(inst)}===== ${group.id} (${mode}, ${group.files} file) =====`);
     const code = await shAsync(
       `${WDIO} run "${group.confs[String(inst.n)]}"`,
       {
@@ -289,93 +339,91 @@ async function runLanes() {
           ? { APP_ENV_WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: inst.env.APP_BROWSER_ARGS }
           : {}),
       },
-      tag,
+      tagOf(inst),
     );
     if (code !== 0) failed = true;
     console.log(
-      `[fast-run] ${tag ? `[${tag}] ` : ''}${group.id} xong: exit ${code}, ${Math.round((Date.now() - started) / 60000)} phút`,
+      `[fast-run] ${pre(inst)}${group.id} xong: exit ${code}, ${Math.round((Date.now() - started) / 60000)} phút`,
     );
   }
+
+  /* 2. Shared phase */
+
+  /** Lanes other than primary still working (or about to): while one is, primary leaves them the shared attach work. */
+  let activeOthers = live.length - 1;
+
+  /**
+   * Next group for `inst` in `mode`. Only the primary lane can take `primary`, so
+   * it takes no shared work while primary work is waiting: in run 5 it drained two
+   * shared attach groups (26 min) before its primary launch groups, and the copy
+   * then sat idle for the last 70 min of the parallel phase.
+   */
+  const take = (inst, mode) => {
+    if (inst !== primary) return queues.any[mode].shift() ?? null;
+    const own = queues.primary[mode].shift();
+    if (own) return own;
+    if (mode === 'attach' && queues.primary.launch.length && activeOthers > 0) return null;
+    return queues.any[mode].shift() ?? null;
+  };
+  const left = (inst, mode) => queues.any[mode].length + (inst === primary ? queues.primary[mode].length : 0);
 
   async function lane(inst) {
-    const tag = inst.n ? `i${inst.n}` : '';
-    let stopPark = () => {};
-    if (inst.n) {
-      // Always a fresh copy: one left open by hand (the QR sign-in) keeps a small,
-      // framed window, and tests then click outside its viewport. A fresh launch
-      // takes the seeded 1920×1080 frameless placement — the installed app's
-      // fullscreen viewport. Parked from the first frame, or it covers the screen.
-      await shAsync('npm run app:kill', inst.env, tag);
-      stopPark = parkWatcher(inst);
-      const warm = await warmInstance(inst);
-      if (warm.sitOut) {
-        activeCopies -= 1;
-        stopPark();
-        await shAsync('npm run app:kill', inst.env, tag);
-        return;
-      }
-    }
     try {
-      for (let g = take(inst.n, 'attach'); g; g = take(inst.n, 'attach')) await runGroup(inst, g, 'attach');
-      if (left(inst.n, 'launch') === 0) return;
-      // The launch groups start their own app per group: close the attach one first.
-      await shAsync('npm run app:kill', inst.env, tag);
-      if (
-        (await shAsync(
-          'npm run preflight',
-          { ...inst.env, WDIO_MODE: 'launch', PREFLIGHT_CLEAN_LEFTOVERS: '1' },
-          tag,
-        )) !== 0
-      ) {
-        console.log(
-          `[fast-run] ${tag ? `[${tag}] ` : ''}preflight launch FAIL — làn này dừng, phần còn lại để làn khác`,
-        );
-        failed = true;
-        return;
-      }
-      for (let g = take(inst.n, 'launch'); g; g = take(inst.n, 'launch')) await runGroup(inst, g, 'launch');
+      for (let g = take(inst, 'attach'); g; g = take(inst, 'attach')) await runGroup(inst, g, 'attach');
+      if (left(inst, 'launch') === 0) return;
+      if (!(await toLaunch(inst))) return;
+      for (let g = take(inst, 'launch'); g; g = take(inst, 'launch')) await runGroup(inst, g, 'launch');
     } finally {
-      stopPark();
-      // A parked copy holds ~1 GB; nothing else needs it this run.
-      if (inst.n) {
-        activeCopies -= 1;
-        await shAsync('npm run app:kill', inst.env, tag);
-      }
+      if (inst !== primary) activeOthers -= 1;
     }
   }
 
-  console.log(`[fast-run] ${elapsed()} ===== song song: ${instances.length} app =====`);
-  await Promise.all(instances.map((inst) => lane(inst)));
-  // A lane that sat out (copy not signed in) leaves its share: instance 0 takes it now.
-  const inst0 = instances[0];
+  console.log(`[fast-run] ${elapsed()} ===== song song: ${live.length} app =====`);
+  await Promise.all(live.map((inst) => lane(inst)));
+  // A lane that died leaves its share: the primary lane takes it now.
   for (const mode of ['attach', 'launch']) {
-    if (left(0, mode) === 0) continue;
-    if (mode === 'launch') sh('npm run app:kill');
-    for (let g = take(0, mode); g; g = take(0, mode)) await runGroup(inst0, g, mode);
+    if (left(primary, mode) === 0) continue;
+    if (mode === 'launch' && !(await toLaunch(primary))) break;
+    for (let g = take(primary, mode); g; g = take(primary, mode)) await runGroup(primary, g, mode);
   }
 
-  // Merchant-global specs last, with nothing else touching the merchant.
+  /* 3. Store-wide specs last: one app per store, nothing else touching that store */
   const alone = queues.alone;
   if (alone.attach.length || alone.launch.length) {
-    console.log(
-      `\n[fast-run] ${elapsed()} ===== chạy riêng (cài đặt / báo cáo / danh sách chung): app gốc =====`,
-    );
-    for (const g of alone.attach) await runGroup(inst0, g, 'attach');
-    if (alone.launch.length) {
-      sh('npm run app:kill');
-      if (
-        alone.attach.length &&
-        sh('npm run preflight', { WDIO_MODE: 'launch', PREFLIGHT_CLEAN_LEFTOVERS: '1' }) !== 0
-      )
-        failed = true;
-      for (const g of alone.launch) await runGroup(inst0, g, 'launch');
+    const perStore = new Map();
+    for (const inst of live) if (!inst.dead && !perStore.has(inst.store ?? '')) perStore.set(inst.store ?? '', inst);
+    const storeLanes = [...perStore.values()];
+    // The other apps of each store must be idle — close them, which also hands back their RAM.
+    for (const inst of live) {
+      if (storeLanes.includes(inst) || !inst.n) continue;
+      inst.stopPark?.();
+      await kill(inst);
+      inst.closed = true;
     }
+    console.log(
+      `\n[fast-run] ${elapsed()} ===== chạy riêng (cài đặt / báo cáo / danh sách chung): ` +
+        `${storeLanes.map(describe).join(' + ')} =====`,
+    );
+    await Promise.all(
+      storeLanes.map(async (inst) => {
+        for (let g = alone.attach.shift(); g; g = alone.attach.shift()) await runGroup(inst, g, 'attach');
+        if (!alone.launch.length || !(await toLaunch(inst))) return;
+        for (let g = alone.launch.shift(); g; g = alone.launch.shift()) await runGroup(inst, g, 'launch');
+      }),
+    );
+  }
+
+  // A parked copy holds ~1 GB; nothing else needs it after the run.
+  for (const inst of live) {
+    if (!inst.n || inst.closed) continue;
+    inst.stopPark?.();
+    await kill(inst);
   }
 
   sh(`npx tsx "${path.join(REPO_ROOT, 'scripts', 'finalize-dashboard.ts')}"`, {
     DASHBOARD_RUN_MODES: runModes,
   });
-  if (readWarm()?.enabled === false) sh('npm run app:kill');
+  if (installed && readWarm()?.enabled === false) sh('npm run app:kill');
   return failed;
 }
 
