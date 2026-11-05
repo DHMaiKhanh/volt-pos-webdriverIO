@@ -86,6 +86,18 @@ export interface AppEnv {
    * web lane, like WEB_URL, with no tauri-driver.
    */
   GAP_URL: string;
+  /**
+   * GoCheckin PRODUCTION login for verifying a PROD POS build against its own
+   * store (e.g. merchant 2949 "Bee Bee Spa"). Same two-step login as WEB_*;
+   * values live only in the git-ignored .env.dev. Empty = the prod web lane skips.
+   */
+  PROD_GCI_URL: string;
+  PROD_GCI_GAP_URL: string;
+  PROD_GCI_MERCHANT_ID: string;
+  PROD_GCI_USERNAME: string;
+  PROD_GCI_PASSWORD: string;
+  /** Owner passcode GAP → Gap Settings asks for on that store. */
+  PROD_GCI_PASSCODE: string;
   /** Fastboy Portal origin (store settings), e.g. https://v2.dev-fastboypay.com — web lane, QR-signed profile. */
   PORTAL_URL: string;
   /** Merchant whose Store Settings the Portal lane edits — the same store the till is signed into. */
@@ -204,7 +216,10 @@ let cached: AppEnv | null = null;
  *
  * Precedence, highest first:
  *   1. Real process env — the CI secret store, and `cross-env ENV=…`
- *   2. `configs/env/.env.<ENV>`   (git-ignored, per-machine)
+ *   2. `configs/env/.env.<ENV>.<STORE_ID>` (git-ignored) — when the GUI runs an app
+ *      signed in to one store (dashboard/server/apps.mjs: Staging = ENV dev, 14 / 100004;
+ *      prod 2949 / 20258), that store's own staff, services, customers…
+ *   2b. `configs/env/.env.<ENV>`   (git-ignored, per-machine)
  *   3. `configs/env/.env.local`   (git-ignored, personal overrides)
  *   4. `configs/env/.env.example` (tracked defaults)
  *
@@ -218,7 +233,10 @@ export function loadEnv(force = false): AppEnv {
     throw new Error(`Unknown ENV="${envName}". Expected one of: dev | staging | prod.`);
   }
 
-  for (const file of [`.env.${envName}`, '.env.local', '.env.example']) {
+  const store = (process.env.STORE_ID ?? '').trim();
+  const files = [`.env.${envName}`, '.env.local', '.env.example'];
+  if (store) files.unshift(`.env.${envName}.${store}`);
+  for (const file of files) {
     const full = path.join(Paths.ENV_DIR, file);
     if (fs.existsSync(full)) dotenv.config({ path: full, override: false });
   }
@@ -257,6 +275,12 @@ export function loadEnv(force = false): AppEnv {
     WEB_USERNAME: process.env.WEB_USERNAME ?? '',
     WEB_PASSWORD: process.env.WEB_PASSWORD ?? '',
     GAP_URL: process.env.GAP_URL ?? 'https://gap.gocheckin.net/home',
+    PROD_GCI_URL: process.env.PROD_GCI_URL ?? 'https://pos.gocheckin.net/login',
+    PROD_GCI_GAP_URL: process.env.PROD_GCI_GAP_URL ?? 'https://gap.gocheckin.net/home',
+    PROD_GCI_MERCHANT_ID: process.env.PROD_GCI_MERCHANT_ID ?? '',
+    PROD_GCI_USERNAME: process.env.PROD_GCI_USERNAME ?? '',
+    PROD_GCI_PASSWORD: process.env.PROD_GCI_PASSWORD ?? '',
+    PROD_GCI_PASSCODE: process.env.PROD_GCI_PASSCODE ?? '',
     PORTAL_URL: (process.env.PORTAL_URL ?? 'https://v2.dev-fastboypay.com').replace(/\/+$/, ''),
     PORTAL_MERCHANT_ID: process.env.PORTAL_MERCHANT_ID ?? '14',
     WEB_CUSTOMER_PHONE: process.env.WEB_CUSTOMER_PHONE ?? '',

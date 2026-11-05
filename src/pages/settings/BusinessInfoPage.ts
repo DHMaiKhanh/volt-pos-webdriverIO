@@ -218,6 +218,12 @@ export class BusinessInfoPage extends BasePage {
     return this.exists(businessField(name), Timeouts.SHORT);
   }
 
+  /** Current value of the field with this `name` (e.g. `businessPhone`). Throws when it is not rendered. */
+  async readFieldByName(name: string): Promise<string> {
+    const el = await this.find(businessField(name), { timeout: Timeouts.MEDIUM });
+    return (await el.getValue()) ?? '';
+  }
+
   /** Is the field with this `name` disabled (read-only)? Throws when it is not rendered. */
   async isFieldDisabledByName(name: string): Promise<boolean> {
     const el = await this.find(businessField(name), { timeout: Timeouts.SHORT });

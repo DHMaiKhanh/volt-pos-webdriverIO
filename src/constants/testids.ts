@@ -128,7 +128,15 @@ export const CommonIds = {
    * passcode-guard-dialog.tsx` through the shared `Dialog`, so Radix supplies
    * `role="dialog"` on the same node.
    */
-  passcodeGuardDialog: locator('passcode guard dialog', 'passcode-guard-dialog', byRole('dialog')),
+  passcodeGuardDialog: locator(
+    'passcode guard dialog',
+    'passcode-guard-dialog',
+    // The dialog that carries the 0-9 keypad, so a guard stacked ON TOP of
+    // another dialog (the line editor → Edit Service Price, VP-4815) is the one
+    // matched — the bare role fallback returns the editor underneath first.
+    '//*[@role="dialog"][.//button[normalize-space(.)="1"]][.//button[normalize-space(.)="0"]]',
+    byRole('dialog'),
+  ),
 
   /**
    * "Skip passcode for 30 minutes" checkbox. `CheckboxLabel` forwards its `id`

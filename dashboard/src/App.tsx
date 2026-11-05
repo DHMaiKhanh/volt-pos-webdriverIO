@@ -4,6 +4,7 @@ import { formatDuration } from './lib/format';
 import type { RunInfo, RunRequest, WarmState, WarmStatus } from './lib/gui';
 import { useCatalog, useGuiRunner, usePersisted } from './lib/gui';
 import { Sidebar, type FileCounts } from './components/gui/Sidebar';
+import { AppsBar } from './components/gui/AppsBar';
 import { ResultsTab } from './components/gui/ResultsTab';
 import { ConsoleTab } from './components/gui/ConsoleTab';
 import { HistoryTab } from './components/gui/HistoryTab';
@@ -67,7 +68,9 @@ export function App(): JSX.Element {
   const { history, reload } = useHistory();
   const { features, error: catalogError, refresh } = useCatalog();
   const [tab, setTab] = usePersisted<Tab>('gui-tab', 'results');
-  const [env, setEnv] = usePersisted('gui-env', 'dev');
+  const [savedEnv, setEnv] = usePersisted('gui-env', 'dev');
+  // `dev` is shown as Staging (one environment); an old saved `staging` lands there too.
+  const env = savedEnv === 'prod' ? 'prod' : 'dev';
   const [selectedList, setSelectedList] = usePersisted<string[]>('gui-selected', []);
   const [tags, setTags] = usePersisted<string[]>('gui-tags', []);
   const [fast, setFast] = usePersisted('gui-fast', true);
@@ -91,7 +94,7 @@ export function App(): JSX.Element {
     },
     [reload, notifyPrefs],
   );
-  const runner = useGuiRunner(onFinished);
+  const runner = useGuiRunner(env, onFinished);
   const { run, running, results } = runner;
 
   // Coming back to the runner is when a Run is likely: if the pre-warmed app is
@@ -192,11 +195,14 @@ export function App(): JSX.Element {
   const runSelected = (): void => {
     const specs = selectedList.filter((p) => knownPaths.has(p));
     const useFast = fast && env === 'dev';
+    const count = runner.apps?.env === env ? runner.apps.config[runner.apps.env].count : 1;
+    const where =
+      env === 'prod' ? ` · Production ×${count} app` : count > 1 ? ` · Staging ×${count} app` : '';
     void start({
       specs,
       tags,
       fast: useFast,
-      label: `${useFast ? '⚡ ' : ''}${specs.length} spec${tags.length ? ` · ${tags.join(' ')}` : ''}`,
+      label: `${useFast ? '⚡ ' : ''}${specs.length} spec${tags.length ? ` · ${tags.join(' ')}` : ''}${where}`,
     });
   };
 
@@ -213,14 +219,11 @@ export function App(): JSX.Element {
   const remaining =
     run && running ? Math.max(0, run.estimateMs - (now - new Date(run.startedAt).getTime())) : 0;
   const warmState: WarmState = runner.warm?.enabled ? runner.warm.state : 'off';
-  const lanesCopies = runner.lanes?.copies ?? [];
-  const lanesSignedIn = lanesCopies.filter((c) => c.signedIn).length;
-  /** First copy still on its QR login — the "Mở QR" button opens that one. */
-  const unsignedCopy = lanesCopies.find((c) => !c.signedIn);
   const selectedCount = selectedList.filter((p) => knownPaths.has(p)).length;
   // Test cases (it) the run will execute: tests in the ticked files, narrowed by the tag chips.
-  // ⚡ fast mode never runs the _manual stubs, _recovery probes or @broken tests.
-  const fastOn = fast && env === 'dev';
+  // ⚡ fast mode never runs the _manual stubs, _recovery probes or @broken tests — and
+  // staging / prod always run that way, on their store copies.
+  const fastOn = env !== 'dev' || fast;
   const selectedTests = useMemo(
     () =>
       features
@@ -252,16 +255,6 @@ export function App(): JSX.Element {
             <div className="brand-sub">WebdriverIO E2E · chọn &amp; chạy test</div>
           </div>
         </div>
-        <select
-          value={env}
-          onChange={(e) => setEnv(e.target.value)}
-          disabled={running}
-          title="Môi trường (build .exe)"
-        >
-          <option value="dev">ENV: dev</option>
-          <option value="staging">ENV: staging</option>
-          <option value="prod">ENV: prod (chỉ smoke)</option>
-        </select>
         <span className={`status-pill ${!runner.online ? 'off' : running ? 'busy' : 'idle'}`}>
           <i />
           {!runner.online
@@ -294,31 +287,7 @@ export function App(): JSX.Element {
             )}
           </span>
         )}
-        {env === 'dev' && lanesCopies.length > 0 && (
-          <span
-            className={`warm-pill ${lanesSignedIn > 0 ? 'ready' : 'busy'}`}
-            title={
-              lanesSignedIn > 0
-                ? `⚡ chạy nhanh chia spec cho ${1 + lanesSignedIn} app (app gốc + bản sao chạy ngầm). ` +
-                  'Cài đặt / báo cáo vẫn chạy riêng ở cuối. Xem docs/parallel-instances.md'
-                : 'Bản sao (D:\\VoltE2E\\i1) chưa đăng nhập: bấm "Mở QR", quét bằng app GCI Business (tiệm 14), ' +
-                  'đăng nhập xong thì đóng cửa sổ bản sao. Tới lúc đó ⚡ chạy 1 app như cũ.'
-            }
-          >
-            <i />
-            {lanesSignedIn > 0 ? `${1 + lanesSignedIn} app song song` : 'Bản sao chưa đăng nhập'}
-            {unsignedCopy && !running && (
-              <button
-                className="warm-retry"
-                onClick={() => void runner.signInCopy(unsignedCopy.n)}
-                title={`Mở bản sao i${unsignedCopy.n} với màn QR đăng nhập`}
-              >
-                Mở QR i{unsignedCopy.n}
-              </button>
-            )}
-          </span>
-        )}
-        {env === 'dev' && runner.freeze && (
+        {runner.freeze && (
           <span
             className={`warm-pill ${runner.freeze.frozen > 0 ? 'busy' : runner.freeze.enabled ? 'ready' : 'off'}`}
             title={
@@ -359,9 +328,9 @@ export function App(): JSX.Element {
           <button className="btn stop big" onClick={() => void runner.stop()}>
             ■ Dừng
           </button>
-        ) : (
+        ) : env !== 'dev' ? null : (
           <label
-            className={`fast-toggle${env === 'dev' ? '' : ' disabled'}`}
+            className="fast-toggle"
             title={
               'Chạy nhanh: spec thường attach vào app mở sẵn (bắt đầu ngay), chỉ spec thanh toán / màn khách / @dual-window\n' +
               'mới launch app riêng (gom file mỗi lần mở). Bỏ case kiểm tay (_manual), _recovery và @broken. Chỉ áp dụng ENV dev.\n' +
@@ -371,7 +340,6 @@ export function App(): JSX.Element {
             <input
               type="checkbox"
               checked={fast}
-              disabled={env !== 'dev'}
               onChange={(e) => setFast(e.target.checked)}
             />
             ⚡ Chạy nhanh
@@ -390,6 +358,8 @@ export function App(): JSX.Element {
           ◐
         </button>
       </header>
+
+      <AppsBar env={env} onEnv={setEnv} runner={runner} disabled={running || !runner.online} />
 
       <div className="body">
         <Sidebar

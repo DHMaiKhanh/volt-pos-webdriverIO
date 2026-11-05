@@ -12,6 +12,10 @@ configs/env/.env.dev
 configs/env/.env.staging
 configs/env/.env.prod
 configs/env/.env.local
+# Per-store overrides read by the GUI apps (configs/env/loadEnv.ts STORE_ID).
+configs/env/.env.dev.*
+configs/env/.env.staging.*
+configs/env/.env.prod.*
 
 # Local driver binaries installed by scripts/setup-drivers.ts
 .drivers/
