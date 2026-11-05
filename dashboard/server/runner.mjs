@@ -56,6 +56,7 @@ import { fileURLToPath } from 'node:url';
 import { fastGrep, laneClass, needsLaunch, planFast, planLanes, specSourceWithKits } from './fast-plan.mjs';
 import { buildCatalog } from './catalog.mjs';
 import { createWarm } from './warm.mjs';
+import { createApps, normEnv } from './apps.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root = two levels up from dashboard/server/. npm scripts run from here. */
@@ -188,6 +189,8 @@ function getCatalog(refresh = false) {
 let current = null;
 /** The pre-warm (warm.mjs), created once the run state below exists. */
 let warm = null;
+/** Which apps / stores a run drives (apps.mjs). */
+let apps = null;
 /** A fresh UI gets at most the log's tail. */
 const MAX_LOG_BYTES = 3_000_000;
 
@@ -395,7 +398,7 @@ function summarize() {
   return out;
 }
 
-function statePayload(sinceVersion = -1) {
+function statePayload(sinceVersion = -1, appsEnv = current?.env ?? 'dev') {
   ingestLive();
   refreshExit();
   const running = !!current && current.exitCode === null;
@@ -421,7 +424,7 @@ function statePayload(sinceVersion = -1) {
       : null,
     logLength: current ? logSize() : 0,
     warm: warm?.status() ?? null,
-    lanes: lanesStatus(),
+    apps: apps.status(appsEnv),
     freeze: freezeStatus(),
   };
   // Results only when they moved — the UI polls every second or so.
@@ -506,130 +509,27 @@ const FAST_GROUP_SIZE = 25;
 
 /* ── Parallel app instances (docs/parallel-instances.md) ────────────────── */
 
-/** Where `scripts/make-instance.mjs` puts the copies: <root>\i<N>\volt-pos-i<N>.exe. */
-const INSTANCE_ROOT = process.env.VOLT_INSTANCE_ROOT || 'D:\\VoltE2E';
 /**
- * Apps per ⚡ run, the installed one included. Each app + worker ≈ 1.3 GB: three
- * fit this 16 GB machine once browsers / chat apps are closed; a copy that is
- * not signed in yet simply gets no lane. `GUI_LANES=1` turns the lanes off.
+ * Apps per run are picked in the GUI (1–3, apps.mjs). With every app on store 14 a
+ * sweep still needs this many files before the copies pay their boot; a run that
+ * includes another store (100004) or Production always runs the picked apps.
  */
-const MAX_LANES = Math.max(1, Number(process.env.GUI_LANES ?? 3) || 1);
-/** Lanes pay a second app's boot: only worth it for a sweep, not a handful of files. */
 const LANES_MIN_FILES = 20;
 /** Smaller than FAST_GROUP_SIZE: the lanes pull groups off one queue, so small ones even out the finish. */
 const LANE_GROUP_SIZE = 10;
-/** A parked copy must keep rendering while out of sight. */
-const ANTI_THROTTLE =
-  '--disable-features=CalculateNativeWinOcclusion --disable-backgrounding-occluded-windows ' +
-  '--disable-renderer-backgrounding --disable-background-timer-throttling';
-
-/** Everything instance N's processes need to stay out of instance 0's way (src/support/process.ts). */
-function instanceEnv(n) {
-  const dir = path.join(INSTANCE_ROOT, `i${n}`);
-  return {
-    VOLT_INSTANCE: String(n),
-    APP_PATH: path.join(dir, `volt-pos-i${n}.exe`),
-    APP_IDENTIFIER: `VoltP${String(n).padStart(2, '0')}`,
-    APP_IMAGES: `volt-pos-i${n}.exe`,
-    DRIVER_IMAGES: `tauri-driver-i${n}.exe,msedgedriver-i${n}.exe`,
-    MSEDGEDRIVER_PATH: path.join(dir, `msedgedriver-i${n}.exe`),
-    TAURI_DRIVER_PATH: path.join(dir, `tauri-driver-i${n}.exe`),
-    REMOTE_DEBUG_PORT: String(9222 + 10 * n),
-    DRIVER_PORT: String(4444 + 10 * n),
-    TAURI_NATIVE_PORT: String(4445 + 10 * n),
-    APP_BROWSER_ARGS: ANTI_THROTTLE,
-    APP_WINDOW_SEED: path.join(dir, 'window-offscreen.json'),
-  };
-}
-
-/**
- * Instance 0 plus every copy on disk that has been signed in once, up to
- * MAX_LANES. A copy fresh from make-instance.mjs sits on its QR login and has no
- * `credentials` file in its data folder yet (only its existence is checked).
- */
-function laneInstances() {
-  const found = [{ n: 0, env: {} }];
-  for (let n = 1; found.length < MAX_LANES && n <= 9; n += 1) {
-    const env = instanceEnv(n);
-    const signedIn = existsSync(path.join(process.env.APPDATA ?? '', env.APP_IDENTIFIER, 'credentials'));
-    if (existsSync(env.APP_PATH) && existsSync(env.MSEDGEDRIVER_PATH) && signedIn) found.push({ n, env });
-  }
-  return found;
-}
-
-/** The installed app the copies are made from (the GUI runs outside the Claude package, so this is the real one). */
-const INSTALLED_APP = path.join(process.env.LOCALAPPDATA ?? '', 'Volt POS', 'volt-pos.exe');
-
-/**
- * Remake copy N (scripts/make-instance.mjs) when the installed app changed under
- * it. A 1.1.85 copy beside a freshly installed 1.1.86 signed itself out and
- * never got a lane again. make-instance.mjs stamps `source.json` with the
- * installed exe it was made from; a copy that is running keeps its exe locked,
- * so it is left for the next run. Returns what happened, for the run log.
- */
-function syncCopyBuild(n) {
-  const dir = path.join(INSTANCE_ROOT, `i${n}`);
-  if (!existsSync(path.join(dir, `volt-pos-i${n}.exe`)) || !existsSync(INSTALLED_APP)) return 'none';
-  const st = statSync(INSTALLED_APP);
-  try {
-    const stamp = JSON.parse(readFileSync(path.join(dir, 'source.json'), 'utf8'));
-    if (stamp.size === st.size && stamp.mtimeMs === st.mtimeMs) return 'same';
-  } catch {
-    /* no stamp yet: remake it once */
-  }
-  const running = spawnSync('tasklist', ['/FI', `IMAGENAME eq volt-pos-i${n}.exe`, '/NH'], {
-    encoding: 'utf8',
-  });
-  if ((running.stdout ?? '').toLowerCase().includes(`volt-pos-i${n}.exe`)) return 'busy';
-  const r = spawnSync(process.execPath, [path.join(REPO_ROOT, 'scripts', 'make-instance.mjs'), String(n)], {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-  });
-  return r.status === 0 ? 'rebuilt' : `failed: ${(r.stderr || r.stdout || '').trim().split(/\r?\n/).pop()}`;
-}
-
-/** For the GUI pill: the copies on disk (up to MAX_LANES) and whether each is signed in. */
-function lanesStatus() {
-  const copies = [];
-  for (let n = 1; n < MAX_LANES && n <= 9; n += 1) {
-    const env = instanceEnv(n);
-    if (!existsSync(env.APP_PATH)) continue;
-    copies.push({
-      n,
-      signedIn: existsSync(path.join(process.env.APPDATA ?? '', env.APP_IDENTIFIER, 'credentials')),
-    });
-  }
-  return { max: MAX_LANES, copies };
-}
-
-/**
- * Open copy N on screen with its QR login (`launch.cmd visible`), for the one-time
- * device sign-in. From here, NOT from a shell inside the Claude app: that one is
- * an MSIX package whose children get a virtualised AppData, so a sign-in made
- * there would never reach the runs.
- */
-function openCopyForSignIn(n) {
-  const launcher = path.join(INSTANCE_ROOT, `i${n}`, 'launch.cmd');
-  if (!existsSync(launcher))
-    return { ok: false, error: `Không có ${launcher} — chạy node scripts/make-instance.mjs ${n}` };
-  spawn('cmd.exe', ['/c', launcher, 'visible'], {
-    detached: true,
-    stdio: 'ignore',
-    windowsHide: true,
-  }).unref();
-  return { ok: true };
-}
 
 /**
  * The lanes plan for fast-run.mjs: every queued group gets one generated config
  * per instance allowed to take it (`….i<N>.conf.ts` — the name is how
  * activeWdioRuns tells the lanes' processes apart).
  */
-function writeLanePlan(plan, instances, userTags, retries) {
+function writeLanePlan(plan, instances, userTags, retries, titleGrep = '') {
   for (const old of readdirSync(TMP))
     if (/^gui-lane-.*\.conf\.ts$/.test(old)) rmSync(path.join(TMP, old), { force: true });
   // A `@lane-split` group (fast-plan.mjs planLanes) runs one half of its files' tests.
+  // A single-test run (staging / prod, one app) greps its titles instead.
   const grepFor = (only) =>
+    titleGrep ||
     fastGrep({
       exclude: only === 'shared' ? ['@broken', '@exclusive'] : ['@broken'],
       userTags,
@@ -642,7 +542,9 @@ function writeLanePlan(plan, instances, userTags, retries) {
       queues[cls][mode] = q[mode].map(({ files, only }, k) => {
         const id = `${cls}-${mode}-${k + 1}${only ? `-${only}` : ''}`;
         const confs = {};
-        for (const inst of cls === 'any' ? instances : instances.slice(0, 1)) {
+        // Every app gets a config for every group: which app is "primary" (the first
+        // one that boots) and which runs a store's `alone` work is only known at run time.
+        for (const inst of instances) {
           const conf = path.join(TMP, `gui-lane-${id}${inst.n ? `.i${inst.n}` : ''}.conf.ts`);
           const base =
             mode === 'attach' ? 'configs/wdio/wdio.bulk-attach.conf.ts' : 'configs/wdio/wdio.bulk.conf.ts';
@@ -660,7 +562,8 @@ function writeLanePlan(plan, instances, userTags, retries) {
 function startRun(body) {
   refreshExit();
   if (current && current.exitCode === null) return { ok: false, error: 'Đang có một lần chạy khác.' };
-  const env = ENVS[body.env] ? body.env : 'dev';
+  // dev and staging are one environment (the dev build): an old `staging` request runs as dev.
+  const env = normEnv(body.env);
   const known = new Set(getCatalog().flatMap((f) => f.files.map((x) => x.path)));
   let specs = [...new Set((body.specs ?? []).map(String))].filter((s) => known.has(s));
   // Production is read-only smoke — wdio.prod.conf.ts pins that, and the override
@@ -673,6 +576,32 @@ function startRun(body) {
     };
   }
   const grep = buildGrep({ tags: body.tags ?? [], titles: body.titles ?? [] });
+
+  // Which apps (apps.mjs). One test / one file runs on App 1 only.
+  const appOverride =
+    body.titles?.length || specs.length === 1 ? { ...(body.apps ?? {}), count: 1 } : (body.apps ?? {});
+  const picked = apps.slotsFor(env, appOverride);
+  // Staging with every app on store 14 (App 1 = the installed app) keeps the old
+  // paths: one app, plus copies for a ⚡ sweep of ≥ 20 files. As soon as an app is
+  // on another store (100004), or on Production, the run uses exactly the picked
+  // apps — otherwise that store would never be tested.
+  const installedOnly = env === 'dev' && picked[0]?.n === 0 && picked.every((s) => s.store === picked[0].store);
+  const fixedApps = !installedOnly;
+  const fast =
+    fixedApps || ((!!body.fast || specs.length >= LANES_MIN_FILES) && !body.titles?.length);
+  const wantLanes = fixedApps || (fast && picked.length > 1 && specs.length >= LANES_MIN_FILES);
+  const appPick = wantLanes ? apps.laneInstances(env, appOverride) : { instances: [], skipped: [], builds: [] };
+  if (fixedApps && appPick.instances.length === 0) {
+    return {
+      ok: false,
+      error:
+        `Chưa có app nào sẵn sàng: ${appPick.skipped.join(' · ') || 'chưa chọn app'}. ` +
+        'Bấm "Tạo & mở QR" ở thanh App, quét QR bằng GCI Business đúng tiệm, rồi đóng cửa sổ bản sao.',
+    };
+  }
+  const instances = appPick.instances;
+  // RAM for the copies: the pre-warmed installed app is closed when no lane uses it.
+  if (fixedApps && !instances.some((i) => i.n === 0)) warm?.release();
 
   mkdirSync(TMP, { recursive: true });
   mkdirSync(path.dirname(LIVE_FILE), { recursive: true });
@@ -692,20 +621,15 @@ function startRun(body) {
   const launchOnly = (p) =>
     needsLaunch(byPath.get(p) ?? { path: p, tests: [] }, specSourceWithKits(REPO_ROOT, p));
 
-  // Fast mode is a dev-lane sweep of whole files; a single-title run stays plain.
+  // Fast mode is a sweep of whole files; a single-title dev run stays plain.
   // A sweep is always ⚡ (and so gets the parallel copies): pressing Run on a full
   // selection without the toggle used to fall back to one app booting per file.
-  const fast = (!!body.fast || specs.length >= LANES_MIN_FILES) && env === 'dev' && !body.titles?.length;
-  const copyBuilds =
-    fast && specs.length >= LANES_MIN_FILES
-      ? Array.from({ length: MAX_LANES - 1 }, (_, i) => `i${i + 1} ${syncCopyBuild(i + 1)}`)
-      : [];
-  const instances = fast ? laneInstances() : [];
+  const copyBuilds = appPick.builds;
   let phases;
   let lanes;
   let planned;
   let estimateMs;
-  if (fast && instances.length > 1 && specs.length >= LANES_MIN_FILES) {
+  if (fixedApps || (wantLanes && instances.length > 1)) {
     const userTags = body.tags ?? [];
     // Asked several times per file below; reading a spec + its kits is the slow part.
     const lanesOf = new Map();
@@ -729,11 +653,13 @@ function startRun(body) {
         error: 'Chạy nhanh: không còn test tự động nào trong lựa chọn (toàn case kiểm tay/@broken).',
       };
     }
-    lanes = writeLanePlan(plan, instances, userTags, retries);
+    lanes = writeLanePlan(plan, instances, userTags, retries, body.titles?.length ? grep : '');
     // A `@lane-split` file is estimated whole in its lane: its exclusive tests are the small part.
     const filesOf = (cls) => plan.files.filter((p) => laneOf(p).replace(/^split:/, '') === cls);
     const [alone, primary, any] = ['alone', 'primary', 'any'].map((cls) => estimate(filesOf(cls)));
-    estimateMs = alone + Math.max(primary, (primary + any) / instances.length);
+    // Store-wide (`alone`) work splits across the stores the apps are signed in to.
+    const stores = new Set(instances.map((i) => i.store)).size || 1;
+    estimateMs = alone / stores + Math.max(primary, (primary + any) / instances.length);
     phases = Object.entries(plan.queues).map(([cls, q]) => ({ name: cls, mode: 'lanes', files: q.files }));
   } else if (fast) {
     const userTags = body.tags ?? [];
@@ -802,8 +728,12 @@ function startRun(body) {
     ),
   );
   const cmd = `node "${FAST_RUN}" "${PLAN_FILE}"`;
+  const appsLine = instances
+    .map((i) => `App ${i.slot}=${i.n ? `i${i.n}` : 'app đã cài'}${fixedApps ? ` tiệm ${i.store}` : ''}`)
+    .join(', ');
   const phaseLine = lanes
-    ? `${lanes.instances.length} app song song: ` + phases.map((p) => `${p.name} ${p.files} file`).join(' · ')
+    ? `${lanes.instances.length} app song song (${appsLine}): ` +
+      phases.map((p) => `${p.name} ${p.files} file`).join(' · ')
     : phases.map((p) => `${p.name} ${p.files} file`).join(' → ');
   current = freshRunState({
     id: new Date().toISOString(),
@@ -821,11 +751,10 @@ function startRun(body) {
   writeFileSync(
     RUN_LOG,
     `$ ENV=${env} ${cmd}\n# ${specs.length} spec${grep ? `, grep ${grep}` : ''}${fast ? ' · ⚡ chạy nhanh' : ''}` +
-      ` · ${phaseLine} · app mở sẵn: ${warm?.status().state ?? 'off'}` +
+      ` · ${phaseLine}` +
+      (fixedApps ? '' : ` · app mở sẵn: ${warm?.status().state ?? 'off'}`) +
       (copyBuilds.length ? ` · bản sao: ${copyBuilds.join(', ')}` : '') +
-      (fast && instances.length < MAX_LANES && specs.length >= LANES_MIN_FILES
-        ? ' · chạy 1 app: bản sao chưa đăng nhập (chip "Mở QR" trên GUI)'
-        : '') +
+      (appPick.skipped.length ? ` · bỏ: ${appPick.skipped.join(' · ')}` : '') +
       '\n',
   );
   saveRunState();
@@ -911,6 +840,7 @@ function tickSchedules() {
       tags: s.tags,
       label: `⏰ ${s.name}`,
       fast: s.fast !== false,
+      apps: s.apps,
     });
     s.lastResult = r.ok ? `started ${now.toISOString()}` : `skipped: ${r.error}`;
   }
@@ -1004,7 +934,11 @@ async function handle(req, res) {
     return sendJson(res, 200, { features: getCatalog(url.searchParams.has('refresh')) });
   }
   if (pathname === '/api/gui/state' && req.method === 'GET') {
-    return sendJson(res, 200, statePayload(Number(url.searchParams.get('since') ?? -1)));
+    return sendJson(
+      res,
+      200,
+      statePayload(Number(url.searchParams.get('since') ?? -1), url.searchParams.get('env') || undefined),
+    );
   }
   if (pathname === '/api/gui/log' && req.method === 'GET') {
     const offset = Number(url.searchParams.get('offset') ?? 0);
@@ -1040,12 +974,17 @@ async function handle(req, res) {
     if (typeof body.enabled === 'boolean') setFreezeEnabled(body.enabled);
     return sendJson(res, 200, { freeze: freezeStatus() });
   }
-  if (pathname === '/api/gui/lanes/signin' && req.method === 'POST') {
+  // { env, count?, stores? } — how many apps, and which store each one tests.
+  if (pathname === '/api/gui/apps' && req.method === 'POST') {
     const body = await readBody(req);
-    const n = Number(body.n);
-    if (!Number.isInteger(n) || n < 1 || n > 9) return sendJson(res, 400, { error: 'n phải là 1–9' });
-    const r = openCopyForSignIn(n);
-    return sendJson(res, r.ok ? 200 : 400, r.ok ? { lanes: lanesStatus() } : { error: r.error });
+    const r = apps.setConfig(body);
+    return sendJson(res, r.ok ? 200 : 400, r.ok ? { apps: apps.status(body.env) } : { error: r.error });
+  }
+  // { n, env } — make copy n if needed, then open it on screen with its QR login.
+  if (pathname === '/api/gui/apps/signin' && req.method === 'POST') {
+    const body = await readBody(req);
+    const r = apps.openForSignIn(Number(body.n));
+    return sendJson(res, r.ok ? 200 : 400, r.ok ? { apps: apps.status(body.env) } : { error: r.error });
   }
   if (pathname === '/api/gui/schedules') {
     if (req.method === 'GET') return sendJson(res, 200, { schedules: loadSchedules() });
@@ -1088,6 +1027,7 @@ export const isRunning = () => {
 /** Close the app the pre-warm opened (desktop.mjs, when the window closes). */
 export const releaseWarm = () => warm?.release();
 
+apps = createApps({ repoRoot: REPO_ROOT, tmp: TMP, envFileValue, logCrash });
 warm = createWarm({
   repoRoot: REPO_ROOT,
   tmp: TMP,

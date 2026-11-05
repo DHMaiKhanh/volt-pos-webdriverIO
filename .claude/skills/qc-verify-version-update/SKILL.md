@@ -17,6 +17,7 @@ Nếu thiếu mã task → hỏi user, KHÔNG đoán task.
 | cc                          | `@tienpd @loan_dang`                                                                  |
 | Ngôn ngữ comment / sub task | Tiếng Việt (giữ nguyên câu mở đầu tiếng Anh của template)                             |
 | Version ghi trong comment   | Version **thật sự đã test** (đọc trong app), không phải số trong template (vd 1.1.57) |
+| Version test                | Luôn là **bản dev mới nhất trên feed** (mục 2), trừ khi tham số chỉ định version      |
 
 ## 1. Đọc task
 
@@ -25,7 +26,22 @@ Nếu thiếu mã task → hỏi user, KHÔNG đoán task.
 2. Rút ra: hành vi mong đợi, màn hình liên quan, version fix, dev làm (PR / comment dev).
 3. Nếu task ghi "production" mà chỉ test được dev → hỏi user trước.
 
-## 2. Chuẩn bị POS
+## 2. Chuẩn bị POS — luôn test trên bản dev MỚI NHẤT
+
+User yêu cầu (05/11): mọi lần QC đều phải chạy trên **bản dev mới nhất trên feed**.
+
+1. Bản mới nhất: `curl -s https://volt-pos.v2.dev-fastboypay.com/auto_update/check_version_update/0.0.1` → `version`.
+2. Bản đang cài: Windows Uninstall (`Volt POS` → `DisplayVersion`) và trong app `invoke('plugin:app|version')`.
+   Bản prod có số kiểu `1.1.6`, khác dòng dev `1.1.9x`.
+3. Bản đang cài ≠ bản mới nhất → dừng, báo user (kèm link `binary.exe` của bản mới nhất trên feed) và hỏi trước khi
+   tải / cài; KHÔNG test trên bản cũ. Tham số `[version]` chỉ định version khác thì dùng version đó.
+4. PR của task phải merge vào `develop` trước thời điểm build bản mới nhất; chưa có → báo user.
+5. Đọc lại version ngay trước khi test và trước mỗi lượt chạy spec (dòng "Binary under test" + `plugin:app|version`):
+   session Claude khác trên cùng máy có thể cài đè bản cũ hoặc đăng xuất POS (05/11: 1.1.98 bị đè thành 1.1.90).
+   Lệch version → dừng và báo user; kết quả chạy trên bản cũ không dùng để kết luận.
+6. Cổng CDP: biến môi trường `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222` làm app WebView2
+   khác (vd TeamViewer) có thể giành 9222 → kiểm tra `curl http://127.0.0.1:9222/json/list` có "Volt POS"; nếu không,
+   launch và chạy spec với `REMOTE_DEBUG_PORT=9223`.
 
 - Launch build cài đặt (CDP 9222): `APP_PATH="$LOCALAPPDATA\Volt POS\volt-pos.exe" npm run app:launch` (chạy nền).
 - Lái app bằng MCP `volt-app` (ToolSearch `+volt-app`), chọn tab chính (không phải `/customer/`).
@@ -117,5 +133,5 @@ Please help me fix bug @ngan_huynh cc @tienpd @loan_dang
 
 ## 7. Báo lại user
 
-Tóm tắt: version đã test, X/Y PASS, link comment, sub task đã tạo (link), trạng thái mới.
+Tóm tắt: version đã test (và đó có phải bản mới nhất trên feed lúc test không), X/Y PASS, link comment, sub task đã tạo (link), trạng thái mới.
 Cập nhật memory nếu học được điều mới về updater.
