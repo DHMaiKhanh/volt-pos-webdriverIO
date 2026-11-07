@@ -214,16 +214,22 @@ describe('VP-1761 — Turn suggestion', () => {
   );
 
   it(
-    title('VP-1761 TC-10 Setting asks for a staff code first', Tag.REGRESSION),
+    title(
+      'VP-1761 TC-10 Setting opens directly, with no staff code (gate removed by VP-1762)',
+      Tag.REGRESSION,
+    ),
     async function (this: Mocha.Context): Promise<void> {
       this.timeout(Timeouts.MOCHA_HOOK);
       await todayRows();
+      // The sheet asked for a staff code; volt-pos #2215 "remove passcode gate from
+      // turn dialogs [VP-1762]" dropped it on purpose. Drop the grant anyway so a
+      // returning gate would show up here as a prompt.
       await clearPasscodeGrant();
       await turnBoardDialog.openSettings().catch(() => undefined);
       const prompted = await passcodeDialog.isPrompting(Timeouts.SHORT);
       if (prompted) await passcodeDialog.enter(env.STAFF_PASSCODE, { skipForNext30Min: true });
       await ensurePasscodeGrant();
-      expect(prompted).toBe(true);
+      expect(prompted).toBe(false);
       expect(await turnBoardDialog.isSettingsOpen(Timeouts.MEDIUM)).toBe(true);
     },
   );

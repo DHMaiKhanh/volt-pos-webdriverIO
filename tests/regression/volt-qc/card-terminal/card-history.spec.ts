@@ -167,7 +167,8 @@ describe('volt-qc card terminal — after the charge (tip, re-open, reports)', f
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'Card order re-opened then abandoned: status Re-open, Continue Re-open, no Adjust Tip / Cancel / Refund; continued and closed unchanged: $0 owed on Card / Cash / Other, Re-Open Done (no Complete Payment, no terminal), still the one card txn, the edit left (RO-202, RO-201)',
       Tag.REGRESSION,

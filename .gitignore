@@ -31,4 +31,11 @@ Thumbs.db
 
 # Fastboy Portal login session (QR-scanned once by `npm run portal:login`)
 .portal-profile/
+.portal-profile-*/
 .gocheckin-profile/
+
+# QC evidence videos (npm run rec:start / rec:stop)
+.recordings/
+
+# per-store web credentials (local only)
+configs/web-accounts.json

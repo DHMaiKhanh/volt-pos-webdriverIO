@@ -1,6 +1,13 @@
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { Routes } from '../../constants/routes.js';
-import { AccessibilityExtraIds } from '../../constants/testids.settings-accessibility.js';
+import {
+  AccessibilityExtraIds,
+  DefaultScreenIds,
+  defaultScreenOption,
+  defaultScreenPreview,
+  defaultScreenRadio,
+  type DefaultScreen,
+} from '../../constants/testids.settings-accessibility.js';
 import { AccessibilityIds, passcodeGate } from '../../constants/testids.vp.js';
 import type { Locator } from '../../helpers/selectors.js';
 import { logStep } from '../../helpers/steps.js';
@@ -151,6 +158,74 @@ export class AccessibilitySettingsPage extends BasePage {
   async isPasscodeSaveEnabled(): Promise<boolean> {
     const save = await this.find(AccessibilityIds.passcodeSaveBtn, { visible: true });
     return save.isEnabled();
+  }
+
+  /* --------------------------------------------------------------------- *
+   * Default Screen (VP-5685)
+   * --------------------------------------------------------------------- */
+
+  /** Is the Default Screen card rendered (scrolled into view)? */
+  async isDefaultScreenCardShown(): Promise<boolean> {
+    if (!(await this.exists(DefaultScreenIds.card, Timeouts.MEDIUM))) return false;
+    await (await this.find(DefaultScreenIds.card)).scrollIntoView({ block: 'center' });
+    return this.isVisible(DefaultScreenIds.card, Timeouts.SHORT);
+  }
+
+  /** Is the card the very next card after Customer Display? */
+  isDefaultScreenAfterCustomerDisplay(): Promise<boolean> {
+    return this.exists(DefaultScreenIds.cardAfterCustomerDisplay, Timeouts.SHORT);
+  }
+
+  /** Are both options rendered with their skeleton preview? */
+  async hasDefaultScreenOptions(): Promise<boolean> {
+    for (const value of ['pending_orders', 'home'] as const) {
+      if (!(await this.exists(defaultScreenRadio(value), Timeouts.SHORT))) return false;
+      if (!(await this.exists(defaultScreenPreview(value), Timeouts.SHORT))) return false;
+    }
+    return true;
+  }
+
+  /** Does Pending Orders carry the "Default" badge? */
+  hasDefaultBadge(): Promise<boolean> {
+    return this.exists(DefaultScreenIds.defaultBadge, Timeouts.SHORT);
+  }
+
+  /** The option currently selected in the card (not necessarily saved), or null. */
+  async selectedDefaultScreen(): Promise<DefaultScreen | null> {
+    for (const value of ['pending_orders', 'home'] as const) {
+      if (await this.isSwitchOn(defaultScreenRadio(value))) return value;
+    }
+    return null;
+  }
+
+  /** Pick an option without saving. */
+  async chooseDefaultScreen(value: DefaultScreen): Promise<this> {
+    await logStep(`Accessibility: default screen → ${value}`);
+    await this.click(defaultScreenOption(value));
+    await settle();
+    return this;
+  }
+
+  /** Is the card's Save pressable (= the choice differs from the saved value)? */
+  async isDefaultScreenSaveEnabled(): Promise<boolean> {
+    return (await this.find(DefaultScreenIds.saveBtn, { visible: true })).isEnabled();
+  }
+
+  /** Press the card's Save. Returns false (and does nothing) when Save is disabled. */
+  async saveDefaultScreen(): Promise<boolean> {
+    const save = await this.find(DefaultScreenIds.saveBtn, { visible: true });
+    if (!(await save.isEnabled())) return false;
+    await logStep('Accessibility: save default screen');
+    await save.click();
+    await settle(Timeouts.DEBOUNCE);
+    return true;
+  }
+
+  /** Pick and save in one go; a no-op when the value is already selected and saved. */
+  async applyDefaultScreen(value: DefaultScreen): Promise<this> {
+    if ((await this.selectedDefaultScreen()) !== value) await this.chooseDefaultScreen(value);
+    await this.saveDefaultScreen();
+    return this;
   }
 
   /** Radix switch / radio state: `aria-checked`, falling back to `data-state`. */

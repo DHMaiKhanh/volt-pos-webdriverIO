@@ -98,7 +98,7 @@ async function withSignature(
 
 const reMoney = (n: number): string => `\\$${n.toFixed(2).replace('.', '\\.')}`;
 
-describe('volt-qc 05 SPLIT card — pay a check by card / no terminal / network loss', () => {
+describe('volt-qc 05 SPLIT card — pay a check by card / no terminal', () => {
   before(() => {
     assertWritesAllowed('volt-qc 05 SPLIT card: split checks paid by card / cash');
   });
@@ -367,20 +367,6 @@ describe('volt-qc 05 SPLIT card — pay a check by card / no terminal / network 
           await S.settleSplit(id);
         }
       });
-    },
-  );
-
-  it(
-    title(
-      'SPL-C3 Network loss on the Split screen: Other / Card / Gift Card → "Oops... Disconnected" blocks; Pay with cash works; back online pays the rest',
-      Tag.REGRESSION,
-      Tag.WRITE,
-    ),
-    function () {
-      console.warn(
-        'SPL-C3 needs the volt-qc network proxy (src/flows/net.ts: navigator.onLine + payment-tunnel cut) — not available in this suite',
-      );
-      this.skip();
     },
   );
 });

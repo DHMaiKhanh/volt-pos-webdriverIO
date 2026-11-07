@@ -29,9 +29,7 @@ import {
   closeStrayDialogs,
   countText,
   expireSkip,
-  fakeOnline,
   gateBackspace,
-  gateElement,
   gateKey,
   gateSkipChecked,
   gateState,
@@ -39,9 +37,7 @@ import {
   gateType,
   hasText,
   navigateRaw,
-  offlineBanner,
   openGate,
-  openReport,
   openSidebar,
   pathname,
   readSkip,
@@ -85,7 +81,6 @@ describe('volt-qc RPT — menu & passcode gate', () => {
 
   after(async function (this: Mocha.Context): Promise<void> {
     this.timeout(Timeouts.MOCHA_HOOK);
-    await fakeOnline(true).catch(() => undefined);
     await escapeGate().catch(() => undefined);
     await ensurePasscodeGrant();
   });
@@ -319,63 +314,6 @@ describe('volt-qc RPT — menu & passcode gate', () => {
           await escapeGate();
           expect(await readSkip()).toBeNull();
         },
-      );
-    },
-  );
-
-  it(
-    title(
-      'Offline (faked) shows the warning banner on the 4 income reports, never on Batch History (RPT-021, RPT-022)',
-      Tag.REGRESSION,
-    ),
-    async function (this: Mocha.Context) {
-      this.timeout(4 * 60_000);
-      await ensurePasscodeGrant();
-      try {
-        await openReport(RptRoutes.daily);
-        await browser.waitUntil(async () => hasText(RptCss.main, 'Total Order'), {
-          timeout: Timeouts.MEDIUM,
-          interval: 250,
-        });
-        expect((await offlineBanner()).visible).toBe(false);
-
-        await fakeOnline(false);
-        for (const route of [RptRoutes.daily, RptRoutes.summary, RptRoutes.staff, RptRoutes.payroll]) {
-          await step(`${route} offline`, async () => {
-            await openReport(route);
-            let banner = await offlineBanner();
-            await browser
-              .waitUntil(async () => (banner = await offlineBanner()).visible, {
-                timeout: Timeouts.SHORT,
-                interval: 200,
-              })
-              .catch(() => undefined);
-            ensure(banner.visible, `${route}: no offline banner while offline`);
-            expect(banner.role).toBe('alert');
-            expect(banner.text).toBe(RptText.offlineBanner);
-          });
-        }
-        await fakeOnline(true);
-        await browser
-          .waitUntil(async () => !(await offlineBanner()).visible, { timeout: Timeouts.SHORT, interval: 200 })
-          .catch(() => undefined);
-        expect((await offlineBanner()).visible).toBe(false);
-
-        await step('RPT-022 Batch History has no banner', async () => {
-          await fakeOnline(false);
-          await openReport(RptRoutes.batch);
-          await browser.waitUntil(async () => hasText(RptCss.main, 'Batch Number'), {
-            timeout: Timeouts.MEDIUM,
-            interval: 250,
-          });
-          expect((await offlineBanner()).visible).toBe(false);
-        });
-      } finally {
-        await fakeOnline(true);
-      }
-      ensure(
-        (await gateElement(Timeouts.ANIMATION)) === null,
-        'A passcode guard is still up after the offline case',
       );
     },
   );

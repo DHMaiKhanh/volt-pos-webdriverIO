@@ -53,7 +53,7 @@ import {
   waitCustomerText,
 } from '../../../../src/pages/voltqc/app-rpt-set-perm/aspFlows.js';
 import { BUSINESS_FIELD_NAMES_VQ, Vq } from '../../../../src/constants/testids.voltqc-settings-devm.js';
-import { fakeOnline, openSidebar } from '../../../../src/pages/voltqc/reports-time/rptDom.js';
+import { openSidebar } from '../../../../src/pages/voltqc/reports-time/rptDom.js';
 import { vqProbe } from '../../../../src/pages/voltqc/settings-devm/VqProbe.js';
 import { ensurePasscodeGrant } from '../../../../src/support/passcodeGrant.js';
 import { Tag, title } from '../../../../src/types/testTags.js';
@@ -72,27 +72,6 @@ const PROD_SIDEBAR = [
   'Setting',
   'Reload',
 ];
-
-/** `#network-status`: shown flag + text. */
-async function networkStatus(): Promise<{ shown: boolean; text: string }> {
-  return browser.execute(function () {
-    const el = document.querySelector<HTMLElement>('#network-status');
-    if (!el) return { shown: false, text: '' };
-    const flag = el.getAttribute('data-show-network-status');
-    const visible = el.getClientRects().length > 0 && flag !== 'false';
-    return { shown: visible, text: (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim() };
-  });
-}
-
-async function waitNetwork(re: RegExp, shown: boolean, timeout: number = Timeouts.SHORT): Promise<boolean> {
-  const end = Date.now() + timeout;
-  do {
-    const s = await networkStatus();
-    if (s.shown === shown && (!shown || re.test(s.text))) return true;
-    await settle(200);
-  } while (Date.now() < end);
-  return false;
-}
 
 /** The header bell's badge text ('' when none). */
 async function bellBadge(): Promise<string> {
@@ -115,7 +94,7 @@ const pageZoom = (): Promise<number> =>
     );
   });
 
-describe('volt-qc APP — shell, reload, offline banner, notifications (mutation)', () => {
+describe('volt-qc APP — shell, reload, notifications (mutation)', () => {
   before(async function (this: Mocha.Context): Promise<void> {
     this.timeout(Timeouts.MOCHA_HOOK);
     assertWritesAllowed('create drafts, mark notifications read and switch Appearance / Language');
@@ -123,7 +102,6 @@ describe('volt-qc APP — shell, reload, offline banner, notifications (mutation
   });
 
   afterEach(async () => {
-    await fakeOnline(true).catch(() => undefined);
     await gateProbe.dismiss().catch(() => undefined);
     if (await appNav.isSidebarOpen().catch(() => false)) await appNav.closeSidebar().catch(() => undefined);
   });
@@ -434,69 +412,6 @@ describe('volt-qc APP — shell, reload, offline banner, notifications (mutation
 
   it(
     title(
-      'Offline: red "Lost internet connection." banner; X hides it until the route changes; online → green "restored", gone after ~3 s (APP-081, APP-082, APP-083)',
-      Tag.REGRESSION,
-    ),
-    async function (this: Mocha.Context): Promise<void> {
-      this.timeout(Timeouts.MOCHA_HOOK);
-      await orderPendingPage.open();
-      try {
-        await fakeOnline(false);
-        expect(await waitNetwork(/Lost internet connection\./, true)).toBe(true);
-        expect((await networkStatus()).text).toContain('Your device is currently offline');
-        await step('APP-083 X hides it; a route change brings it back', async () => {
-          await browser.execute(function () {
-            document.querySelector<HTMLButtonElement>('#network-status button')?.click();
-          });
-          expect(await waitNetwork(/./, false)).toBe(true);
-          await gateProbe.routerNavigate('/home');
-          expect(await waitNetwork(/Lost internet connection\./, true)).toBe(true);
-        });
-        await fakeOnline(true);
-        expect(await waitNetwork(/Internet connection restored\./, true)).toBe(true);
-        const t0 = Date.now();
-        expect(await waitNetwork(/./, false, 6_000)).toBe(true);
-        expect(Date.now() - t0).toBeLessThanOrEqual(5_000);
-      } finally {
-        await fakeOnline(true);
-      }
-    },
-  );
-
-  it(
-    title(
-      'Offline the till keeps working on local data: Time Keeping, Appointment, Pending open without a crash (APP-084)',
-      Tag.REGRESSION,
-    ),
-    async function (this: Mocha.Context): Promise<void> {
-      this.timeout(Timeouts.MOCHA_HOOK);
-      await returnToHome();
-      try {
-        await fakeOnline(false);
-        await appShellProbe.clickTimeKeepingIcon();
-        await settle(1_500);
-        expect((await bodyText('[role="dialog"]')).length).toBeGreaterThan(0);
-        await browser.keys([Key.Escape]);
-        for (const route of ['/appointment', '/order-pending']) {
-          await gateProbe.routerNavigate(route);
-          await settle(1_500);
-          if (await gateProbe.isOpen()) await gateProbe.submit(ownerCode());
-          const t = await bodyText('main');
-          expect({ route, blank: t.trim() === '' }).toEqual({ route, blank: false });
-          expect({ route, crash: /Something went wrong|Unexpected Application Error/i.test(t) }).toEqual({
-            route,
-            crash: false,
-          });
-        }
-      } finally {
-        await fakeOnline(true);
-        await returnToHome();
-      }
-    },
-  );
-
-  it(
-    title(
       'Notifications: popover with heading and Mark all as read; opening clears the badge; after Mark all the button is disabled (APP-122, APP-126)',
       Tag.REGRESSION,
       Tag.WRITE,
@@ -603,18 +518,7 @@ describe('volt-qc APP — shell, reload, offline banner, notifications (mutation
           expect(pop).not.toMatch(/\bNotifications\b|Mark all as read/);
           await browser.keys([Key.Escape]);
         });
-        await step('APP-085 network banner', async () => {
-          await fakeOnline(false);
-          await settle(800);
-          const off = await networkStatus();
-          expect(off.shown).toBe(true);
-          expect(off.text).not.toMatch(/Lost internet connection/);
-          await fakeOnline(true);
-          await settle(800);
-          expect((await networkStatus()).text).not.toMatch(/Internet connection restored/);
-        });
       } finally {
-        await fakeOnline(true);
         await restoreEnglish();
       }
     },

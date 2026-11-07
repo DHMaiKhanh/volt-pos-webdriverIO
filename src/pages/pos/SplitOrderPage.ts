@@ -172,7 +172,7 @@ export class SplitOrderPage extends BasePage {
    * string and committed with Done. The app then re-balances the split: the LAST
    * check absorbs the remainder for a valid entry, and an over-total entry is
    * refused outright — the split reverts. Those two behaviours are what
-   * TC-ORDERFLOW-30 / TC-ORDERFLOW-29 assert against.
+   * vp-tickets/split-order TC-04 / TC-06 assert against.
    */
   async enterCheckAmount(index: number, amountCents: number): Promise<this> {
     await logStep(`${this.name}: set check ${String(index)} to ${String(amountCents)} cents`);

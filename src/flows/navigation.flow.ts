@@ -5,6 +5,7 @@ import { appNav, hasHeaderNav, passcodeDialog } from '../components/index.js';
 import { Routes } from '../constants/routes.js';
 import { step } from '../helpers/steps.js';
 import { waitUntilPath } from '../helpers/wait.js';
+import { clearPasscodeGrant } from '../support/passcodeGrant.js';
 import {
   accessibilitySettingsPage,
   checkoutPage,
@@ -95,6 +96,7 @@ export async function returnToHome(): Promise<HomePage> {
         // boxes hides the staff cards the ready check waits for.
         await homePage.dismissOpenDialogs();
         await homePage.clearSearches();
+        await homePage.ensurePendingSidebarOpen();
         return homePage.waitForReady(Timeouts.MEDIUM);
       }
 
@@ -236,6 +238,42 @@ export async function isPasscodeGateOn(gate: PasscodeGate): Promise<boolean> {
     await returnToHome();
     return on;
   });
+}
+
+/**
+ * Make sure a passcode gate is ON before a spec that asserts its prompt — a
+ * leftover OFF from another spec (or a Portal change) would otherwise read as
+ * "the guard is gone". Saves only when it had to flip it. Ends back on the till.
+ */
+export async function ensurePasscodeGateOn(gate: PasscodeGate): Promise<boolean> {
+  return step(`Ensure the "${gate}" passcode gate is ON`, async () => {
+    await goToSettings();
+    await settingsPage.openSection('ACCESSIBILITY');
+    await accessibilitySettingsPage.waitForReady(Timeouts.MEDIUM);
+    const was = await accessibilitySettingsPage.isGateOn(gate);
+    if (!was) {
+      await accessibilitySettingsPage.applyGates({ [gate]: true });
+      // Fail here, by name, rather than later as "the prompt never appeared".
+      if (!(await accessibilitySettingsPage.isGateOn(gate))) {
+        throw new Error(
+          `The "${gate}" passcode gate is OFF and could not be switched ON in Passcode Setting.`,
+        );
+      }
+    }
+    await returnToHome();
+    return was;
+  });
+}
+
+/**
+ * Arm one gate for a test that asserts its prompt: the gate switched ON (another
+ * spec or a Portal change may have left it off) AND the run's 30-minute grant
+ * dropped — either one alone lets the app skip the prompt by design. Ends back on
+ * the till. The caller re-seeds the grant afterwards with `ensurePasscodeGrant()`.
+ */
+export async function armPasscodeGate(gate: PasscodeGate): Promise<void> {
+  await ensurePasscodeGateOn(gate);
+  await clearPasscodeGrant();
 }
 
 /* --------------------------------------------------------------------- *

@@ -267,6 +267,32 @@ export class HomePage extends BasePage {
     return cleared;
   }
 
+  /**
+   * 1.1.8x boots with the Pending Orders sidebar closed (header toggle, aria-label
+   * still the raw i18n key "global.showPendingSidebar"), which hides Quick Checkout,
+   * the sidebar search and the order cards. Open it when it is closed; the toggle
+   * keeps the same label either way, so the sidebar itself is the state.
+   */
+  async ensurePendingSidebarOpen(): Promise<boolean> {
+    const opened = await browser.execute(function () {
+      if (document.querySelector('[aria-label="Pending Orders sidebar"]')) return false;
+      const toggle = Array.from(document.querySelectorAll('button')).find((b) =>
+        /pending ?sidebar/i.test(b.getAttribute('aria-label') ?? ''),
+      );
+      if (!toggle) return false;
+      toggle.click();
+      return true;
+    });
+    if (opened) {
+      await logStep('Home: open the Pending Orders sidebar');
+      await browser.waitUntil(
+        () => browser.execute(() => !!document.querySelector('[aria-label="Pending Orders sidebar"]')),
+        { timeout: Timeouts.SHORT, timeoutMsg: 'Pending Orders sidebar never opened' },
+      );
+    }
+    return opened;
+  }
+
   /** Switch staff group tab. `'all'` is the default tab. */
   async openStaffGroup(groupId: string): Promise<this> {
     await logStep(`Home: open staff group "${groupId}"`);
@@ -603,6 +629,15 @@ export class HomePage extends BasePage {
    * selecting a staff member created an order — and its absence, after a delete,
    * that the order was discarded.
    */
+  /** Is the customer phone keypad ("Phone, name or email") on screen — i.e. no customer on the till? */
+  async isCustomerKeypadShown(timeout: number = Timeouts.SHORT): Promise<boolean> {
+    // 1.1.8x+ renders the "Phone, name or email" search input; older builds the keypad input.
+    return (
+      (await this.isVisible(HomeIds.customerSearchInput, timeout)) ||
+      this.isVisible(HomeIds.customerPhoneInput, Timeouts.ANIMATION)
+    );
+  }
+
   hasActiveDraft(timeout = 2_000): Promise<boolean> {
     // 2s, not SHORT: the till is already rendered when this is asked, and most
     // callers expect NO draft — proving that by waiting 5s was 11 min of a full run.
@@ -1085,19 +1120,24 @@ export class HomePage extends BasePage {
           const nameBox = name.getBoundingClientRect();
           const priceBox = price ? price.getBoundingClientRect() : nameBox;
           const lineHeight = parseFloat(window.getComputedStyle(name).lineHeight) || 28;
+          const truncated = name.scrollHeight > name.clientHeight + 2;
+          // A CSS line-clamp draws its own "..." on the last line — no ellipsis span.
+          const clamp = window.getComputedStyle(name).getPropertyValue('-webkit-line-clamp');
+          const cssEllipsis = !ell && truncated && clamp !== '' && clamp !== 'none';
           return {
             name: (name.textContent || '').trim(),
             price: price ? (price.textContent || '').trim() : '',
-            truncated: name.scrollHeight > name.clientHeight + 2,
+            truncated: truncated,
             visibleLines: Math.round(name.clientHeight / lineHeight),
             ellipsisVisible:
-              !!ell &&
-              (ell.textContent || '').trim() === '...' &&
-              ellStyle !== null &&
-              ellStyle.display !== 'none' &&
-              ellStyle.visibility !== 'hidden' &&
-              Number(ellStyle.opacity) > 0 &&
-              ell.getBoundingClientRect().height > 0,
+              cssEllipsis ||
+              (!!ell &&
+                (ell.textContent || '').trim() === '...' &&
+                ellStyle !== null &&
+                ellStyle.display !== 'none' &&
+                ellStyle.visibility !== 'hidden' &&
+                Number(ellStyle.opacity) > 0 &&
+                ell.getBoundingClientRect().height > 0),
             cardHeight: Math.round(card.getBoundingClientRect().height),
             overlapsPrice: nameBox.bottom > priceBox.top + 1,
           };

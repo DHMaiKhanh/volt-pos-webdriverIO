@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import type { Feature, GuiRunner, LiveResult } from '../../lib/gui';
 import { featureKeyOf } from '../../lib/gui';
 import { formatDuration } from '../../lib/format';
+import { FailureDetail, diagnose } from './FailureDetail';
+import { SkippedList } from './SkippedList';
 
 interface ResultsTabProps {
   runner: GuiRunner;
@@ -12,7 +14,17 @@ interface ResultsTabProps {
 }
 
 /** Ring: pass (incl. flaky, amber) and fail arcs over the executed count. */
-function Donut({ passed, flaky, failed, skipped }: { passed: number; flaky: number; failed: number; skipped: number }): JSX.Element {
+function Donut({
+  passed,
+  flaky,
+  failed,
+  skipped,
+}: {
+  passed: number;
+  flaky: number;
+  failed: number;
+  skipped: number;
+}): JSX.Element {
   const total = passed + flaky + failed + skipped;
   const pct = total === 0 ? 0 : Math.round(((passed + flaky) / Math.max(1, passed + flaky + failed)) * 100);
   const R = 56;
@@ -93,7 +105,11 @@ export function stopReason(log: string, done: number): StopReason {
     };
   }
   if (end.includes('run process is gone without an exit code')) {
-    return { title: 'Tiến trình chạy bị tắt giữa chừng (máy ngủ / khởi động lại / bị kill).', checks: [], tail: [] };
+    return {
+      title: 'Tiến trình chạy bị tắt giữa chừng (máy ngủ / khởi động lại / bị kill).',
+      checks: [],
+      tail: [],
+    };
   }
   return {
     title: done === 0 ? 'Run kết thúc trước khi có test nào xong. Cuối log:' : 'Cuối log:',
@@ -121,13 +137,17 @@ export function ResultsTab({ runner, features, now, onRerun, disabled }: Results
       else c.passed += 1;
       m.set(k, c);
     }
-    return [...m.entries()].sort((a, b) => (featureName.get(a[0]) ?? a[0]).localeCompare(featureName.get(b[0]) ?? b[0]));
+    return [...m.entries()].sort((a, b) =>
+      (featureName.get(a[0]) ?? a[0]).localeCompare(featureName.get(b[0]) ?? b[0]),
+    );
   }, [results, featureName]);
 
   const plannedByFeature = useMemo(() => {
     const m = new Map<string, number>();
     if (!run) return m;
-    for (const f of features) for (const file of f.files) if (run.specs.includes(file.path)) m.set(f.key, (m.get(f.key) ?? 0) + file.tests.length);
+    for (const f of features)
+      for (const file of f.files)
+        if (run.specs.includes(file.path)) m.set(f.key, (m.get(f.key) ?? 0) + file.tests.length);
     return m;
   }, [features, run]);
 
@@ -135,13 +155,16 @@ export function ResultsTab({ runner, features, now, onRerun, disabled }: Results
     return (
       <div className="empty card">
         <h2>Chưa có lần chạy nào</h2>
-        <p className="muted">Chọn tính năng ở cột trái rồi bấm <b>▶ Chạy</b>. Kết quả sẽ hiện trực tiếp ở đây.</p>
+        <p className="muted">
+          Chọn tính năng ở cột trái rồi bấm <b>▶ Chạy</b>. Kết quả sẽ hiện trực tiếp ở đây.
+        </p>
       </div>
     );
   }
 
   const s = run.summary;
-  const elapsed = (run.finishedAt ? new Date(run.finishedAt).getTime() : now) - new Date(run.startedAt).getTime();
+  const elapsed =
+    (run.finishedAt ? new Date(run.finishedAt).getTime() : now) - new Date(run.startedAt).getTime();
   const done = s.done;
   const planned = Math.max(run.planned, done);
   const stopped = !running && run.exitCode !== null && run.exitCode !== 0 && done < run.planned;
@@ -161,20 +184,39 @@ export function ResultsTab({ runner, features, now, onRerun, disabled }: Results
         <Donut passed={s.passed} flaky={s.flaky} failed={s.failed} skipped={s.skipped} />
         <div className="hero-body">
           <h2 className={running ? 'h-running' : s.failed || stopped ? 'h-fail' : 'h-pass'}>
-            {running ? `Đang chạy… ${done}/${planned}` : stopped ? `Đã dừng · ${done}/${planned}` : `Xong · ${done}/${planned}`}
+            {running
+              ? `Đang chạy… ${done}/${planned}`
+              : stopped
+                ? `Đã dừng · ${done}/${planned}`
+                : `Xong · ${done}/${planned}`}
           </h2>
           <p className="muted">
             {running
               ? 'Kết quả cập nhật trực tiếp, bạn cứ làm việc khác.'
               : `${run.label} · ENV ${run.env} · exit ${run.exitCode ?? '—'}`}
-            {run.activeSpec && <> · đang chạy <code>{run.activeSpec.replace(/^tests\//, '')}</code></>}
+            {run.activeSpec && (
+              <>
+                {' '}
+                · đang chạy <code>{run.activeSpec.replace(/^tests\//, '')}</code>
+              </>
+            )}
           </p>
           <div className="stat-pills">
-            <span className="spill"><i className="d pass" /> <b>{s.passed}</b> đạt</span>
-            <span className="spill"><i className="d fail" /> <b>{s.failed}</b> lỗi</span>
-            <span className="spill"><i className="d flaky" /> <b>{s.flaky}</b> flaky</span>
-            <span className="spill"><i className="d skip" /> <b>{s.skipped}</b> bỏ qua</span>
-            <span className="spill"><i className="d time" /> <b>{formatDuration(elapsed)}</b> thời gian</span>
+            <span className="spill">
+              <i className="d pass" /> <b>{s.passed}</b> đạt
+            </span>
+            <span className="spill">
+              <i className="d fail" /> <b>{s.failed}</b> lỗi
+            </span>
+            <span className="spill">
+              <i className="d flaky" /> <b>{s.flaky}</b> flaky
+            </span>
+            <span className="spill">
+              <i className="d skip" /> <b>{s.skipped}</b> bỏ qua
+            </span>
+            <span className="spill">
+              <i className="d time" /> <b>{formatDuration(elapsed)}</b> thời gian
+            </span>
           </div>
           {running && planned > 0 && (
             <div className="progress">
@@ -279,15 +321,24 @@ export function ResultsTab({ runner, features, now, onRerun, disabled }: Results
             {issues.map((r) => (
               <li key={r.key} className={`inbox-row ${r.state === 'failed' ? 'is-fail' : 'is-flaky'}`}>
                 <div className="inbox-main" onClick={() => setOpenKey(openKey === r.key ? null : r.key)}>
-                  <span className={`ibadge ${r.state === 'failed' ? 'fail' : 'flaky'}`}>{r.state === 'failed' ? '✗' : '!'}</span>
+                  <span className={`ibadge ${r.state === 'failed' ? 'fail' : 'flaky'}`}>
+                    {r.state === 'failed' ? '✗' : '!'}
+                  </span>
                   <div className="inbox-text">
                     <div className="inbox-title">{r.title}</div>
                     <div className="inbox-meta">
-                      {featureName.get(featureKeyOf(r.file)) ?? featureKeyOf(r.file)} · <code>{r.file.replace(/^tests\//, '')}</code> · thử lần{' '}
-                      {r.attempt}
+                      {featureName.get(featureKeyOf(r.file)) ?? featureKeyOf(r.file)} ·{' '}
+                      <code>{r.file.replace(/^tests\//, '')}</code> · thử lần {r.attempt}
                       {r.flaky ? ' · chập chờn' : ''}
                       {r.hook ? ' · hook' : ''}
                     </div>
+                    {r.state === 'failed' && (
+                      <div className="inbox-cause">
+                        {diagnose(r).title}
+                        {r.evidence?.shot ? ' · 📷 có ảnh' : ''}
+                        {r.evidence?.frames.length ? ` · 🎞 ${r.evidence.frames.length} khung replay` : ''}
+                      </div>
+                    )}
                   </div>
                   <span className="inbox-dur">{formatDuration(r.durationMs)}</span>
                   <button
@@ -302,12 +353,16 @@ export function ResultsTab({ runner, features, now, onRerun, disabled }: Results
                     ↻
                   </button>
                 </div>
-                {openKey === r.key && r.error && <pre className="inbox-err">{r.error}</pre>}
+                {openKey === r.key && <FailureDetail r={r} />}
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <SkippedList
+        results={results.filter((r) => !featureFilter || featureKeyOf(r.file) === featureFilter)}
+      />
     </div>
   );
 }

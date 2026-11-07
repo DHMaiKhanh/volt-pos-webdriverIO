@@ -25,44 +25,10 @@
  * staging only.
  */
 
-import { expect } from '@wdio/globals';
-import { assertWritesAllowed } from '../../../configs/env/loadEnv.js';
-import { returnToHome } from '../../../src/flows/index.js';
-import { homePage } from '../../../src/pages/index.js';
-import { Tag, title } from '../../../src/types/testTags.js';
+import { title } from '../../../src/types/testTags.js';
 
+// SPL-01 (Split gated behind Total > $5) runs as volt-qc/vp-tickets/split-order TC-01 (boundary $5.00 / $5.01).
 describe('Payment flows — Split Order', () => {
-  before(async () => {
-    // Building the draft IS the setup, so the write rail is stated here.
-    assertWritesAllowed('build a draft to probe the split eligibility gate');
-    await returnToHome();
-    await homePage.waitForReady();
-    await homePage.discardDraftIfAny();
-  });
-
-  after(async () => {
-    await returnToHome();
-    await homePage.waitForReady();
-    await homePage.discardDraftIfAny();
-  });
-
-  it(title('Split is gated behind a Total above $5 (SPL-01)', Tag.REGRESSION, Tag.WRITE), async () => {
-    await homePage.selectFirstStaff();
-    await homePage.addFirstService();
-
-    // Drop the single line below the threshold: a $1 order cannot be split.
-    await homePage.openServiceEditor();
-    await homePage.setServiceEditorPrice(100);
-    await homePage.saveServiceEditor();
-    expect(await homePage.isSplitOrderAvailable()).toBe(false);
-
-    // Raise it well clear of $5: split becomes available again.
-    await homePage.openServiceEditor();
-    await homePage.setServiceEditorPrice(5_000);
-    await homePage.saveServiceEditor();
-    expect(await homePage.isSplitOrderAvailable()).toBe(true);
-  });
-
   it(
     title(
       'SPL-02..08: split methods / tax / clear-check SPEC — COVERED by split-order*.spec.ts (TC-ORDERFLOW-25..33)',

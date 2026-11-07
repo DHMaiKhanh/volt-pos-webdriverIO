@@ -380,7 +380,8 @@ describe('volt-qc 04 PROMO — deep: discounts, points, gift cards', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'PROMO-D04 Points on cancel / re-open: new customer K pays Other → cancel keeps points (never negative); 2nd order Cash adds on; re-open finish again changes neither points nor visits (PROMO-098, PROMO-099)',
       Tag.REGRESSION,

@@ -57,6 +57,7 @@ import { fastGrep, laneClass, needsLaunch, planFast, planLanes, specSourceWithKi
 import { buildCatalog } from './catalog.mjs';
 import { createWarm } from './warm.mjs';
 import { createApps, normEnv } from './apps.mjs';
+import { createPreflight } from './preflight.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** Repo root = two levels up from dashboard/server/. npm scripts run from here. */
@@ -191,6 +192,8 @@ let current = null;
 let warm = null;
 /** Which apps / stores a run drives (apps.mjs). */
 let apps = null;
+/** "Chạy tất cả" gate: web pages open + signed in, terminal connected (preflight.mjs). */
+let preflight = null;
 /** A fresh UI gets at most the log's tail. */
 const MAX_LOG_BYTES = 3_000_000;
 
@@ -222,6 +225,7 @@ function freshRunState(saved) {
   return {
     ...saved,
     results: new Map(),
+    pendingEvidence: new Map(),
     liveOffset: 0,
     activeSpec: null,
     attempts: new Map(),
@@ -336,6 +340,18 @@ const relSpec = (file) => {
   return rel.replace(/\\/g, '/');
 };
 
+/** Mocha joins titles with spaces, WDIO with dots — same fold as configs/reporters/liveRegistry.ts. */
+const titleKey = (t) => String(t ?? '').replace(/[\s.]+/g, ' ').trim();
+
+/** Evidence that arrived before this failed test's event (see the 'evidence' branch). */
+function takeEvidence(file, ev) {
+  if (ev.state !== 'failed') return undefined;
+  const key = ev.hook ? `${file}::<hook>` : `${file}::${titleKey(ev.fullTitle)}`;
+  const found = current.pendingEvidence.get(key);
+  current.pendingEvidence.delete(key);
+  return found;
+}
+
 /** Pull new lines from the live-event file into `current.results`. */
 function ingestLive() {
   if (!current || !existsSync(LIVE_FILE)) return;
@@ -361,6 +377,18 @@ function ingestLive() {
     } else if (ev.t === 'spec-end') {
       if (current.activeSpec === file) current.activeSpec = null;
       current.specsDone.add(file);
+    } else if (ev.t === 'evidence') {
+      // Written by AppLifecycleService right AFTER the reporter's fail event —
+      // attach to that result, or to the file's latest failure without evidence
+      // (a hook's title differs between the service and the reporter).
+      // It usually lands BEFORE the test's own fail event (afterTest runs first),
+      // so it waits in `pendingEvidence` for that event; a hook's titles differ
+      // between service and reporter, so hooks match by file.
+      const exact = [...current.results.values()].find(
+        (r) => r.file === file && r.state === 'failed' && titleKey(r.fullTitle) === titleKey(ev.fullTitle),
+      );
+      if (exact) exact.evidence = ev.evidence;
+      else current.pendingEvidence.set(ev.hook ? `${file}::<hook>` : `${file}::${titleKey(ev.fullTitle)}`, ev.evidence);
     } else if (ev.t === 'test') {
       const key = `${file}::${ev.fullTitle}`;
       const prev = current.results.get(key);
@@ -375,6 +403,11 @@ function ingestLive() {
         attempt: current.attempts.get(file) ?? 1,
         hook: !!ev.hook,
         error: ev.state === 'failed' ? ev.error : prev?.error,
+        message: ev.state === 'failed' ? ev.message : prev?.message,
+        stack: ev.state === 'failed' ? ev.stack : prev?.stack,
+        skip: ev.state === 'skipped' ? ev.skip : undefined,
+        // A passing retry keeps the earlier attempt's evidence (why it was flaky).
+        evidence: ev.state === 'skipped' ? undefined : (takeEvidence(file, ev) ?? prev?.evidence),
         failedBefore,
         // Passed only after a failed attempt (spec retry or mocha retry) = flaky.
         flaky: ev.state === 'passed' && (failedBefore || (ev.mochaRetries ?? 0) > 0),
@@ -559,6 +592,41 @@ function writeLanePlan(plan, instances, userTags, retries, titleGrep = '') {
   return { instances, queues };
 }
 
+/**
+ * Is this a "Chạy tất cả" run? The GUI says so (`all: true`), and a request that
+ * ticks every automated spec of the catalog counts too (schedules, old clients).
+ */
+function isFullRun(body) {
+  if (body.all === true) return true;
+  const auto = getCatalog()
+    .flatMap((f) => f.files.map((x) => x.path))
+    .filter((p) => !p.includes('/volt-qc/_manual/') && !p.startsWith('tests/_recovery/'));
+  const asked = new Set((body.specs ?? []).map(String));
+  return auto.length > 0 && auto.every((p) => asked.has(p));
+}
+
+/**
+ * startRun behind the full-run gate: every store under test needs GoCheckin,
+ * GAP Checkin and the Portal open + signed in and its terminal connected. The
+ * check opens and signs in whatever is missing first, so pressing Run is enough;
+ * only a Portal QR (or a dead terminal) needs a person.
+ */
+async function startRunGated(body) {
+  const env = normEnv(body.env);
+  if (env === 'dev' && isFullRun(body) && !body.skipPreflight) {
+    if (current && current.exitCode === null) return { ok: false, error: 'Đang có một lần chạy khác.' };
+    const pf = await preflight.check(env, { open: true, stores: preflight.runStores(env, body.apps ?? {}) });
+    if (!pf.ok) {
+      return {
+        ok: false,
+        error: ['Chưa đủ điều kiện "Chạy tất cả":', ...pf.problems.map((p) => `• ${p}`)].join('\n'),
+        preflight: pf,
+      };
+    }
+  }
+  return startRun(body);
+}
+
 function startRun(body) {
   refreshExit();
   if (current && current.exitCode === null) return { ok: false, error: 'Đang có một lần chạy khác.' };
@@ -606,6 +674,7 @@ function startRun(body) {
   mkdirSync(TMP, { recursive: true });
   mkdirSync(path.dirname(LIVE_FILE), { recursive: true });
   archiveLastRun();
+  pruneEvidence();
   writeFileSync(LIVE_FILE, '');
   // Default retries OFF for GUI runs (fail once, re-run reds with the "Test lỗi
   // lần trước" button), unless the UI asks for more.
@@ -834,15 +903,23 @@ function tickSchedules() {
     if (Array.isArray(s.days) && s.days.length && !s.days.includes(now.getDay())) continue;
     s.lastSlot = slot;
     changed = true;
-    const r = startRun({
+    // Gated (full runs check the web pages + terminal first), so the result lands later.
+    void startRunGated({
       env: s.env,
       specs: s.specs,
       tags: s.tags,
       label: `⏰ ${s.name}`,
       fast: s.fast !== false,
       apps: s.apps,
-    });
-    s.lastResult = r.ok ? `started ${now.toISOString()}` : `skipped: ${r.error}`;
+    })
+      .then((r) => {
+        const fresh = loadSchedules();
+        const mine = Array.isArray(fresh) ? fresh.find((x) => x.lastSlot === slot && x.name === s.name) : null;
+        if (!mine) return;
+        mine.lastResult = r.ok ? `started ${now.toISOString()}` : `skipped: ${r.error}`;
+        saveSchedules(fresh);
+      })
+      .catch((err) => logCrash('schedule start', err));
   }
   if (changed) saveSchedules(list);
 }
@@ -915,6 +992,38 @@ function serveStatic(pathname, res) {
   return false;
 }
 
+/** Failure evidence folders (src/support/evidence.ts): screenshots, replay frames, DOM, app log. */
+const EVIDENCE_DIR = path.join(REPO_ROOT, 'reports', 'evidence');
+/** Folders kept across runs — newest first; each holds ≤ ~12 PNGs. */
+const EVIDENCE_KEEP = 400;
+
+function serveEvidence(rel, res) {
+  const file = path.normalize(path.join(EVIDENCE_DIR, decodeURIComponent(rel)));
+  if (!file.startsWith(EVIDENCE_DIR + path.sep) || !existsSync(file) || !statSync(file).isFile()) return false;
+  const type = { '.html': 'text/plain; charset=utf-8', '.log': 'text/plain; charset=utf-8' }[path.extname(file)];
+  res.writeHead(200, {
+    'Content-Type': type ?? MIME[path.extname(file)] ?? 'application/octet-stream',
+    // A folder name carries its timestamp, so its files never change.
+    'Cache-Control': 'max-age=86400',
+  });
+  createReadStream(file)
+    .on('error', () => res.destroy())
+    .pipe(res);
+  return true;
+}
+
+function pruneEvidence() {
+  try {
+    if (!existsSync(EVIDENCE_DIR)) return;
+    const dirs = readdirSync(EVIDENCE_DIR)
+      .map((name) => ({ name, t: statSync(path.join(EVIDENCE_DIR, name)).mtimeMs }))
+      .sort((a, b) => b.t - a.t);
+    for (const d of dirs.slice(EVIDENCE_KEEP)) rmSync(path.join(EVIDENCE_DIR, d.name), { recursive: true, force: true });
+  } catch (err) {
+    logCrash('pruneEvidence', err);
+  }
+}
+
 const server = createServer(async (req, res) => {
   try {
     await handle(req, res);
@@ -953,9 +1062,25 @@ async function handle(req, res) {
       reset: reset && offset > 0,
     });
   }
+  if (pathname.startsWith('/api/gui/evidence/') && req.method === 'GET') {
+    if (serveEvidence(pathname.slice('/api/gui/evidence/'.length), res)) return;
+    return sendJson(res, 404, { error: 'no such evidence file' });
+  }
   if (pathname === '/api/gui/run' && req.method === 'POST') {
-    const result = startRun(await readBody(req));
+    const result = await startRunGated(await readBody(req));
     return sendJson(res, result.ok ? 200 : 409, result.ok ? statePayload() : result);
+  }
+  // Full-run gate status: GET = last result (instant), POST { env, open } = check now
+  // (open: open + sign in the missing web pages, boot the app to read the terminal).
+  if (pathname === '/api/gui/preflight') {
+    const env = normEnv(url.searchParams.get('env') || 'dev');
+    if (req.method === 'GET') return sendJson(res, 200, { preflight: preflight.status(env) });
+    if (req.method === 'POST') {
+      const body = await readBody(req);
+      const e = normEnv(body.env || env);
+      const r = await preflight.check(e, { open: !!body.open, stores: preflight.runStores(e, body.apps ?? {}) });
+      return sendJson(res, 200, { preflight: { ...r, busy: false } });
+    }
   }
   if (pathname === '/api/gui/stop' && req.method === 'POST') {
     const result = stopRun();
@@ -1035,6 +1160,7 @@ warm = createWarm({
   isRunning: () => !!current && current.exitCode === null,
   logCrash,
 });
+preflight = createPreflight({ repoRoot: REPO_ROOT, apps, warm, logCrash });
 adoptLastRun();
 
 // `node server/runner.mjs` → listen right away; importing (desktop.mjs) leaves it to the caller.

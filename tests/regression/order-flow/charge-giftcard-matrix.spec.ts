@@ -87,30 +87,6 @@ describe('Order flow — Gift-card charge matrix', () => {
   );
 
   it(
-    title('$2.00 single line redeems and settles (TC-ORDERFLOW-125)', Tag.REGRESSION, Tag.WRITE, Tag.PAYMENT),
-    async function (this: Mocha.Context): Promise<void> {
-      requireRedeemable(this);
-
-      const orderId = await openCheckout({ priceCents: 200 }, 'gift-card');
-      expectCentsEqual(await checkoutPage.subtotalCents(), 200, 'subtotal after price override');
-
-      await expectSettled(await payWithGiftCard(orderId, giftCard.code), orderId);
-    },
-  );
-
-  it(
-    title('$3.00 single line redeems and settles (TC-ORDERFLOW-126)', Tag.REGRESSION, Tag.WRITE, Tag.PAYMENT),
-    async function (this: Mocha.Context): Promise<void> {
-      requireRedeemable(this);
-
-      const orderId = await openCheckout({ priceCents: 300 }, 'gift-card');
-      expectCentsEqual(await checkoutPage.subtotalCents(), 300, 'subtotal after price override');
-
-      await expectSettled(await payWithGiftCard(orderId, giftCard.code), orderId);
-    },
-  );
-
-  it(
     title(
       '$1.00 + item discount redeems and settles (TC-ORDERFLOW-127)',
       Tag.REGRESSION,

@@ -28,7 +28,7 @@ import {
   VqhSidebar,
   inDlg,
 } from '../../../../src/constants/testids.voltqc-home-pend.js';
-import { returnToHome } from '../../../../src/flows/index.js';
+import { ensurePasscodeGateOn, returnToHome } from '../../../../src/flows/index.js';
 import { step } from '../../../../src/helpers/steps.js';
 import { settle } from '../../../../src/helpers/wait.js';
 import { checkoutPage, orderHistoryDetailPage } from '../../../../src/pages/index.js';
@@ -119,6 +119,9 @@ async function confirmDelete(choice: 'Delete' | 'Cancel'): Promise<void> {
 
 describe('volt-qc 02 HOME — order building & deleting (write)', () => {
   before(async () => {
+    // HOME-146..152 assert the Remove prompt; it only exists while the Delete
+    // Order gate is on (Settings › Accessibility › Passcode Setting).
+    await ensurePasscodeGateOn('delete_order');
     await returnToHome();
     const d = await discover();
     staff = d.staff;
@@ -223,6 +226,7 @@ describe('volt-qc 02 HOME — order building & deleting (write)', () => {
       Tag.WRITE,
     ),
     async () => {
+      await ensurePasscodeGateOn('delete_order');
       const id = await createOrder(A(), [S1()]);
       await attachNewCustomer(randomPhone(), uniqueName('QC Del'));
       expect(await P.has(VqhOrder.remove)).toBe(true);
@@ -253,6 +257,7 @@ describe('volt-qc 02 HOME — order building & deleting (write)', () => {
       Tag.WRITE,
     ),
     async () => {
+      await ensurePasscodeGateOn('delete_order');
       const id = await createOrder(A(), [S1()]);
       const name = uniqueName('QC Keep');
       await attachNewCustomer(randomPhone(), name);
@@ -275,6 +280,7 @@ describe('volt-qc 02 HOME — order building & deleting (write)', () => {
       Tag.WRITE,
     ),
     async () => {
+      await ensurePasscodeGateOn('delete_order');
       const id = await createOrder(A(), [S1()]);
       await dropGrant();
       await P.clickQ(VqhOrder.remove);
@@ -300,6 +306,7 @@ describe('volt-qc 02 HOME — order building & deleting (write)', () => {
       Tag.WRITE,
     ),
     async () => {
+      await ensurePasscodeGateOn('delete_order');
       await createOrder(A(), [S1()]);
       await dropGrant();
       await P.clickQ(VqhOrder.remove);
@@ -326,6 +333,7 @@ describe('volt-qc 02 HOME — order building & deleting (write)', () => {
       Tag.WRITE,
     ),
     async function () {
+      await ensurePasscodeGateOn('delete_order');
       // Needs VOLT_NO_DELETE_ORDER_CODE: the code of a staff whose role lacks Delete Order.
       if (!noDeleteCode()) this.skip();
       await createOrder(A(), [S1()]);
@@ -346,6 +354,7 @@ describe('volt-qc 02 HOME — order building & deleting (write)', () => {
       Tag.WRITE,
     ),
     async () => {
+      await ensurePasscodeGateOn('delete_order');
       await createOrder(A(), [S1()]);
       await dropGrant();
       await P.clickQ(VqhOrder.remove);
@@ -782,7 +791,8 @@ describe('volt-qc 02 HOME — order building & deleting (write)', () => {
 
   /* ---------------------------------------------------------------- re-open mode */
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'Re-open a paid order → Edit Order: the Pending sidebar is hidden on Home (HOME-015)',
       Tag.REGRESSION,

@@ -1,4 +1,6 @@
 import { Timeouts } from '../../../../configs/constants/timeouts.js';
+import { env } from '../../../../configs/env/loadEnv.js';
+import { passcodeDialog } from '../../../components/index.js';
 import {
   VqcGlobalSearch,
   VqcHome,
@@ -33,8 +35,13 @@ export interface ServiceTile {
  * stability window and the retry (volt-qc `App.quickCheckout`).
  */
 export async function quickCheckout(): Promise<void> {
+  await ensurePendingSidebarOpen();
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await P.clickQ(VqcHome.quickCheckout);
+    // 1.1.10x can gate Quick Checkout behind "Enter staff code to access Quick
+    // Checkout" (Portal passcode setting); unlock it so the gate does not cover
+    // the till and cascade every later step into "click intercepted".
+    await unlockQuickCheckoutGate();
     const deadline = Date.now() + 3_000;
     let emptySince = 0;
     while (Date.now() < deadline) {
@@ -47,6 +54,24 @@ export async function quickCheckout(): Promise<void> {
     }
   }
   throw new Error('Quick Checkout never produced an empty order frame (an "#OD…" header kept showing).');
+}
+
+/** Enter the staff passcode when a Quick Checkout / staff-pick passcode gate is up. */
+export async function unlockQuickCheckoutGate(): Promise<void> {
+  await passcodeDialog.unlockForRun(env.STAFF_PASSCODE, { timeout: 1_500 });
+}
+
+/**
+ * 1.1.8x can collapse the Pending sidebar (header toggle, aria-label still the raw
+ * i18n key "global.showPendingSidebar") and remembers it, which hides Quick Checkout
+ * on every later run. Re-open it when Quick Checkout is missing.
+ */
+export async function ensurePendingSidebarOpen(): Promise<void> {
+  if (await P.has(VqcHome.quickCheckout)) return;
+  const toggle = { css: 'button[aria-label*="PendingSidebar" i], button[aria-label*="pending sidebar" i]' };
+  if (!(await P.has(toggle))) return;
+  await P.clickQ(toggle);
+  await P.waitFor(VqcHome.quickCheckout, Timeouts.SHORT, 'Quick Checkout after opening the Pending sidebar');
 }
 
 /** Category tiles of the service carousel, in DOM order. */
@@ -135,7 +160,14 @@ export async function customerKeys(keys: string): Promise<void> {
 
 /** Header "Search..." → the global search dialog. */
 export async function openGlobalSearch(): Promise<void> {
-  await P.clickQ([{ css: 'header' }, { css: 'input', placeholder: 'Search...' }]);
+  // The header field is a readonly trigger. On a crowded header (125% display
+  // scaling) it shrinks to ~17px and WebDriver calls it "not interactable", so
+  // press its wrapper with a pointer click at the centre instead.
+  const trigger = [{ css: 'header' }, { css: 'div.input-wrapper', hasCss: 'input[placeholder="Search..."]' }];
+  await P.waitFor(trigger, Timeouts.SHORT, 'header search');
+  const r = (await P.info(trigger))?.rect;
+  if (r && r.w > 0) await P.clickAt(r.x + r.w / 2, r.y + r.h / 2);
+  else await P.clickQ([{ css: 'header' }, { css: 'input', placeholder: 'Search...' }]);
   await P.waitFor(VqcGlobalSearch.dialog, Timeouts.SHORT, 'global search dialog');
 }
 

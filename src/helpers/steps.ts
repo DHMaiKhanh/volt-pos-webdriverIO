@@ -1,6 +1,7 @@
 import { browser } from '@wdio/globals';
 import allure from '@wdio/allure-reporter';
 import { loadEnv } from '../../configs/env/loadEnv.js';
+import { noteStep } from '../support/evidence.js';
 import { moduleLogger } from '../utils/logger.js';
 
 const log = moduleLogger('steps');
@@ -101,6 +102,7 @@ export async function installStepOverlay(): Promise<void> {
  */
 export async function logStep(text: string): Promise<void> {
   log.info(text);
+  noteStep(text);
   await tryPaint(text);
 
   try {

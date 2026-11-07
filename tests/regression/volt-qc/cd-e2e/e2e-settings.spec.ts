@@ -17,7 +17,7 @@ import { expect } from '@wdio/globals';
 import { env } from '../../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../../../src/components/index.js';
 import { CdCustomer, CdMain, type VqcQuery } from '../../../../src/constants/testids.voltqc-cd-e2e.js';
-import { returnToHome } from '../../../../src/flows/index.js';
+import { ensurePasscodeGateOn, returnToHome } from '../../../../src/flows/index.js';
 import { step } from '../../../../src/helpers/steps.js';
 import { accessibilitySettingsPage } from '../../../../src/pages/index.js';
 import {
@@ -235,6 +235,8 @@ describe('volt-qc 14 E2E — settings → screens', () => {
     ),
     async function () {
       this.timeout(8 * 60_000);
+      // "Daily Sale still gated" needs that gate ON; another spec may have left it off.
+      await ensurePasscodeGateOn('daily_income');
       await app.clearPasscodeSkip();
       await app.openReport('/settings/accessibility');
       await accessibilitySettingsPage.waitForReady();

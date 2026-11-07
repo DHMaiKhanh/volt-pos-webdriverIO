@@ -109,42 +109,6 @@ describe('Order flow — Cash charge matrix', () => {
   );
 
   it(
-    title(
-      'Over-tender on a fresh single line settles (TC-ORDERFLOW-96)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-      Tag.PAYMENT,
-    ),
-    async function (this: Mocha.Context): Promise<void> {
-      this.timeout(Timeouts.MOCHA_HOOK);
-
-      const orderId = await openCheckout({}, 'cash');
-
-      await expectCashOverTenderChange();
-
-      await expectSettled(await payInCash(orderId), orderId);
-    },
-  );
-
-  it(
-    title(
-      'Over-tender on a repeat single line settles (TC-ORDERFLOW-97)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-      Tag.PAYMENT,
-    ),
-    async function (this: Mocha.Context): Promise<void> {
-      this.timeout(Timeouts.MOCHA_HOOK);
-
-      const orderId = await openCheckout({}, 'cash');
-
-      await expectCashOverTenderChange();
-
-      await expectSettled(await payInCash(orderId), orderId);
-    },
-  );
-
-  it(
     title('Two-line order, exact tender, settles (TC-ORDERFLOW-98)', Tag.REGRESSION, Tag.WRITE, Tag.PAYMENT),
     async function (this: Mocha.Context): Promise<void> {
       this.timeout(Timeouts.MOCHA_HOOK);

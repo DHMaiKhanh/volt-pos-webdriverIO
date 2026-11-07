@@ -308,7 +308,8 @@ describe('volt-qc PERM — Passcode Setting saved, gates ON/OFF (settings)', () 
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'Cancel Order and Re-Open gates OFF: void and re-open run with no passcode (PERM-048, PERM-050)',
       Tag.REGRESSION,

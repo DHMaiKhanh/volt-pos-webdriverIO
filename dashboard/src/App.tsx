@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from './lib/useHistory';
 import { formatDuration } from './lib/format';
-import type { RunInfo, RunRequest, WarmState, WarmStatus } from './lib/gui';
-import { useCatalog, useGuiRunner, usePersisted } from './lib/gui';
+import type { PreflightStatus, RunInfo, RunRequest, WarmState, WarmStatus } from './lib/gui';
+import { fetchPreflight, useCatalog, useGuiRunner, usePersisted } from './lib/gui';
 import { Sidebar, type FileCounts } from './components/gui/Sidebar';
 import { AppsBar } from './components/gui/AppsBar';
+import { PreflightBar } from './components/gui/PreflightBar';
 import { ResultsTab } from './components/gui/ResultsTab';
 import { ConsoleTab } from './components/gui/ConsoleTab';
 import { HistoryTab } from './components/gui/HistoryTab';
@@ -77,6 +78,8 @@ export function App(): JSX.Element {
   const [failedOnly, setFailedOnly] = useState(false);
   const [notifyPrefs, setNotifyPrefs] = usePersisted<NotifyPrefs>('gui-notify', DEFAULT_NOTIFY);
   const [startError, setStartError] = useState<string | null>(null);
+  /** Gate result pushed back by a refused "Chạy tất cả" (PreflightBar shows it). */
+  const [pushedPf, setPushedPf] = useState<PreflightStatus | null>(null);
   const [now, setNow] = useState(Date.now());
   const [, toggleTheme] = useThemeToggle();
 
@@ -188,12 +191,15 @@ export function App(): JSX.Element {
   const start = async (req: Omit<RunRequest, 'env'>): Promise<void> => {
     setStartError(null);
     const err = await runner.start({ env, ...req });
-    if (err) setStartError(err);
-    else setTab('results');
+    if (err) {
+      setStartError(err);
+      if (req.all) void fetchPreflight(env).then(setPushedPf).catch(() => undefined);
+    } else setTab('results');
   };
 
   const runSelected = (): void => {
     const specs = selectedList.filter((p) => knownPaths.has(p));
+    const isAll = allSelected;
     const useFast = fast && env === 'dev';
     const count = runner.apps?.env === env ? runner.apps.config[runner.apps.env].count : 1;
     const where =
@@ -201,6 +207,7 @@ export function App(): JSX.Element {
     void start({
       specs,
       tags,
+      all: isAll,
       fast: useFast,
       label: `${useFast ? '⚡ ' : ''}${specs.length} spec${tags.length ? ` · ${tags.join(' ')}` : ''}${where}`,
     });
@@ -220,6 +227,16 @@ export function App(): JSX.Element {
     run && running ? Math.max(0, run.estimateMs - (now - new Date(run.startedAt).getTime())) : 0;
   const warmState: WarmState = runner.warm?.enabled ? runner.warm.state : 'off';
   const selectedCount = selectedList.filter((p) => knownPaths.has(p)).length;
+  // "Chạy tất cả" = every automated spec ticked (manual stubs / _recovery probes don't count).
+  const automatedPaths = useMemo(
+    () => [...knownPaths].filter((p) => !p.includes('/volt-qc/_manual/') && !p.startsWith('tests/_recovery/')),
+    [knownPaths],
+  );
+  const allSelected = useMemo(() => {
+    const sel = new Set(selectedList);
+    return automatedPaths.length > 0 && automatedPaths.every((p) => sel.has(p));
+  }, [automatedPaths, selectedList]);
+  const storesKey = JSON.stringify(runner.apps?.env === env ? runner.apps.config[env as 'dev'] : null);
   // Test cases (it) the run will execute: tests in the ticked files, narrowed by the tag chips.
   // ⚡ fast mode never runs the _manual stubs, _recovery probes or @broken tests — and
   // staging / prod always run that way, on their store copies.
@@ -351,7 +368,8 @@ export function App(): JSX.Element {
             disabled={!runner.online || selectedCount === 0}
             onClick={runSelected}
           >
-            ▶ Chạy {selectedCount} spec · {selectedTests.toLocaleString('vi-VN')} test
+            ▶ {allSelected && env === 'dev' ? 'Chạy tất cả · ' : 'Chạy '}
+            {selectedCount} spec · {selectedTests.toLocaleString('vi-VN')} test
           </button>
         )}
         <button className="btn icon" onClick={toggleTheme} title="Sáng / tối">
@@ -360,6 +378,9 @@ export function App(): JSX.Element {
       </header>
 
       <AppsBar env={env} onEnv={setEnv} runner={runner} disabled={running || !runner.online} />
+      {runner.online && (
+        <PreflightBar env={env} storesKey={storesKey} disabled={running} pushed={pushedPf} />
+      )}
 
       <div className="body">
         <Sidebar

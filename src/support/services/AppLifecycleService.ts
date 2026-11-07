@@ -11,6 +11,13 @@ import { startUpdaterWatcher, stopUpdaterWatcher } from '../../helpers/updater.j
 import { installStepOverlay } from '../../helpers/steps.js';
 import { moduleLogger } from '../../utils/logger.js';
 import { ensureHealthyAttachedApp } from '../attachApp.js';
+import {
+  afterActionCommand,
+  replayCost,
+  resetEvidence,
+  writeEvidence,
+  type FailureFiles,
+} from '../evidence.js';
 import { APP_IMAGE_NAMES, killStaleProcesses, waitForImagesGone } from '../process.js';
 
 const log = moduleLogger('AppLifecycleService');
@@ -21,6 +28,29 @@ const slug = (value: string): string =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 120)
     .toLowerCase();
+
+/**
+ * The Mocha title path of the test `afterTest` got. WDIO's Mocha test object
+ * carries no `fullTitle` (only the immediate `parent`), but the Mocha context
+ * it passes alongside still knows the real test.
+ */
+function fullTitleOf(test: Frameworks.Test, context: unknown): string {
+  const ctx = context as
+    { test?: { fullTitle?: () => string }; currentTest?: { fullTitle?: () => string } } | undefined;
+  const fromCtx = ctx?.currentTest?.fullTitle?.() ?? ctx?.test?.fullTitle?.();
+  return fromCtx || test.fullTitle || `${test.parent ?? ''} ${test.title}`.trim();
+}
+
+/** `work`, or a rejection after `ms` — evidence capture must not hang on a dead session. */
+function withinMs<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  return Promise.race([
+    work,
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`no answer within ${String(ms)}ms`)), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
 
 /** Cap on a failure's DOM snapshot — the inline icon SVGs alone run to megabytes. */
 const DOM_SNAPSHOT_MAX_CHARS = 2_000_000;
@@ -146,15 +176,58 @@ export default class AppLifecycleService {
    * rolling log is the entire post-mortem, so both are attached to the Allure
    * result rather than only written to disk, where a CI job would discard them.
    */
-  async afterTest(test: Frameworks.Test, _context: unknown, result: Frameworks.TestResult): Promise<void> {
-    if (result.passed) return;
+  async afterTest(test: Frameworks.Test, context: unknown, result: Frameworks.TestResult): Promise<void> {
+    // A `this.skip()` also arrives here as `passed: false` — but with no error.
+    // Capturing for it cost a screenshot + DOM + app log per skip, for nothing.
+    if (result.passed || !result.error) return;
+    const files = await this.captureFailure(test.parent ?? '', test.title);
+    writeEvidence(
+      { file: test.file || this.currentFile, title: test.title, fullTitle: fullTitleOf(test, context) },
+      files,
+    );
+  }
 
+  /** Spec file of the running suite — a hook's own object does not say. */
+  private currentFile = '';
+
+  beforeSuite(suite: Frameworks.Suite): void {
+    if (suite.file) this.currentFile = suite.file;
+  }
+
+  beforeTest(): void {
+    resetEvidence();
+  }
+
+  /** Replay frames are taken here — see src/support/evidence.ts for the cost cap. */
+  async afterCommand(commandName: string): Promise<void> {
+    await afterActionCommand(commandName);
+  }
+
+  /**
+   * A failed `before all` / `after all` hook takes its whole suite down without
+   * a single `it` failing, so {@link afterTest} never sees it. Same evidence.
+   */
+  async afterHook(
+    test: Frameworks.Test,
+    _context: unknown,
+    result: Frameworks.TestResult & { error?: Error },
+  ): Promise<void> {
+    if (result.passed !== false && !result.error) return;
+    const title = test.title || 'hook';
+    const files = await this.captureFailure(test.parent ?? '', title);
+    writeEvidence({ file: test.file || this.currentFile, title, fullTitle: title, hook: true }, files);
+  }
+
+  /** Screenshot, URL, DOM and app log at the moment of failure — on disk and in Allure. */
+  private async captureFailure(parent: string, title: string): Promise<FailureFiles> {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const base = `${slug(test.parent ?? '')}__${slug(test.title)}__${stamp}`;
+    const base = `${slug(parent)}__${slug(title)}__${stamp}`;
+    const out: FailureFiles = {};
 
     try {
       const shotPath = path.join(Paths.SCREENSHOTS, `${base}.png`);
-      await browser.saveScreenshot(shotPath);
+      await withinMs(browser.saveScreenshot(shotPath), 15_000);
+      out.shotPath = shotPath;
       await allure.addAttachment('Screenshot', fs.readFileSync(shotPath), 'image/png');
       log.info(`Screenshot: ${shotPath}`);
     } catch (error) {
@@ -162,7 +235,8 @@ export default class AppLifecycleService {
     }
 
     try {
-      const url = await browser.getUrl();
+      const url = await withinMs(browser.getUrl(), 5_000);
+      out.url = url;
       await allure.addAttachment('URL at failure', url, 'text/plain');
     } catch {
       /* the session may already be gone */
@@ -174,7 +248,12 @@ export default class AppLifecycleService {
     // that the running suite was busy driving.
     try {
       const domPath = path.join(Paths.FAILURE_DOM, `${base}.html`);
-      fs.writeFileSync(domPath, await browser.execute(domSnapshot, DOM_SNAPSHOT_MAX_CHARS), 'utf8');
+      fs.writeFileSync(
+        domPath,
+        await withinMs(browser.execute(domSnapshot, DOM_SNAPSHOT_MAX_CHARS), 10_000),
+        'utf8',
+      );
+      out.domPath = domPath;
       log.info(`DOM: ${domPath}`);
     } catch (error) {
       log.debug(`No DOM snapshot: ${(error as Error).message}`);
@@ -185,11 +264,13 @@ export default class AppLifecycleService {
       if (logs) {
         const logPath = path.join(Paths.APP_LOGS, `${base}.log`);
         fs.writeFileSync(logPath, logs, 'utf8');
+        out.logPath = logPath;
         await allure.addAttachment('App log (tail)', logs, 'text/plain');
       }
     } catch (error) {
       log.debug(`No app log collected: ${(error as Error).message}`);
     }
+    return out;
   }
 
   /**
@@ -200,6 +281,7 @@ export default class AppLifecycleService {
   after(): void {
     const env = loadEnv();
     stopUpdaterWatcher();
+    log.info(`Failure replay: ${replayCost()}`);
 
     if (env.KEEP_APP_OPEN) {
       log.warn('KEEP_APP_OPEN=true — leaving the app running for manual inspection.');

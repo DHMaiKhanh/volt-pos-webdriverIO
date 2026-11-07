@@ -170,7 +170,8 @@ describe('volt-qc 14 E2E — catalogue rows without a volt-qc spec', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'Action bar by status: Successful - Unsettled → Receipt + Re-Open + Cancel, no Refund; Canceled → Receipt only (E2E-024)',
       Tag.REGRESSION,
@@ -199,7 +200,8 @@ describe('volt-qc 14 E2E — catalogue rows without a volt-qc spec', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'Re-open to change the staff (restricted mode): line price unchanged, every tender owes $0.00, Re-Open Done → Unsettled, same Total, Service Details and tip on the new staff (E2E-026)',
       Tag.REGRESSION,
@@ -243,7 +245,8 @@ describe('volt-qc 14 E2E — catalogue rows without a volt-qc spec', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'Re-Open availability: Successful - Unsettled shows Re-Open Order; a Re-open order shows Continue Re-open; Canceled shows none (E2E-030)',
       Tag.REGRESSION,

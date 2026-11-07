@@ -31,16 +31,10 @@
 
 import { expect } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
-import { env } from '../../../configs/env/loadEnv.js';
-import { passcodeDialog } from '../../../src/components/index.js';
 import { returnToHome } from '../../../src/flows/index.js';
 import { homePage, orderHistoryDetailPage } from '../../../src/pages/index.js';
 import { Tag, title } from '../../../src/types/testTags.js';
-import {
-  createAndSettleCashOrder,
-  openSettledOrderOrSkip,
-  REFUND_SETTLE_ENABLED,
-} from './payment-flows.helpers.js';
+import { createAndSettleCashOrder } from './payment-flows.helpers.js';
 
 describe('Payment flows — Refund gating (unsettled)', () => {
   before(async function (this: Mocha.Context): Promise<void> {
@@ -58,62 +52,15 @@ describe('Payment flows — Refund gating (unsettled)', () => {
     async () => {
       // Refund requires Settled; the unsettled order offers Cancel / Re-Open instead.
       // The "card not batched → disable + alert" half needs a settled card order and
-      // is covered by RFD-EXEC's precondition, not here.
+      // needs a settled card order, not here.
       expect(await orderHistoryDetailPage.isRefundAvailable()).toBe(false);
     },
   );
 });
 
+// RFD-02 (All = full amount, locked) and RFD-EXEC (full refund completes) run as
+// volt-qc/oh-reopen/oh-refund OH-131 / OH-140.
 describe('Payment flows — Refund on a settled order', () => {
-  after(async () => {
-    await returnToHome();
-    await homePage.waitForReady();
-  });
-
-  it(
-    title('The refund dialog autofills the full amount for "All" (RFD-02)', Tag.REGRESSION, Tag.WRITE),
-    async function (this: Mocha.Context): Promise<void> {
-      this.timeout(Timeouts.MOCHA_HOOK);
-      const { detail } = await openSettledOrderOrSkip(this);
-
-      expect(await detail.isRefundAvailable()).toBe(true);
-      await detail.openRefundDialog();
-
-      // Selecting All = Full Refund autofills the whole order; the amount field is
-      // app-computed and disabled, so a populated, positive figure IS the assertion.
-      await detail.selectAllRefundServices();
-      expect(await detail.readRefundAmount()).toBeGreaterThan(0);
-
-      // Read-only: do not confirm. Partial autofill (= selected service prices) needs
-      // the order-item ids, which this list view does not surface — see RFD-03/R1.
-      await detail.closeRefundDialog();
-      expect(await detail.isRefundDialogShown()).toBe(false);
-    },
-  );
-
-  it(
-    title('A full refund on a settled order completes (RFD-EXEC)', Tag.REGRESSION, Tag.WRITE, Tag.PAYMENT),
-    async function (this: Mocha.Context): Promise<void> {
-      if (!REFUND_SETTLE_ENABLED) {
-        // Decision (b) lets us refund a found Settled order, but a refund is
-        // irreversible — only run it when an operator opts in with REFUND_SETTLE=1.
-        this.skip();
-      }
-      this.timeout(Timeouts.MOCHA_HOOK);
-
-      const { orderId, detail } = await openSettledOrderOrSkip(this);
-      await detail.refundFully({ reason: 'customer_request' });
-
-      // Confirm fires the `refund` passcode guard; answer it like every other
-      // permission-gated mutation (the page layer leaves it to the flow/spec).
-      await passcodeDialog.enterIfPresent(env.STAFF_PASSCODE);
-
-      // The dialog closes and the order leaves the refundable state.
-      await detail.waitForOrder(orderId);
-      expect(await detail.isRefundDialogShown()).toBe(false);
-    },
-  );
-
   it(
     title(
       'RFD-03: refund on the discounted price, promotion preserved — PENDING 🌙 (needs a discounted settled order)',
@@ -137,12 +84,6 @@ describe('Payment flows — Refund on a settled order', () => {
   it(
     title(
       'RFD-R1 (VP-4051): a refunded service is still editable — PENDING 🌙 (needs a partially-refunded order)',
-    ),
-  );
-
-  it(
-    title(
-      'RFD-R2 (VP-3109): P8D "Refunding" while POS Refunded — PENDING 🌙 (cross-system, P8D not observable)',
     ),
   );
 

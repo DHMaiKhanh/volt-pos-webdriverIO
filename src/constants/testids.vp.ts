@@ -177,8 +177,9 @@ export const passcodeGate = (permission: string): Locator =>
 
 /** The service-card parts VP-2465 measures. Relative to a card (`li.cursor-pointer`). */
 export const ServiceCardParts = {
-  name: 'span.overflow-hidden',
-  /** The `...` span rendered right after the name. */
+  /** 1.1.8x renders `span.line-clamp-2` (CSS line-clamp); older builds `span.overflow-hidden`. */
+  name: 'span.line-clamp-2, span.overflow-hidden',
+  /** The `...` span older builds render after the name; line-clamp builds draw it in CSS. */
   ellipsis: 'span.overflow-hidden + span',
   /** The price is the card's last child div. */
   price: ':scope > div:last-child',

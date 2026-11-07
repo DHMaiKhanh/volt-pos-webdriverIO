@@ -1,41 +1,115 @@
 {
-  "runId": "2026-11-05T09-58-36-857Z",
-  "startedAt": "2026-11-05T09:58:36.857Z",
-  "finishedAt": "2026-11-05T09:59:06.394Z",
-  "durationMs": 29537,
+  "runId": "2026-11-07T09-17-22-579Z",
+  "startedAt": "2026-11-07T09:17:22.579Z",
+  "finishedAt": "2026-11-07T09:19:49.396Z",
+  "durationMs": 146817,
   "env": {
     "name": "dev",
-    "mode": "attach",
+    "mode": "launch",
     "merchant": "14",
     "app": "volt-pos.exe",
     "upstream": "https://volt-pos.v2.dev-fastboypay.com"
   },
   "totals": {
-    "tests": 1,
-    "passed": 1,
-    "failed": 0,
+    "tests": 21,
+    "passed": 18,
+    "failed": 3,
     "skipped": 0,
-    "passRate": 100
+    "passRate": 85.7
   },
-  "passed": true,
+  "passed": false,
   "specs": [
     {
       "cid": "0-0",
-      "file": "file:///D:/2.POS/e2e_volt_pos_webdriverIO/tests/regression/settings/vp-4815-passcode-gates.spec.ts",
-      "specName": "vp-4815-passcode-gates",
-      "startedAt": "2026-11-05T09:58:38.677Z",
-      "finishedAt": "2026-11-05T09:59:05.770Z",
-      "durationMs": 27093,
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/volt-qc/pos/home.spec.ts",
+      "specName": "home",
+      "startedAt": "2026-11-07T09:17:31.268Z",
+      "finishedAt": "2026-11-07T09:18:38.640Z",
+      "durationMs": 67372,
       "retry": 1,
       "suites": [
         {
-          "title": "VP-4815 — passcode gates + customer status",
+          "title": "volt-qc 02 HOME — read-only",
           "tests": [
             {
-              "title": "TC-VP4815-07 Scanner → Add Funds asks Quick Checkout (Staff refused), then Sell Gift Card @regression @write @exclusive",
-              "fullTitle": "VP-4815 — passcode gates + customer status.TC-VP4815-07 Scanner → Add Funds asks Quick Checkout (Staff refused), then Sell Gift Card @regression @write @exclusive",
+              "title": "Customer entry: keypad 0-9/C + backspace, Done disabled, phone mask, paste 11 digits drops the leading 1 (HOME-089, HOME-091, HOME-095, HOME-104) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Customer entry: keypad 0-9/C + backspace, Done disabled, phone mask, paste 11 digits drops the leading 1 (HOME-089, HOME-091, HOME-095, HOME-104) @regression",
               "state": "passed",
-              "durationMs": 12470,
+              "durationMs": 10329,
+              "retries": 0
+            },
+            {
+              "title": "Tile order Quick Pay, Gift Card, then categories; \"N Service(s)\" plural rule; service tiles show name + $x.xx (HOME-036, HOME-038) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Tile order Quick Pay, Gift Card, then categories; \"N Service(s)\" plural rule; service tiles show name + $x.xx (HOME-036, HOME-038) @regression",
+              "state": "passed",
+              "durationMs": 2278,
+              "retries": 0
+            },
+            {
+              "title": "Service search keeps only matching services and deselects the category; no match → \"No services available.\" (HOME-039, HOME-040) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Service search keeps only matching services and deselects the category; no match → \"No services available.\" (HOME-039, HOME-040) @regression",
+              "state": "passed",
+              "durationMs": 3133,
+              "retries": 0
+            },
+            {
+              "title": "More than 8 tiles: dragging the carousel shows the rest and keeps the selected category (HOME-037) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.More than 8 tiles: dragging the carousel shows the rest and keeps the selected category (HOME-037) @regression",
+              "state": "passed",
+              "durationMs": 3821,
+              "retries": 0
+            },
+            {
+              "title": "Staff search never returns an Inactive staff or the Owner (HOME-017) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Staff search never returns an Inactive staff or the Owner (HOME-017) @regression",
+              "state": "passed",
+              "durationMs": 3562,
+              "retries": 0
+            },
+            {
+              "title": "Sort by popover lists every option; Name sorts A→Z then Z→A (HOME-023, HOME-024) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Sort by popover lists every option; Name sorts A→Z then Z→A (HOME-023, HOME-024) @regression",
+              "state": "failed",
+              "durationMs": 5100,
+              "retries": 0,
+              "error": "expect(received).toEqual(expected) // deep equality",
+              "message": "expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 1\n\n  Array [\n    \"1001vvv\",\n    \"24234\",\n    \"333\",\n    \"3333\",\n    \"5t67\",\n    \"888\",\n+   \"APIB1778506575 abc\",\n    \"Alexander2\",\n    \"Althea Schroeder\",\n    \"Anastasia Parham\",\n    \"Angela Tyler 89999\",\n    \"Anna\",\n-   \"APIB1778506575 abc\",\n    \"Artreides\",\n    \"Aubrey Shepard\",\n    \"Bell\",\n    \"Ben\",\n  ]",
+              "stack": "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 1\n\n  Array [\n    \"1001vvv\",\n    \"24234\",\n    \"333\",\n    \"3333\",\n    \"5t67\",\n    \"888\",",
+              "evidence": "regression-volt-qc-pos-home__sort-by-popover-lists-every-option-name-sorts-a-z-then-z-a-home-023-home-024-reg__2026-11-07T09-18-11-013Z"
+            },
+            {
+              "title": "Global Search modal: title, autofocus, hint, 4 tabs (All selected), no-result text, reset on reopen (HOME-155, HOME-161, HOME-162) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Global Search modal: title, autofocus, hint, 4 tabs (All selected), no-result text, reset on reopen (HOME-155, HOME-161, HOME-162) @regression",
+              "state": "passed",
+              "durationMs": 3535,
+              "retries": 0
+            },
+            {
+              "title": "Global Search \"5\" → Customer tab capped at 20 rows (HOME-163) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Global Search \"5\" → Customer tab capped at 20 rows (HOME-163) @regression",
+              "state": "passed",
+              "durationMs": 2562,
+              "retries": 0
+            },
+            {
+              "title": "Home layout: 4 panels, no horizontal scroll, customer placeholder not clipped, sidebar has no collapse/pin (HOME-001, HOME-003, HOME-016) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Home layout: 4 panels, no horizontal scroll, customer placeholder not clipped, sidebar has no collapse/pin (HOME-001, HOME-003, HOME-016) @regression",
+              "state": "passed",
+              "durationMs": 2437,
+              "retries": 0
+            },
+            {
+              "title": "Typing one character in Search staff / Search service shows no \"null\"/\"undefined\" (HOME-002) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Typing one character in Search staff / Search service shows no \"null\"/\"undefined\" (HOME-002) @regression",
+              "state": "passed",
+              "durationMs": 3402,
+              "retries": 0
+            },
+            {
+              "title": "Checkin Today / Appointments Today accordions toggle Show/Hide; none today → \"No appointments today\" (HOME-117) @regression",
+              "fullTitle": "volt-qc 02 HOME — read-only.Checkin Today / Appointments Today accordions toggle Show/Hide; none today → \"No appointments today\" (HOME-117) @regression",
+              "state": "passed",
+              "durationMs": 3683,
               "retries": 0
             }
           ],
@@ -43,11 +117,113 @@
         }
       ],
       "totals": {
-        "tests": 1,
-        "passed": 1,
-        "failed": 0,
+        "tests": 11,
+        "passed": 10,
+        "failed": 1,
         "skipped": 0,
-        "passRate": 100
+        "passRate": 90.9
+      }
+    },
+    {
+      "cid": "0-1",
+      "file": "file:///D:/Project/webdriverIO_volt_pos/tests/regression/appointment/vp-4402-staff-column-order-color.spec.ts",
+      "specName": "vp-4402-staff-column-order-color",
+      "startedAt": "2026-11-07T09:18:52.985Z",
+      "finishedAt": "2026-11-07T09:19:44.293Z",
+      "durationMs": 51308,
+      "retry": 1,
+      "suites": [
+        {
+          "title": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481)",
+          "tests": [
+            {
+              "title": "TC-VP4402-01: the installed build carries the feature (≥ 1.1.87) @regression",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-01: the installed build carries the feature (≥ 1.1.87) @regression",
+              "state": "passed",
+              "durationMs": 178,
+              "retries": 0
+            },
+            {
+              "title": "TC-VP4402-02: board columns follow the staff_appointment (GAP) priority order @regression",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-02: board columns follow the staff_appointment (GAP) priority order @regression",
+              "state": "passed",
+              "durationMs": 196,
+              "retries": 0
+            },
+            {
+              "title": "TC-VP4402-03: priority = 0 staff sit after every ranked staff @regression",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-03: priority = 0 staff sit after every ranked staff @regression",
+              "state": "passed",
+              "durationMs": 168,
+              "retries": 0
+            },
+            {
+              "title": "TC-VP4402-04: staff without a staff_appointment row are the board tail @regression",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-04: staff without a staff_appointment row are the board tail @regression",
+              "state": "passed",
+              "durationMs": 136,
+              "retries": 0
+            },
+            {
+              "title": "TC-VP4402-06: the Staffs filter dropdown keeps its A→Z order @regression",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-06: the Staffs filter dropdown keeps its A→Z order @regression",
+              "state": "passed",
+              "durationMs": 12474,
+              "retries": 0
+            },
+            {
+              "title": "TC-VP4402-07: the column order does not change with the day @regression",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-07: the column order does not change with the day @regression",
+              "state": "passed",
+              "durationMs": 11298,
+              "retries": 0
+            },
+            {
+              "title": "TC-VP4402-11: each column header is drawn in its staff colour @regression",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-11: each column header is drawn in its staff colour @regression",
+              "state": "passed",
+              "durationMs": 172,
+              "retries": 0
+            },
+            {
+              "title": "TC-VP4402-12: VP-5481 — no column is grey; a no-colour staff is #5669FF like GAP @regression @broken",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-12: VP-5481 — no column is grey; a no-colour staff is #5669FF like GAP @regression @broken",
+              "state": "failed",
+              "durationMs": 345,
+              "retries": 0,
+              "error": "expect(received).toEqual(expected) // deep equality",
+              "message": "expect(received).toEqual(expected) // deep equality\n\n- Expected  -  1\n+ Received  + 27\n\n- Array []\n+ Array [\n+   \"taff 12347\",\n+   \"Shelby\",\n+   \"JS\",\n+   \"JDD\",\n+   \"JSS\",\n+   \"JD1119\",\n+   \"JS1110\",\n+   \"JD1121\",\n+   \"JS1120\",\n+   \"JD112\",\n+   \"JS112\",\n+   \"JDxx\",\n+   \"JSxx\",\n+   \"JD3002\",\n+   \"JS3002\",\n+   \"JD4001\",\n+   \"JS5002\",\n+   \"JD5001\",\n+   \"JS9002\",\n+   \"JD53001\",\n+   \"JS9302\",\n+   \"KKate\",\n+   \"WWave\",\n+   \"Phong001\",\n+   \"JD\",\n+ ]",
+              "stack": "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  -  1\n+ Received  + 27\n\n- Array []\n+ Array [\n+   \"taff 12347\",\n+   \"Shelby\",\n+   \"JS\",\n+   \"JDD\",\n+   \"JSS\",",
+              "evidence": "regression-appointment-vp-4402-staff-column-order-color__tc-vp4402-12-vp-5481-no-column-is-grey-a-no-colour-staff-is-5669ff-like-gap-regr__2026-11-07T09-19-31-459Z"
+            },
+            {
+              "title": "TC-VP4402-13: VP-5481 — the Unassigned column is blue #5669FF like GAP @regression @broken",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-13: VP-5481 — the Unassigned column is blue #5669FF like GAP @regression @broken",
+              "state": "failed",
+              "durationMs": 313,
+              "retries": 0,
+              "error": "expect(received).toBe(expected) // Object.is equality",
+              "message": "expect(received).toBe(expected) // Object.is equality\n\nExpected: \"#5669FF\"\nReceived: \"#4D4A5B\"",
+              "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"#5669FF\"\nReceived: \"#4D4A5B\"\n    at Context.<anonymous> (D:\\Project\\webdriverIO_volt_pos\\tests\\regression\\appointment\\vp-4402-staff-column-order-color.spec.ts:210:39)\n    at Context.executeAsync (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1134:10)\n    at Context.testFrameworkFnWrapper (D:\\Project\\webdriverIO_volt_pos\\node_modules\\@wdio\\utils\\build\\index.js:1214:34)\n    at process.processImmediate (node:internal/timers:472:9)",
+              "evidence": "regression-appointment-vp-4402-staff-column-order-color__tc-vp4402-13-vp-5481-the-unassigned-column-is-blue-5669ff-like-gap-regression-br__2026-11-07T09-19-35-165Z"
+            },
+            {
+              "title": "TC-VP4402-14: VP-5481 — Anna carries her GAP colour #96BDF5 @regression",
+              "fullTitle": "VP-4402 — Appointment board: GAP staff order + staff colours (+ VP-5481).TC-VP4402-14: VP-5481 — Anna carries her GAP colour #96BDF5 @regression",
+              "state": "passed",
+              "durationMs": 177,
+              "retries": 0
+            }
+          ],
+          "suites": []
+        }
+      ],
+      "totals": {
+        "tests": 10,
+        "passed": 8,
+        "failed": 2,
+        "skipped": 0,
+        "passRate": 80
       }
     }
   ]

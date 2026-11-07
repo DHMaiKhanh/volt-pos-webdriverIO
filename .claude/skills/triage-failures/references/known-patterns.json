@@ -1,0 +1,96 @@
+{
+  "_doc": "Mẫu lỗi ĐÃ BIẾT gốc rễ. collect-failures.mjs khớp regex (không phân biệt hoa thường) với error+message+stack+title, theo THỨ TỰ, cái đầu tiên thắng. Thêm mẫu mới mỗi khi triage xác định được gốc rễ để lần quét sau tự nhận ra. category ∈ APP_BUG | LOGIC_CHANGE | UI_CHANGE | TEST_CODE | ENV | CASCADE | FLAKY.",
+  "patterns": [
+    {
+      "id": "staff-token-empty",
+      "match": "STAFF_TOKEN is empty",
+      "category": "ENV",
+      "cause": "Device bị đăng xuất (màn /login là QR) → root before-all chết, mọi spec chết theo. Không phải lỗi app/test.",
+      "fix": "Quét QR đăng nhập lại device hoặc điền STAFF_TOKEN trong configs/env/.env.dev rồi chạy lại."
+    },
+    {
+      "id": "passcode-not-accepted",
+      "match": "Passcode was not accepted|Authentication failed",
+      "category": "ENV",
+      "cause": "Passcode guard không nhận mã (sai tiệm / sai mã / gate bị spec khác đổi). Passcode đúng tiệm 14 & 20258 = 8888.",
+      "fix": "Kiểm tra tiệm đang đăng nhập + STAFF_PASSCODE trong .env; nếu đúng mã thì xem gate có bị bật/tắt dở dang (armPasscodeGate)."
+    },
+    {
+      "id": "passcode-gate-missing",
+      "match": "Never appeared: passcode dialog",
+      "category": "ENV",
+      "cause": "Passcode gate của màn đang TẮT (thường do spec khác tắt mà không bật lại) nên dialog passcode không hiện.",
+      "fix": "Bật lại gate trên POS Settings › Permissions / gọi armPasscodeGate trong before; không phải lỗi app."
+    },
+    {
+      "id": "wdio-timeout-120s",
+      "match": "^Error: Timeout$|^Timeout$",
+      "category": "TEST_CODE",
+      "cause": "Test vượt 120s mặc định — this.timeout() trong thân test bị WDIO 9 bỏ qua; hoặc 1 bước chờ quá lâu.",
+      "fix": "Khai báo timeout ở root beforeEach/mochaOpts, hoặc tìm bước chờ chậm trong evidence."
+    },
+    {
+      "id": "quick-checkout-empty-frame",
+      "match": "Quick Checkout never produced an empty order frame",
+      "category": "CASCADE",
+      "cause": "Còn đơn dở (#OD…) từ test trước nên Quick Checkout không mở frame trống — hệ quả dọn dẹp thất bại ở test trước/đơn kẹt passcode xoá.",
+      "fix": "Xem test fail ĐẦU TIÊN trong cùng spec/run; dọn đơn nháp (confirmDestructiveAction) rồi chạy lại."
+    },
+    {
+      "id": "home-not-clickable-gated",
+      "match": "/home\"\\]\"\\) still not clickable|Open sidebar\"\\]\"\\) still not clickable|readyAnchor not ready",
+      "category": "CASCADE",
+      "cause": "Overlay (passcode guard / dialog còn mở / reopen mode ẩn nav) che điều hướng → không về được Home. Thường là hệ quả test trước để lại màn hình dở.",
+      "fix": "Mở final.png xem cái gì đang che; nếu là passcode guard → thiếu unlockForRun; nếu reopen mode → leaveReopenCheckout."
+    },
+    {
+      "id": "placeholder-phone-name-email",
+      "match": "Phone, name or email",
+      "category": "UI_CHANGE",
+      "cause": "App 1.1.8x đổi placeholder ô tìm khách thành \"Phone, name or email\".",
+      "fix": "Cập nhật locator theo placeholder mới (đã vá 31/10)."
+    },
+    {
+      "id": "preset-replace",
+      "match": "preset.*(replace|add)|\\$50.*keypad",
+      "category": "LOGIC_CHANGE",
+      "cause": "Nút preset tiền mặt THAY số đã gõ (không cộng dồn) — hành vi có chủ đích của build hiện tại.",
+      "fix": "Sửa kỳ vọng test theo hành vi REPLACE."
+    },
+    {
+      "id": "click-intercepted",
+      "match": "element click intercepted",
+      "category": "UI_CHANGE",
+      "cause": "Phần tử khác nằm đè lên điểm click (dialog/toast/overlay hoặc layout tràn ở scaling 125%).",
+      "fix": "Xem final.png: nếu dialog dở dang → CASCADE; nếu layout tràn → UI_CHANGE/scaling; nếu nút disabled → logic điều kiện bật nút."
+    },
+    {
+      "id": "move-target-out-of-bounds",
+      "match": "move target out of bounds",
+      "category": "UI_CHANGE",
+      "cause": "Phần tử nằm ngoài viewport (layout tràn, thường do Windows scaling 125% hoặc cửa sổ nhỏ).",
+      "fix": "Kiểm tra display scaling = 100% / kích thước cửa sổ; scrollIntoView trước khi click."
+    },
+    {
+      "id": "invalid-session",
+      "match": "invalid session id|session deleted|chrome not reachable|DevToolsActivePort|ECONNREFUSED|disconnected: not connected",
+      "category": "ENV",
+      "cause": "Phiên WebDriver/app chết giữa chừng (app crash, máy sleep, driver lệch phiên bản).",
+      "fix": "Xem Kernel-Power sleep/restart; npm run setup:drivers --force; chạy lại."
+    },
+    {
+      "id": "card-terminal-disabled",
+      "match": "Complete Payment stays disabled on the Card tender",
+      "category": "ENV",
+      "cause": "Terminal thẻ chưa kết nối (badge đỏ \"!\") nên Complete Payment bị khoá.",
+      "fix": "Kết nối lại terminal rồi chạy lại; không phải lỗi app."
+    },
+    {
+      "id": "data-precondition",
+      "match": "No Adjust row with Current: 0|No staff card / service tile rendered|no eligible order|nothing to refund",
+      "category": "ENV",
+      "cause": "Dữ liệu tiệm không thoả điều kiện đầu vào của test (hết staff turn = 0, không có đơn phù hợp…).",
+      "fix": "Chuẩn bị/seed dữ liệu hoặc cho test tự tạo precondition."
+    }
+  ]
+}

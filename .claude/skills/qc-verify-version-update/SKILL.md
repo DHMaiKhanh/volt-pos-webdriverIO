@@ -1,6 +1,6 @@
 ---
 name: qc-verify-version-update
-description: QC 1 task Linear liên quan đến Version Update của Volt POS (menu ≡ → Version Update, updater, release notes, Update Now/retry, auto update) — đọc task, tự test trên POS dev, liệt kê bảng test case PASS/FAIL, rồi comment kết quả tiếng Việt kèm nhiều ảnh. PASS → comment "I have verified..." + chuyển QC Completed. FAIL → mỗi bug 1 sub task, comment "Please help me fix bug..." + assign lại dev. Dùng khi user nói "test task VP-xxxx (version update / update POS) xem pass chưa", "verify version update", "/qc-verify-version-update VP-xxxx".
+description: QC 1 task Linear liên quan đến Version Update của Volt POS (menu ≡ → Version Update, updater, release notes, Update Now/retry, auto update) — đọc task, tự test trên POS dev, liệt kê bảng test case PASS/FAIL, rồi comment kết quả tiếng Việt kèm nhiều ảnh + video (🎬 Video). PASS → comment "I have verified..." + chuyển QC Completed. FAIL → mỗi bug 1 sub task, comment "Please help me fix bug..." + assign mọi bug (sub task + task cha) cho Mai Khanh. Dùng khi user nói "test task VP-xxxx (version update / update POS) xem pass chưa", "verify version update", "/qc-verify-version-update VP-xxxx".
 argument-hint: '<VP-xxxx hoặc URL Linear> [version] [@dev]'
 ---
 
@@ -11,13 +11,15 @@ Nếu thiếu mã task → hỏi user, KHÔNG đoán task.
 
 ## Mặc định (user đã yêu cầu, có thể bị ghi đè bởi tham số)
 
-| Mục                         | Giá trị                                                                               |
-| --------------------------- | ------------------------------------------------------------------------------------- |
-| Dev tag + assign khi FAIL   | `@ngan_huynh` (Ngan Huynh Thi Thao) — lời user > PR author                            |
-| cc                          | `@tienpd @loan_dang`                                                                  |
-| Ngôn ngữ comment / sub task | Tiếng Việt (giữ nguyên câu mở đầu tiếng Anh của template)                             |
-| Version ghi trong comment   | Version **thật sự đã test** (đọc trong app), không phải số trong template (vd 1.1.57) |
-| Version test                | Luôn là **bản dev mới nhất trên feed** (mục 2), trừ khi tham số chỉ định version      |
+| Mục                         | Giá trị                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| Dev tag trong comment       | `@ngan_huynh` (Ngan Huynh Thi Thao) — lời user > PR author                                |
+| Assignee khi FAIL           | **Mai Khanh** (`khanh_do@fastboy.net` / `me`) — MỌI bug: sub task + task cha (user 06/11) |
+| cc                          | `@tienpd @loan_dang`                                                                      |
+| Ngôn ngữ comment / sub task | Tiếng Việt (giữ nguyên câu mở đầu tiếng Anh của template)                                 |
+| Version ghi trong comment   | Version **thật sự đã test** (đọc trong app), không phải số trong template (vd 1.1.57)     |
+| Video                       | 1 video case chính (luồng update) + 1 video cho mỗi bug FAIL — xem mục 4b                 |
+| Version test                | Luôn là **bản dev mới nhất trên feed** (mục 2), trừ khi tham số chỉ định version          |
 
 ## 1. Đọc task
 
@@ -78,6 +80,27 @@ Cách test:
 Linear MCP `prepare_file_upload` / `create_attachment_from_upload` (hoặc `prepare_attachment_upload`) → lấy URL,
 nhúng vào markdown `![TC-VU-01 - 02/11](url)`.
 
+## 4b. Video (giống dev đính "🎬 Video: …mp4")
+
+Công cụ: `scripts/record.mjs` (ffmpeg có sẵn qua devDependency `ffmpeg-static`).
+
+1. **Bắt đầu**: `npm run rec:start -- --name VP-xxxx-TC-VU-01` ngay trước bước tái hiện, chờ dòng `● REC …` (~1–5s).
+   - App có CDP 9222 → quay **màn staff + màn khách cạnh nhau** thẳng từ WebView; cửa sổ khác che lên không bị quay.
+     Chỉ cần màn staff (hầu hết case Version Update): `--screens staff`.
+2. Làm các bước, dừng 1–2s ở kết quả (dialog Version Update, release notes, số version mới…).
+3. **Dừng**: `npm run rec:stop` → in `■ Saved .recordings/<name>-<time>.mp4`. Quá 600s tự dừng (`--max` để đổi).
+4. **Riêng luồng Update Now → app tải → tắt → mở lại** (CDP mất khi app restart nên video CDP sẽ đứng hình):
+   - Cách A (mặc định): video 1 bằng CDP tới lúc bấm Update Now / tiến trình tải → `rec:stop`; app lên lại và có
+     CDP → video 2 quay màn hình version mới (≡ → Version Update). Đính cả 2.
+   - Cách B (muốn liền một mạch cả lúc cài): `npm run rec:start -- --name … --source desktop`, đưa cửa sổ POS lên
+     trên cùng và không đụng máy tới khi xong — chế độ desktop quay mọi thứ nằm trên cùng màn hình (kể cả Claude).
+5. **Kiểm nhanh** 1 khung trước khi up:
+   `node -e "require('child_process').spawnSync(require('ffmpeg-static'),['-y','-ss','2','-i','<file.mp4>','-frames:v','1','<scratchpad>/check.jpg'])"` → Read ảnh.
+6. **Upload**: `prepare_file_upload(filename: "<name>.mp4", contentType: "video/mp4", size: <stat -c %s>)` → ngay lập tức
+   `node .claude/skills/qc-verify-production/scripts/linear-put.mjs <file.mp4> "TC-VU-01 – <mô tả>" <<'JSON' … JSON`
+   → in `[🎬 Video: TC-VU-01 – <mô tả>](assetUrl)` để dán vào comment / sub task.
+7. Video nằm trong `.recordings/` (git-ignored); xoá sau khi đã post comment.
+
 ## 5. Bảng test case (bắt buộc trong mọi comment)
 
 ```
@@ -103,6 +126,8 @@ I have verified that the task passed on dev (version <version-đã-test>) Thank 
 - Ngày dd/MM: TC-VU-01 – <mô tả tiếng Việt>
   ![](url)
 ...
+
+[🎬 Video: TC-VU-01 – <luồng update chính>](url)
 ```
 
 Sau đó đổi trạng thái task → **QC Completed** (`save_issue` state).
@@ -110,8 +135,9 @@ Sau đó đổi trạng thái task → **QC Completed** (`save_issue` state).
 ## 6b. Có FAIL
 
 1. **Mỗi bug = 1 sub task** (`save_issue`): parentId = task, cùng team/project, label `Bug`, state `Todo`,
-   assignee Ngan Huynh. Title: `[POS][Version Update] <mô tả ngắn>`. Body tiếng Việt:
-   `**Mô tả**`, `**Version**`, `**Các bước tái hiện**`, `**Kết quả mong đợi**`, `**Kết quả thực tế**`, ảnh.
+   assignee **Mai Khanh** (`khanh_do@fastboy.net`). Title: `[POS][Version Update] <mô tả ngắn>`. Body tiếng Việt:
+   `**Mô tả**`, `**Version**`, `**Các bước tái hiện**`, `**Kết quả mong đợi**`, `**Kết quả thực tế**`, ảnh,
+   `[🎬 Video: VP-aaaa – tái hiện bug](url)`.
 2. Comment vào task:
 
 ```
@@ -127,9 +153,13 @@ Please help me fix bug @ngan_huynh cc @tienpd @loan_dang
 
 **Hình ảnh minh hoạ**
 ...
+
+[🎬 Video: VP-aaaa – <bug tái hiện>](url)
 ```
 
-3. Assign task cha lại cho Ngan Huynh. Không tự đổi trạng thái khác nếu user không bảo (thường user sẽ bảo chuyển Todo).
+3. Assign task cha cho **Mai Khanh** (`khanh_do@fastboy.net`). Không tự đổi trạng thái khác nếu user không bảo (thường user sẽ bảo chuyển Todo).
+4. Linear có automation tự đổi assignee khi chuyển trạng thái (06/11: chuyển Todo → tự sang Thien Duy). Sau mỗi lần đổi
+   state, đọc lại assignee; lệch → set lại Mai Khanh.
 
 ## 7. Báo lại user
 

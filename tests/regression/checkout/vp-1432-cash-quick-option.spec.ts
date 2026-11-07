@@ -6,13 +6,11 @@
  * ## The sheet and the build disagree on ONE rule
  *
  * The sheet says each tap ADDS the denomination to the entry ($32 + $50 = $82).
- * Every build this suite and volt-qc have driven (1.1.x, re-checked 2026-10-17)
- * REPLACES the entry instead — volt-qc's own live spec PAY-AD1 asserts
- * "$5/$10/$50/$100 THAY số tiền", and CheckoutPage.setCashPreset documents the
- * same. TC-02..04 therefore assert what the SHEET specifies; if they fail with
- * "expected 8200, received 5000" that is the requirement/build mismatch to raise
- * on VP-1432, not a broken test. Set VP1432_PRESET=replace to assert the build's
- * current behaviour instead.
+ * Every build this suite and volt-qc have driven (1.1.x up to 1.1.87, 2026-11-03)
+ * REPLACES the entry instead — volt-qc's later spec PAY-AD1 asserts
+ * "$5/$10/$50/$100 THAY số tiền" (pay-keypad.spec.ts), and
+ * CheckoutPage.setCashPreset documents the same. TC-02..05 therefore assert the
+ * REPLACE rule by default. Set VP1432_PRESET=add to check the original sheet.
  *
  * CREATES DATA AND TAKES A CASH PAYMENT (TC-05). dev / staging only.
  */
@@ -25,7 +23,7 @@ import { checkoutPage, homePage } from '../../../src/pages/index.js';
 import type { CashPreset } from '../../../src/pages/pos/CheckoutPage.js';
 import { Tag, title } from '../../../src/types/testTags.js';
 
-const ADDITIVE = process.env.VP1432_PRESET !== 'replace';
+const ADDITIVE = process.env.VP1432_PRESET === 'add';
 
 /** What the entry should read after tapping `preset` on top of `before`. */
 const expectedAfter = (before: number, preset: number): number => (ADDITIVE ? before + preset : preset);
@@ -84,7 +82,7 @@ describe('VP-1432 — Pay by Cash quick option', () => {
 
   it(
     title(
-      'TC-02 Tapping $50 adds to the default total and enables Complete Payment',
+      'TC-02 Tapping $50 sets the entry to $50; Complete Payment follows whether it covers the due',
       Tag.REGRESSION,
       Tag.WRITE,
     ),
@@ -94,13 +92,13 @@ describe('VP-1432 — Pay by Cash quick option', () => {
 
       const entered = expectedAfter(due, 5_000);
       expect(await checkoutPage.enteredAmountCents()).toBe(entered);
-      // Complete Payment unlocks once the entry covers the due — always true when
-      // presets add; with the build's replace behaviour only when $50 >= due.
+      // Complete Payment unlocks once the entry covers the due: with the build's
+      // replace rule only when $50 >= due (always, under the sheet's add rule).
       expect(await checkoutPage.isCompletePaymentEnabled()).toBe(entered >= due);
     },
   );
 
-  it(title('TC-03 $5 then $100 accumulate', Tag.REGRESSION, Tag.WRITE), async () => {
+  it(title('TC-03 $5 then $100: the last tap wins', Tag.REGRESSION, Tag.WRITE), async () => {
     const due = await freshCashTab();
 
     await checkoutPage.setCashPreset(500);
@@ -111,7 +109,7 @@ describe('VP-1432 — Pay by Cash quick option', () => {
     expect(await checkoutPage.enteredAmountCents()).toBe(expectedAfter(afterFive, 10_000));
   });
 
-  it(title('TC-04 Each denomination adds exactly its own value', Tag.REGRESSION, Tag.WRITE), async () => {
+  it(title('TC-04 Each denomination sets exactly its own value', Tag.REGRESSION, Tag.WRITE), async () => {
     let expected = await freshCashTab();
     for (const preset of [500, 1_000, 5_000, 10_000] as CashPreset[]) {
       await checkoutPage.setCashPreset(preset);

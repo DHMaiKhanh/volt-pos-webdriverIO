@@ -41,6 +41,9 @@ if (!r.ok) {
 const assetUrl = res.assetUrl ?? req.assetUrl ?? res.asset?.url;
 if (!assetUrl) {
   console.log(res.markdown ?? '(PUT OK nhưng JSON không có assetUrl — lấy markdown từ kết quả prepare)');
+} else if (/\.(mp4|webm|mov)$/i.test(file)) {
+  // Video: link (Linear plays it inline), same shape as the dev team's "🎬 Video:" links.
+  console.log(`[🎬 Video: ${caption ?? basename(file)}](${assetUrl})`);
 } else {
   console.log(`![${caption ?? basename(file)}](${assetUrl})`);
 }

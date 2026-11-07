@@ -3,6 +3,7 @@ import { Timeouts } from '../../configs/constants/timeouts.js';
 import { recordAbsent } from '../helpers/deadTime.js';
 import { candidates, type Locator } from '../helpers/selectors.js';
 import { moduleLogger } from '../utils/logger.js';
+import { noteStep } from './evidence.js';
 
 export interface FindOptions {
   /** How long to keep trying the whole candidate chain. */
@@ -128,6 +129,7 @@ export abstract class UiObject {
     const el = await this.find(loc, { visible: true, ...opts });
     await el.waitForClickable({ timeout: opts.timeout ?? Timeouts.MEDIUM });
     this.log.debug(`click ${loc.name}`);
+    noteStep(`${this.constructor.name} › click ${loc.name}`);
     await el.click();
   }
 
@@ -144,6 +146,7 @@ export abstract class UiObject {
     const el = await this.find(loc, { visible: true, ...opts });
     await el.waitForEnabled({ timeout: opts.timeout ?? Timeouts.MEDIUM });
     this.log.debug(`setValue ${loc.name} = ${value}`);
+    noteStep(`${this.constructor.name} › nhập ${loc.name} = "${value}"`);
     await el.setValue(value);
     if (value === '') await this.notifyReact(el, '');
   }

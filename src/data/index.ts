@@ -48,6 +48,7 @@ export {
   fundedActiveGiftCards,
   GIFT_CARD_CATALOG_MERCHANT,
   giftCardCatalog,
+  inactiveGiftCards,
   pickFundedActiveGiftCards,
   requireFundedActiveGiftCard,
 } from './static/giftCards.js';

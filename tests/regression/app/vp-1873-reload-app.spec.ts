@@ -113,8 +113,6 @@ describe('VP-1873 — Reload App', () => {
     },
   );
 
-  it(title('TC-10: reload while offline — PENDING (needs the network cut)'));
-
   it(
     title('TC-11 Reload with an open draft is safe and lands on Home', Tag.REGRESSION, Tag.WRITE, Tag.SLOW),
     async function (this: Mocha.Context): Promise<void> {

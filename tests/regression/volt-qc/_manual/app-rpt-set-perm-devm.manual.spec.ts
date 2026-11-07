@@ -42,14 +42,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   // Needs the app cold-started, restarted or its boot broken (network cut during sync, Windows scaling, splash footer); the lane attaches to an app already past splash and never restarts it.
   it.skip(
     title(
-      '[MANUAL] Lỗi bước khởi động (mất mạng khi sync DB) không làm crash app, app tự thử lại 3 lần rồi báo liên hệ hỗ trợ (APP-014)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // Needs the app cold-started, restarted or its boot broken (network cut during sync, Windows scaling, splash footer); the lane attaches to an app already past splash and never restarts it.
-  it.skip(
-    title(
       '[MANUAL] Có mạng lại trong lúc đang retry thì splash tiếp tục bình thường (APP-015)',
       Tag.REGRESSION,
     ),
@@ -121,14 +113,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
     title('[MANUAL] Phiên đăng nhập được giữ sau khi khởi động lại app (APP-047)', Tag.REGRESSION),
     () => {},
   );
-  // Needs the app cold-started, restarted or its boot broken (network cut during sync, Windows scaling, splash footer); the lane attaches to an app already past splash and never restarts it.
-  it.skip(
-    title(
-      '[MANUAL] Đã đăng nhập online thì khởi động offline vẫn dùng được (Order Flow 1.4) (APP-048)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
 
   /* ---- Install / OS level -------------------------------------------- */
 
@@ -182,14 +166,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   // Signs the device out or in: real QR login needs the GCI Business app on a phone, Staff Token / OTP need tokens issued from Portal, and each case leaves the till on /login (the lane would die on STAFF_TOKEN).
   it.skip(
     title(
-      '[MANUAL] Không tạo được QR khi mất mạng, có mạng lại thì Try Again thành công (APP-029)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // Signs the device out or in: real QR login needs the GCI Business app on a phone, Staff Token / OTP need tokens issued from Portal, and each case leaves the till on /login (the lane would die on STAFF_TOKEN).
-  it.skip(
-    title(
       '[MANUAL] Thiết bị đã gắn merchant A thì quét QR merchant B bị chặn (Order Flow 1.4) (APP-030)',
       Tag.REGRESSION,
     ),
@@ -216,11 +192,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   it.skip(title('[MANUAL] Token sai hoặc hết hạn bị từ chối (APP-035)', Tag.REGRESSION), () => {});
   // Signs the device out or in: real QR login needs the GCI Business app on a phone, Staff Token / OTP need tokens issued from Portal, and each case leaves the till on /login (the lane would die on STAFF_TOKEN).
   it.skip(title('[MANUAL] Token không gắn merchant nào bị từ chối (APP-036)', Tag.REGRESSION), () => {});
-  // Signs the device out or in: real QR login needs the GCI Business app on a phone, Staff Token / OTP need tokens issued from Portal, and each case leaves the till on /login (the lane would die on STAFF_TOKEN).
-  it.skip(
-    title('[MANUAL] Lỗi không xác định (mất mạng, lỗi 5xx) hiện thông báo chung (APP-037)', Tag.REGRESSION),
-    () => {},
-  );
   // Signs the device out or in: real QR login needs the GCI Business app on a phone, Staff Token / OTP need tokens issued from Portal, and each case leaves the till on /login (the lane would die on STAFF_TOKEN).
   it.skip(title('[MANUAL] Token hợp lệ đăng nhập thành công (APP-038)', Tag.REGRESSION), () => {});
   // Signs the device out or in: real QR login needs the GCI Business app on a phone, Staff Token / OTP need tokens issued from Portal, and each case leaves the till on /login (the lane would die on STAFF_TOKEN).
@@ -346,8 +317,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
     ),
     () => {},
   );
-  // Asserts on, or is driven from, fastboy-portal / GoCheckin Business App: another surface this POS lane cannot drive or observe.
-  it.skip(title('[MANUAL] Đóng app hơn 10 phút thì Portal báo Offline (APP-052)', Tag.REGRESSION), () => {});
   // Asserts on, or is driven from, fastboy-portal / GoCheckin Business App: another surface this POS lane cannot drive or observe.
   it.skip(
     title(
@@ -1465,14 +1434,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
   it.skip(
     title(
-      '[MANUAL] Có POS offline → banner "X devices currently offline" và dòng POS offline được highlight (VP-1198 AC) (DEVM-005)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
       '[MANUAL] Tất cả POS Online → không có banner, không dòng nào highlight (DEVM-006)',
       Tag.REGRESSION,
     ),
@@ -1513,31 +1474,7 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
   it.skip(
     title(
-      '[MANUAL] POS đang kết nối hiện Online; POS mất kết nối hiện Offline kèm Offline since (nguồn VP-1198 TC-02) (DEVM-011)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
       '[MANUAL] POS mở app nhưng không thao tác vẫn Online (heartbeat 5 phút thay cho đo lưu lượng sync) (DEVM-012)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
-      '[MANUAL] Mất mạng ngắn (dưới ngưỡng 10 phút) không làm POS chuyển Offline (DEVM-013)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
-      '[MANUAL] Mất mạng quá 10 phút → Offline; có mạng lại → Online trong ≤ 5 phút (DEVM-014)',
       Tag.REGRESSION,
     ),
     () => {},
@@ -1553,23 +1490,7 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
   it.skip(
     title(
-      '[MANUAL] Máy POS ngủ (Sleep) 15 phút → Offline; đánh thức → Online lại không cần mở lại app (DEVM-016)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
       '[MANUAL] Trigger "Device login thành công" cập nhật Last connected và Online (nguồn VP-1198 TC-05.1) (DEVM-017)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
-      '[MANUAL] Trigger "Reconnect sau khi mất mạng" cập nhật Last connected (nguồn VP-1198 TC-05.2) (DEVM-018)',
       Tag.REGRESSION,
     ),
     () => {},
@@ -1593,23 +1514,7 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
   it.skip(
     title(
-      '[MANUAL] Trigger "App closed" cập nhật Last disconnected và Offline (nguồn VP-1198 TC-06.2) (DEVM-022)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
       '[MANUAL] Trigger "Heartbeat timeout" (app chết không đóng sạch) cập nhật Last disconnected sau ngưỡng 10 phút (nguồn VP-1198 TC-06.3) (DEVM-023)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
-      '[MANUAL] Trigger "Internet disconnected" cập nhật Last disconnected và Offline (nguồn VP-1198 TC-06.4) (DEVM-024)',
       Tag.REGRESSION,
     ),
     () => {},
@@ -1665,14 +1570,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
   it.skip(
     title(
-      '[MANUAL] Thay đổi thiết bị lúc POS mất mạng vẫn được đồng bộ lên Portal khi có mạng lại, đúng thời điểm xảy ra (DEVM-031)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
       '[MANUAL] POS chưa từng gắn terminal/printer → Portal không hiện dòng terminal/printer rỗng hay lỗi (DEVM-032)',
       Tag.REGRESSION,
     ),
@@ -1706,22 +1603,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   it.skip(
     title(
       '[MANUAL] Uptime % theo ngày và Uptime 7 ngày tính đúng theo thời gian Online (DEVM-036)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
-      '[MANUAL] POS mới đăng ký chưa đủ 7 ngày/chưa có lịch sử → chỉ hiện ngày có dữ liệu hoặc empty state, không tính ngày trước khi đăng ký là Offline (DEVM-037)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
-      '[MANUAL] Ranh giới ngày tính theo timezone merchant: offline 23:30 → 00:30 chia đúng cho 2 ngày (DEVM-038)',
       Tag.REGRESSION,
     ),
     () => {},
@@ -1769,14 +1650,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
   it.skip(
     title(
-      '[MANUAL] POS Offline: nút Remote View vẫn click được, sau khi thử báo POS offline, audit log Remote fail (nguồn VP-1198 TC-11) (DEVM-044)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
       '[MANUAL] Credential lưu trên device sai → báo lỗi credential, audit log fail với reason tương ứng (nguồn VP-1198 TC-12.1) (DEVM-045)',
       Tag.REGRESSION,
     ),
@@ -1817,31 +1690,7 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
   it.skip(
     title(
-      '[MANUAL] Đang Remote View mà POS bị Disconnect/mất mạng → phiên remote kết thúc có thông báo, Portal không treo (DEVM-050)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
-      '[MANUAL] Disconnect POS Online → POS chuyển Offline, Last disconnected cập nhật, audit log ghi Disconnect (user, result, timestamp) (nguồn VP-1198 TC (DEVM-051)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
       '[MANUAL] Sau Disconnect: POS về /login, màn khách reset, heartbeat dừng; đăng nhập lại bằng QR thì Online lại, thiết bị vẫn Active (không phải Pendin (DEVM-052)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
-      '[MANUAL] Disconnect lúc POS đang mất mạng → khi có mạng lại POS mới bị đưa về /login; trong lúc offline vẫn bán Cash được (DEVM-053)',
       Tag.REGRESSION,
     ),
     () => {},
@@ -1858,14 +1707,6 @@ describe('volt-qc APP / RPT / SET / PERM / DEVM - manual cases', () => {
   it.skip(
     title(
       '[MANUAL] Huỷ ở bước xác nhận Disconnect → không có gì thay đổi, không ghi audit log (DEVM-055)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // DEVM is a fastboy-portal page (device list / detail / history / remote view / disconnect / support commands / audit log); the POS lane cannot drive or read Portal, and many cases also need a network cut, sleep, a second POS or terminal / printer hardware.
-  it.skip(
-    title(
-      '[MANUAL] Disconnect POS đang Offline (máy tắt) → kết quả rõ ràng; lần mở app sau POS về /login (DEVM-056)',
       Tag.REGRESSION,
     ),
     () => {},

@@ -212,8 +212,6 @@ describe('volt-qc 09 TIME KEEPING — manual', () => {
     manual('Shift IN before midnight returns the staff to Unavailable on the new day (TIME-024)'),
     () => {},
   );
-  // Needs a real network cut and a sync to Portal.
-  it.skip(manual('Offline clock-in is stored locally and synced when back online (TIME-025)'), () => {});
   // Needs a second POS.
   it.skip(manual('Clock-in on POS A shows on POS B (TIME-026)'), () => {});
   // Staff Code clock-in with On-time / In-late (VP-2722) is not shipped on build 1.1.56.
@@ -318,9 +316,4 @@ describe('volt-qc 15 TURN — manual', () => {
   it.skip(manual('Turn Settings changed on device A reach device B (TURN-081)'), () => {});
   it.skip(manual('Simultaneous manual adjustments on two devices add up (TURN-082)'), () => {});
   it.skip(manual('Order paid on device B updates the board on device A (TURN-083)'), () => {});
-  // Needs network control and a second POS.
-  it.skip(
-    manual('Offline adjustments / settings saves sync to other devices when back online (TURN-084)'),
-    () => {},
-  );
 });

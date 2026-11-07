@@ -164,12 +164,12 @@ export const VqhEditor = {
  * ------------------------------------------------------------------------- */
 
 export const VqhCustomer = {
-  bar: { css: 'main div.h-24.bg-turquoise-topaz-20', nth: 0 } as VqcQuery,
+  bar: { css: 'main div.bg-turquoise-topaz-20:is(.h-24, .min-h-24)', nth: 0 } as VqcQuery,
   barButtons: [
-    { css: 'main div.h-24.bg-turquoise-topaz-20', nth: 0 },
+    { css: 'main div.bg-turquoise-topaz-20:is(.h-24, .min-h-24)', nth: 0 },
     { role: 'button' },
   ] as readonly VqcQuery[],
-  groupChipCss: 'main div.h-24.bg-turquoise-topaz-20 span.bg-green',
+  groupChipCss: 'main div.bg-turquoise-topaz-20:is(.h-24, .min-h-24) span.bg-green',
   noCustomerFound: { text: 'No customer found', nth: 0 } as VqcQuery,
   nameBox: { css: 'input', placeholder: 'Enter customer name', nth: 0 } as VqcQuery,
 } as const;

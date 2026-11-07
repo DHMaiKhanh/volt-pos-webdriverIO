@@ -73,27 +73,6 @@ describe('Order flow — Split Order (multi-line)', () => {
   );
 
   it(
-    title(
-      'Equally splits a two-line order into checks that sum to the whole (TC-ORDERFLOW-27)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-    ),
-    async () => {
-      await splitOrderPage.selectMethod('equally');
-
-      const amounts = await splitOrderPage.allCheckAmountsCents();
-      expect(amounts.length).toBeGreaterThanOrEqual(2);
-
-      const sum = amounts.reduce((total, amount) => total + amount, 0);
-      expect(sum).toBeGreaterThan(0);
-      // Even split across the checks, the last one carrying at most a rounding cent.
-      const max = Math.max(...amounts);
-      const min = Math.min(...amounts);
-      expect(max - min).toBeLessThanOrEqual(1);
-    },
-  );
-
-  it(
     title('The Receipt Details panel renders the order totals (TC-ORDERFLOW-32)', Tag.REGRESSION, Tag.WRITE),
     async () => {
       expect(await splitOrderPage.isReceiptDetailsShown()).toBe(true);

@@ -230,19 +230,19 @@ E2E case, chỉ là bằng chứng cho các GUARD về reliability).
 
 ### 5.2 Case
 
-| TC        | Loại  | Case                                                                           | Nguồn           | Expected                          | Ưu tiên | Trạng thái ticket | Chạy |
-| --------- | ----- | ------------------------------------------------------------------------------ | --------------- | --------------------------------- | ------- | ----------------- | ---- |
-| TIP-01    | SPEC  | Adjust Tip chỉ Unsettled + Card(Auth)/Cash/Other, không Gift Card              | doc (TC-69)     | Gift Card ẩn Adjust Tip           | P1      | —                 | 🌙   |
-| TIP-02    | SPEC  | Order nhiều method → chọn 1 method để adjust                                   | doc (TC-70)     | Bắt chọn method                   | P2      | —                 | 🌙   |
-| TIP-03    | SPEC  | Split Tip 3 mode (Evenly/Proportion/Manual), ẩn khi 1 staff                    | doc (TC-34..38) | 3 tab + Confirm; tổng = Total Tip | P2      | —                 | ✅   |
-| TIP-R1 🐞 | GUARD | Adjust Tip **prefill tip cũ** thay vì bắt đầu **$0**                           | **VP-3936**     | Bắt đầu $0                        | P2      | Done              | 🌙   |
-| TIP-R2 🐞 | GUARD | Adjust Tip cho nhập tip ≤ tip gốc, **chỉ fail lúc processing**                 | **VP-3935**     | Validate ngay khi nhập            | P2      | Done              | 🌙   |
-| TIP-R3 🐞 | GUARD | **Adjust tip fail cho mọi merchant user**                                      | **VP-4157**     | Adjust tip thành công             | P1      | Done              | 🌙💳 |
-| TIP-R4 🐞 | GUARD | Tính **point đang bao gồm tiền tip**                                           | **VP-4167**     | Point loại trừ tip                | P1      | Verified Prod     | 🌙   |
-| TIP-R5 🐞 | GUARD | Modal Split Tip tab "Split Evenly" **hiển thị sai giá trị ban đầu** khi vừa mở | **VP-4192**     | Giá trị đúng ngay khi mở          | P2      | In Review         | 🌙   |
-| TIP-R6 🐞 | GUARD | Tip **luôn Proportion** trên đơn P8D-completed dù setting Split Evenly         | **VP-3976**     | Honor setting                     | P2      | Done              | 🌙   |
-| TIP-R7 🐞 | GUARD | Card + Split tip **kẹt processing → Payment Failed**                           | **VP-4209**     | Thanh toán thành công             | P1      | Done              | 💳   |
-| TIP-R8 🐞 | GUARD | Thiếu **Split Tip** cho order Successful-Unsettled có Tip trong Order History  | **VP-3884**     | Có action Split Tip               | P2      | Done              | 🌙   |
+| TC        | Loại  | Case                                                                           | Nguồn           | Expected                                                               | Ưu tiên | Trạng thái ticket | Chạy |
+| --------- | ----- | ------------------------------------------------------------------------------ | --------------- | ---------------------------------------------------------------------- | ------- | ----------------- | ---- |
+| TIP-01    | SPEC  | Adjust Tip chỉ Unsettled + Card(Auth)/Cash/Other, không Gift Card              | doc (TC-69)     | Gift Card ẩn Adjust Tip                                                | P1      | —                 | 🌙   |
+| TIP-02    | SPEC  | Order nhiều method → chọn 1 method để adjust                                   | doc (TC-70)     | Bắt chọn method                                                        | P2      | —                 | 🌙   |
+| TIP-03    | SPEC  | Split Tip 3 mode (Evenly/Proportion/Manual), ẩn khi 1 staff                    | doc (TC-34..38) | 3 tab + Confirm; tổng = Total Tip                                      | P2      | —                 | ✅   |
+| TIP-R1 🐞 | GUARD | Adjust Tip **prefill tip cũ** thay vì bắt đầu **$0**                           | **VP-3936**     | Hiện tip cũ, phím đầu **thay** (không cộng) — test ở oh-tip OH-185/186 | P2      | Done              | 🌙   |
+| TIP-R2 🐞 | GUARD | Adjust Tip cho nhập tip ≤ tip gốc, **chỉ fail lúc processing**                 | **VP-3935**     | Validate ngay khi nhập                                                 | P2      | Done              | 🌙   |
+| TIP-R3 🐞 | GUARD | **Adjust tip fail cho mọi merchant user**                                      | **VP-4157**     | Adjust tip thành công                                                  | P1      | Done              | 🌙💳 |
+| TIP-R4 🐞 | GUARD | Tính **point đang bao gồm tiền tip**                                           | **VP-4167**     | Point loại trừ tip                                                     | P1      | Verified Prod     | 🌙   |
+| TIP-R5 🐞 | GUARD | Modal Split Tip tab "Split Evenly" **hiển thị sai giá trị ban đầu** khi vừa mở | **VP-4192**     | Giá trị đúng ngay khi mở                                               | P2      | In Review         | 🌙   |
+| TIP-R6 🐞 | GUARD | Tip **luôn Proportion** trên đơn P8D-completed dù setting Split Evenly         | **VP-3976**     | Honor setting                                                          | P2      | Done              | 🌙   |
+| TIP-R7 🐞 | GUARD | Card + Split tip **kẹt processing → Payment Failed**                           | **VP-4209**     | Thanh toán thành công                                                  | P1      | Done              | 💳   |
+| TIP-R8 🐞 | GUARD | Thiếu **Split Tip** cho order Successful-Unsettled có Tip trong Order History  | **VP-3884**     | Có action Split Tip                                                    | P2      | Done              | 🌙   |
 
 ---
 

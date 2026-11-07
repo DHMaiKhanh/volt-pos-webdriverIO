@@ -92,7 +92,8 @@ async function ensureReopenedCheckout(id: string): Promise<void> {
   if (!onCheckout) await reopenToCheckout(id);
 }
 
-describe('VP-4912 — Re-Open after a split payment: Close Ticket, no forced Void', () => {
+// PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+describe.skip('VP-4912 — Re-Open after a split payment: Close Ticket, no forced Void', () => {
   before(async () => {
     assertWritesAllowed('settle and re-open split orders');
     await returnToHome();

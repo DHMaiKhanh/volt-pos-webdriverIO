@@ -90,7 +90,8 @@ describe('Order flow — Order detail actions', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'An unsettled order offers Cancel / Re-Open, not Refund (TC-ORDERFLOW-55)',
       Tag.REGRESSION,

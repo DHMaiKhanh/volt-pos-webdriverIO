@@ -15,47 +15,6 @@
 import { Tag, title } from '../../../../src/types/testTags.js';
 
 describe('volt-qc 03 PAY — manual cases', () => {
-  /* --------------------------- Network cut ---------------------------- */
-
-  // Network cut: needs the till's network dropped mid-flow and restored.
-  it.skip(
-    title('[MANUAL] Cash payment works offline and syncs when the network returns (PAY-030)', Tag.REGRESSION),
-    () => {},
-  );
-  // Network cut.
-  it.skip(title('[MANUAL] Gift Card cannot be used while offline (PAY-052)', Tag.REGRESSION), () => {});
-  // Network cut during a void.
-  it.skip(
-    title(
-      '[MANUAL] A void that fails offline shows an error and keeps the transactions (PAY-158)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // Network cut.
-  it.skip(
-    title(
-      '[MANUAL] Card / Gift Card / Other while offline show the "Disconnected" dialog (PAY-159)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // Network cut.
-  it.skip(
-    title(
-      '[MANUAL] "Pay with cash" from the Disconnected dialog switches to Cash and completes offline (PAY-160)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // Network cut + restore.
-  it.skip(
-    title(
-      '[MANUAL] Back online → Try Again closes the Disconnected dialog and keeps the method (PAY-161)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
   // Network cut right after Complete Payment.
   it.skip(
     title(

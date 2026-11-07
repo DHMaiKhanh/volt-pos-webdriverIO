@@ -17,13 +17,6 @@ import { Tag, title } from '../../../../src/types/testTags.js';
 const manual = (summary: string): string => title(`[MANUAL] ${summary}`, Tag.REGRESSION);
 
 describe('volt-qc 13 CUSTOMER DISPLAY — manual', () => {
-  // Needs the network cut on the till while the cart is mirrored.
-  it.skip(
-    manual(
-      'Offline → Card / Gift Card / Other tiles dim on the customer display, Cash stays normal (CD-021)',
-    ),
-    () => {},
-  );
   // Needs the dual-screen GCI ticket scanner.
   it.skip(
     manual(
@@ -40,13 +33,6 @@ describe('volt-qc 13 CUSTOMER DISPLAY — manual', () => {
   it.skip(
     manual(
       'Customer display follows the terminal states: Total Amount, Insert/Tap/Swipe, Processing, success, failed, timed out (CD-056)',
-    ),
-    () => {},
-  );
-  // Needs the network cut while Card / Gift Card is selected.
-  it.skip(
-    manual(
-      'Offline during Card / Gift Card → "Oops... Disconnected" on both screens, back to the cart when online (CD-057)',
     ),
     () => {},
   );
@@ -203,20 +189,6 @@ describe('volt-qc 14 E2E — manual', () => {
     manual('Portal ↔ POS sync of Discount Setting, customer note, Reward value, Passcode Setting (E2E-054)'),
     () => {},
   );
-  // Needs the network cut mid-payment.
-  it.skip(
-    manual(
-      'Offline mid-payment: only Cash completes, reports warn offline, everything syncs back once online (E2E-055)',
-    ),
-    () => {},
-  );
-  // Needs the network dropped exactly on Complete Payment.
-  it.skip(
-    manual(
-      'Network drops on Complete Payment with Other: no half/duplicate transaction, Try Again completes once (E2E-056)',
-    ),
-    () => {},
-  );
   // Needs a card terminal + gateway reconciliation (never on prod).
   it.skip(
     manual(
@@ -273,13 +245,6 @@ describe('volt-qc 14 E2E — manual', () => {
   it.skip(
     manual(
       'Wrong-store guard: not store 20258 "DEV - Volt POS TEST" on POS or GoCheckin → stop, touch nothing (E2E-068)',
-    ),
-    () => {},
-  );
-  // Needs the app opened without network / with an expired token.
-  it.skip(
-    manual(
-      'Boot offline / with an expired session: splash does not crash, retries, expired token → Login (E2E-069)',
     ),
     () => {},
   );

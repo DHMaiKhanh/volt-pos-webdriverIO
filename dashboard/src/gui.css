@@ -766,6 +766,134 @@
   font-size: 12px;
 }
 
+.ibadge.skip {
+  background: var(--skip);
+  width: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+.inbox-cause {
+  font-size: 12px;
+  color: var(--fail-text);
+  margin-top: 3px;
+}
+
+/* ── Failure detail: diagnosis, screenshot replay, last steps ───────────── */
+.fail-detail {
+  padding: 0 18px 14px 50px;
+}
+.fail-detail .inbox-err {
+  margin: 8px 0 12px;
+  max-height: 220px;
+  overflow: auto;
+}
+.diag {
+  padding: 10px 12px;
+  border-left: 3px solid var(--fail);
+  background: var(--surface-2);
+  border-radius: 6px;
+  font-size: 13px;
+}
+.evidence {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(220px, 2fr);
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .evidence {
+    grid-template-columns: 1fr;
+  }
+}
+.replay-frame {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  cursor: zoom-in;
+}
+.replay-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.replay-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.replay-bar input[type='range'] {
+  flex: 1;
+  min-width: 120px;
+}
+.replay-label {
+  font-size: 12px;
+  color: var(--muted);
+  width: 100%;
+}
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: zoom-out;
+  color: #fff;
+  font-size: 13px;
+}
+.lightbox img {
+  max-width: 95vw;
+  max-height: 88vh;
+}
+.ev-side h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.steps {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.steps li.last {
+  font-weight: 700;
+  color: var(--fail-text);
+}
+.ev-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.ev-links a {
+  color: var(--accent);
+}
+.stack {
+  white-space: pre-wrap;
+  max-height: 180px;
+  overflow: auto;
+}
+.skip-tests {
+  list-style: none;
+  margin: 0;
+  padding: 0 18px 12px 50px;
+}
+.skip-tests li {
+  padding: 6px 0;
+  border-top: 1px dashed var(--border);
+}
+
 /* ── Console ────────────────────────────────────────────────────────────── */
 .console .log.big {
   height: calc(100vh - 230px);
@@ -983,4 +1111,92 @@ select.app-store {
 .apps-note.bad {
   background: var(--fail-wash);
   color: var(--fail-text);
+}
+
+/* ── "Chạy tất cả" gate: web pages + terminal per store (PreflightBar.tsx) ── */
+.preflight {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 8px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+}
+.preflight.ok {
+  box-shadow: inset 3px 0 0 var(--pass);
+}
+.preflight.bad {
+  box-shadow: inset 3px 0 0 var(--fail);
+}
+.pf-head {
+  display: grid;
+  gap: 2px;
+}
+.pf-stores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.pf-store {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pf-name {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.pf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: help;
+}
+.pf-chip i {
+  font-style: normal;
+  font-weight: 700;
+}
+.pf-chip.ok {
+  background: var(--pass-wash);
+  border-color: transparent;
+  color: var(--pass-text);
+}
+.pf-chip.login,
+.pf-chip.unknown,
+.pf-chip.closed {
+  background: var(--skip-wash);
+  border-color: transparent;
+}
+.pf-chip.nocreds,
+.pf-chip.down {
+  background: var(--fail-wash);
+  border-color: transparent;
+  color: var(--fail-text);
+}
+.pf-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+.pf-problems {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 4px 0 0 18px;
+  color: var(--fail-text);
+}
+.banner.bad {
+  white-space: pre-line;
+}
+@media (max-width: 900px) {
+  .preflight {
+    grid-template-columns: 1fr;
+  }
 }

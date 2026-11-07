@@ -60,6 +60,7 @@
     "portal:earn-on-tip:off": "cross-env ENV=dev PORTAL_PROFILE=1 SPEC_RETRIES=0 PORTAL_EARN_ON_TIP=off wdio run configs/wdio/wdio.web.conf.ts --spec tests/web/portal-earn-on-tip.spec.ts",
     "portal:vp-5338": "cross-env ENV=dev PORTAL_PROFILE=1 SPEC_RETRIES=0 wdio run configs/wdio/wdio.web.conf.ts --spec tests/web/portal-vp-5338-category-palette.spec.ts",
     "portal:vp-4809": "cross-env ENV=dev PORTAL_PROFILE=1 SPEC_RETRIES=0 wdio run configs/wdio/wdio.web.conf.ts --spec tests/web/portal-vp-4809-font-size.spec.ts",
+    "portal:vp-5627": "cross-env ENV=dev PORTAL_PROFILE=1 SPEC_RETRIES=0 wdio run configs/wdio/wdio.web.conf.ts --spec tests/web/portal-vp-5627-custom-promo-split.spec.ts",
     "portal:vp-4390": "cross-env ENV=dev PORTAL_PROFILE=1 SPEC_RETRIES=0 wdio run configs/wdio/wdio.web.conf.ts --spec tests/web/portal-vp-4390-receipt-business-phone.spec.ts",
     "test:earn-points-on-tip:full": "tsx scripts/earn-points-on-tip-full.ts",
     "//dashboard": "React run dashboard (separate package in dashboard/). The DashboardReporter feeds it after every test lane; these just start/build the viewer.",
@@ -92,7 +93,10 @@
     "//unit": "Pure-function tests for src/domain — no app, no driver. node:test via tsx, so no extra dependency. Runs in ~1s and gates a commit.",
     "test:unit": "node --import tsx --test \"tests/unit/**/*.test.ts\"",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test:unit",
-    "clean": "rimraf reports logs .tmp"
+    "clean": "rimraf reports logs .tmp",
+    "rec:start": "node scripts/record.mjs start",
+    "rec:stop": "node scripts/record.mjs stop",
+    "rec:status": "node scripts/record.mjs status"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
@@ -115,6 +119,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-wdio": "^9.31.0",
     "expect-webdriverio": "^6.0.9",
+    "ffmpeg-static": "^5.2.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.3.0",
     "prettier": "^3.4.2",

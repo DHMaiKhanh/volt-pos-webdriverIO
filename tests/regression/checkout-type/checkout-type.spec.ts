@@ -482,15 +482,8 @@ describe('Checkout Type — points on completion (VP-4591)', () => {
     );
   });
 
-  describe('6. Merge / Offline / Compatibility', () => {
+  describe('6. Merge / Compatibility', () => {
     it(title('CHK-POS-034: merge of checked-in orders keeps the merge flow — PENDING (needs 2 check-ins)'));
-    it(
-      title(
-        'CHK-POS-035: Auto completed offline earns the bonus once after sync — PENDING (no network harness)',
-      ),
-    );
-    it(title('CHK-POS-036: Manual completed offline earns once after sync — PENDING (no network harness)'));
     it(title('CHK-POS-037: a pre-#3031 build reads Auto as Manual — PENDING (needs the old build)'));
-    it(title('CHK-POS-038: Windows and Android give the same result — PENDING (Android P8D is manual)'));
   });
 });

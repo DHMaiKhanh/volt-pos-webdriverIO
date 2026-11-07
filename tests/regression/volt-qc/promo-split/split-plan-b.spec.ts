@@ -26,6 +26,7 @@ import {
   VqpsSplit,
   VqpsSuccess,
 } from '../../../../src/constants/testids.voltqc-promo-split.js';
+import { ensurePasscodeGateOn } from '../../../../src/flows/index.js';
 import { step } from '../../../../src/helpers/steps.js';
 import { settle } from '../../../../src/helpers/wait.js';
 import { voltQcProbe as P } from '../../../../src/pages/voltqc/pos/VoltQcProbe.js';
@@ -447,7 +448,8 @@ describe('volt-qc 05 SPLIT plan B — gift card, lock, after-payment, tips, void
    * ======================================================================= */
 
   describe('SPLIT-M After payment', () => {
-    it(
+    // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+    it.skip(
       title(
         'SPLIT-M1 Re-open a split order: re-open checkout Enter Amount $0.00 on 4 methods; Edit Order locks amounts, note editable; Re-Open Done keeps the checks (SPLIT-071, SPLIT-090)',
         Tag.REGRESSION,
@@ -711,6 +713,7 @@ describe('volt-qc 05 SPLIT plan B — gift card, lock, after-payment, tips, void
           console.warn('SPLIT-O1: needs VOLT_STAFF_CODE / STAFF_PASSCODE');
           this.skip();
         }
+        await ensurePasscodeGateOn('cancel_order'); // another spec may have left the gate off
         await app.clearPasscodeSkip();
         const id = track(await app.createOrder());
         await S.openSplit();
@@ -771,6 +774,7 @@ describe('volt-qc 05 SPLIT plan B — gift card, lock, after-payment, tips, void
       ),
       async function () {
         this.timeout(8 * 60_000);
+        await ensurePasscodeGateOn('cancel_order'); // another spec may have left the gate off
         await app.clearPasscodeSkip();
         const id = track(await app.createOrder());
         await S.openSplit();

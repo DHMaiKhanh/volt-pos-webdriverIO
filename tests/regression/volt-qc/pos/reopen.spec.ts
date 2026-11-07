@@ -50,7 +50,8 @@ async function openSettled(code: string): Promise<void> {
   expect(status).toContain('Successful - Settled');
 }
 
-describe('volt-qc 19 RE-OPEN — settled orders (read-only)', () => {
+// PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+describe.skip('volt-qc 19 RE-OPEN — settled orders (read-only)', () => {
   after(async () => {
     await returnToHome().catch(() => undefined);
   });

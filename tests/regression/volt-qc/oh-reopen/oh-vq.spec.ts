@@ -94,7 +94,8 @@ describe('volt-qc 07 ORDER HISTORY — gift card, split, reports, settings, Viet
 
   /* ---------------- gift card ---------------- */
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'A gift-card top-up order lists "Gift Card [****-****-xxxx]" under Store; in reopen that line is read-only (OH-071, OH-163)',
       Tag.REGRESSION,
@@ -201,7 +202,8 @@ describe('volt-qc 07 ORDER HISTORY — gift card, split, reports, settings, Viet
 
   /* ---------------- reports ---------------- */
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'After moving an order to another staff through reopen, Staff Income shows its order and tip under the new staff (OH-162)',
       Tag.REGRESSION,

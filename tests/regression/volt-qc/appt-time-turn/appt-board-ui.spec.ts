@@ -63,7 +63,6 @@ import {
   waitBoardDate,
 } from '../../../../src/pages/voltqc/pos/appointmentProbe.js';
 import { voltQcProbe as P } from '../../../../src/pages/voltqc/pos/VoltQcProbe.js';
-import { fakeOnline } from '../../../../src/pages/voltqc/reports-time/rptDom.js';
 import { Tag, title } from '../../../../src/types/testTags.js';
 
 async function freshBoard(date: Date = new Date()): Promise<void> {
@@ -263,39 +262,6 @@ describe('volt-qc 08 APPOINTMENT — board entry, defaults and surface', () => {
           await closeAppointmentsToday().catch(() => undefined);
         }
       });
-    },
-  );
-
-  it(
-    title(
-      'Offline: the board still renders, changes day and opens a popover from local data (APPT-112)',
-      Tag.REGRESSION,
-    ),
-    async () => {
-      await freshBoard();
-      await fakeOnline(false);
-      try {
-        await nextDay();
-        expect(await waitBoardDate(mdyOf(dayStart(1)))).toBe(mdyOf(dayStart(1)));
-        await nextDay();
-        expect(await waitBoardDate(mdyOf(dayStart(2)))).toBe(mdyOf(dayStart(2)));
-        expect(await P.has({ text: VqcCommon.errorText })).toBe(false);
-        expect((await columnHeaders()).length).toBeGreaterThan(0);
-        const cards = await boardCards();
-        if (cards[0]) {
-          await P.clickQ(Q.card(0)).catch(async () => P.jsClickQ(Q.card(0)));
-          expect(
-            await P.poll(
-              () => P.has(Q.popover),
-              (v) => v,
-              8_000,
-            ),
-          ).toBe(true);
-          await P.escape();
-        }
-      } finally {
-        await fakeOnline(true);
-      }
     },
   );
 

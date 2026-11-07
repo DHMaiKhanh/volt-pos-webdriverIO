@@ -117,7 +117,7 @@ describe('volt-qc 07 ORDER HISTORY — Adjust Tip / Split Tip (write)', () => {
 
   it(
     title(
-      'Single-tender order opens Adjust Tip pre-filled; saving $5 on cash updates Tip, Total, the Got line and the staff tip (OH-184, OH-189)',
+      'Single-tender order opens Adjust Tip at the current tip ($0.00 when untipped); saving $5 on cash updates Tip, Total, the Got line and the staff tip (OH-184, OH-189)',
       Tag.REGRESSION,
       Tag.WRITE,
     ),
@@ -367,7 +367,8 @@ describe('volt-qc 07 ORDER HISTORY — Adjust Tip / Split Tip (write)', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'Two Other txns after a reopen: Adjust Tip opens the "Adjust Order Tip" list, one Adjust Tip per txn, the chosen one gets the tip (OH-192, RO-512)',
       Tag.REGRESSION,

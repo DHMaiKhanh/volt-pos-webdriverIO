@@ -157,7 +157,8 @@ async function withTipMethod(
   }
 }
 
-describe('volt-qc 17 RE-OPEN — fixtures, customers, split, gift card, reports (write)', () => {
+// PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+describe.skip('volt-qc 17 RE-OPEN — fixtures, customers, split, gift card, reports (write)', () => {
   afterEach(async () => {
     await leaveReopenVq();
   });

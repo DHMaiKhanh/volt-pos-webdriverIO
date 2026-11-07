@@ -16,16 +16,6 @@
 import { Tag, title } from '../../../../src/types/testTags.js';
 
 describe('volt-qc 04 PROMO / 05 SPLIT — manual cases', () => {
-  /* ---------------- Portal: preset promotions ---------------- */
-
-  // Network cut before opening the dialog.
-  it.skip(
-    title(
-      '[MANUAL] Promotions fail to load offline: toast, "No promotions available", Custom Discount still works (PROMO-006)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
   // Portal: an Active 10% promotion for the customer's group.
   it.skip(
     title('[MANUAL] Apply a preset % promotion to every service (PROMO-007)', Tag.REGRESSION),
@@ -291,19 +281,9 @@ describe('volt-qc 04 PROMO / 05 SPLIT — manual cases', () => {
     ),
     () => {},
   );
-  // Network cut.
-  it.skip(title('[MANUAL] Selling a card offline queues the top-up (PROMO-139)', Tag.REGRESSION), () => {});
   // Network cut exactly while pressing Pay.
   it.skip(
     title('[MANUAL] A failed redeem rolls its transaction back (VP-3565) (PROMO-149)', Tag.REGRESSION),
-    () => {},
-  );
-  // Network cut on checkout.
-  it.skip(
-    title(
-      '[MANUAL] Offline: Gift Card cannot be selected / "Oops... Disconnected" (PROMO-150)',
-      Tag.REGRESSION,
-    ),
     () => {},
   );
   // Receipt printer.
@@ -335,38 +315,6 @@ describe('volt-qc 04 PROMO / 05 SPLIT — manual cases', () => {
     title('[MANUAL] Card code, status, balance and history on Portal match POS (PROMO-186)', Tag.REGRESSION),
     () => {},
   );
-  // Network cut + restore.
-  it.skip(
-    title(
-      '[MANUAL] Sell a new card offline: Cash only, top-up pending, syncs Active when online (VP-1261) (PROMO-187)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // Network cut + restore.
-  it.skip(
-    title(
-      '[MANUAL] Top up an Active card offline: balance rises once after sync (VP-1261) (PROMO-188)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // Network cut.
-  it.skip(
-    title(
-      '[MANUAL] An offline gift-card sale can only be paid in Cash (VP-1261) (PROMO-189)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  // Network cut.
-  it.skip(
-    title(
-      '[MANUAL] Completing an offline gift-card sale shows the queued dialog that needs OK (VP-1261) (PROMO-190)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
   // Needs the app data folder inspected with dev help (encryption at rest).
   it.skip(
     title(
@@ -381,11 +329,6 @@ describe('volt-qc 04 PROMO / 05 SPLIT — manual cases', () => {
       '[MANUAL] A flaky network during sync neither loses nor doubles a top-up (VP-1261) (PROMO-192)',
       Tag.REGRESSION,
     ),
-    () => {},
-  );
-  // Network cut with several queued top-ups.
-  it.skip(
-    title('[MANUAL] Several offline top-ups each sync exactly once (VP-1261) (PROMO-193)', Tag.REGRESSION),
     () => {},
   );
 
@@ -496,16 +439,6 @@ describe('volt-qc 04 PROMO / 05 SPLIT — manual cases', () => {
     () => {},
   );
 
-  /* ---------------- SPLIT: network / second POS ---------------- */
-
-  // Network cut on the split screen (volt-qc net proxy is not ported).
-  it.skip(
-    title(
-      '[MANUAL] Offline on the split screen: Other / Gift Card / Card locked, Cash still pays (SPLIT-094)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
   // Second POS on the same merchant.
   it.skip(
     title(

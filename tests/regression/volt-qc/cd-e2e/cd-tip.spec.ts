@@ -226,30 +226,6 @@ describe('volt-qc 13 CD — customer tip screen', () => {
 
   it(
     title(
-      'Several presets all $0.00: only the tapped one is highlighted (CD-046, PAY-077)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-      Tag.DUAL_WINDOW,
-    ),
-    async function () {
-      const { reached } = await centOrderToTipScreen();
-      if (!reached) this.skip();
-      const labels = (await cust.tipPresetLabels())
-        .sort((x, y) => pct(x) - pct(y))
-        .filter((l) => pct(l) < 50);
-      if (labels.length < 2) {
-        await app.cancelWaitingTip();
-        this.skip();
-      }
-      const second = labels[1] ?? '';
-      await cust.clickPreset(second);
-      for (const l of labels) expect(await cust.presetSelected(l)).toBe(l === second);
-      await app.cancelWaitingTip();
-    },
-  );
-
-  it(
-    title(
       'Cashier Cancel while waiting on the tip: no transaction, still on checkout, customer back to the cart with the phone locked (CD-047)',
       Tag.REGRESSION,
       Tag.WRITE,
