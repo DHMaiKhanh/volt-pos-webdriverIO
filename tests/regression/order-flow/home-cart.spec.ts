@@ -172,11 +172,21 @@ describe('Order flow — Home & Cart', () => {
     it(
       title('Editing a cart line changes its price (TC-ORDERFLOW-22)', Tag.REGRESSION, Tag.WRITE),
       async () => {
+        // The editor holds the BASE price; the cart line carries the Portal
+        // "Service fee (%)" (Store Settings › Payment & transactions › Tax & pricing,
+        // 3% on merchant 14 — override with PORTAL_SERVICE_FEE_PCT when it changes).
+        // The store's fee is data, not a constant (tiệm 14 moved 3% → 10% on 2026-10-30):
+        // derive it from the cart BEFORE the edit (subtotal ÷ editor base price) unless
+        // PORTAL_SERVICE_FEE_PCT pins it explicitly.
+        const subtotalBefore = await homePage.cartSubtotal();
         await homePage.openServiceEditor();
         expect(await homePage.isServiceEditorShown()).toBe(true);
         // The field opens on the line's current price.
         const original = await homePage.serviceEditorPriceCents();
         expect(original).toBeGreaterThan(0);
+        const feeFactor = process.env.PORTAL_SERVICE_FEE_PCT
+          ? 1 + Number(process.env.PORTAL_SERVICE_FEE_PCT) / 100
+          : Math.round((subtotalBefore / original) * 100) / 100;
 
         // Zero the field and enter a new price, then read back whatever the currency
         // mask settled on — the assertion checks the edit took AND reconciles, not
@@ -186,8 +196,12 @@ describe('Order flow — Home & Cart', () => {
         expect(edited).not.toBe(original);
         await homePage.saveServiceEditor();
 
-        // A single line, so the cart subtotal is exactly the edited line price.
-        expectCentsEqual(await homePage.cartSubtotal(), edited, 'cart subtotal after a price edit');
+        // A single line, so the cart subtotal is the edited base price plus the service fee.
+        expectCentsEqual(
+          await homePage.cartSubtotal(),
+          Math.round(edited * feeFactor),
+          'cart subtotal after a price edit',
+        );
       },
     );
 

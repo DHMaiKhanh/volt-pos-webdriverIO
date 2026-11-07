@@ -205,7 +205,8 @@ describe('volt-qc 03 PAY — fees, card, re-open', function () {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'Re-opening a paid cash order lists the existing payment in Total Paid, Remaining $0.00, and offers Re-Open Done (PAY-055)',
       Tag.REGRESSION,

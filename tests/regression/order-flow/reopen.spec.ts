@@ -22,7 +22,8 @@
 
 import { title } from '../../../src/types/testTags.js';
 
-describe('Order flow — Re-open Order', () => {
+// PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+describe.skip('Order flow — Re-open Order', () => {
   it(title('TC-ORDERFLOW-65: re-open allowed only once — PENDING (LINEAR-ONLY, mutating)'));
 
   it(title('TC-ORDERFLOW-66: button reads "Continue Re-open" mid-flow — PENDING (LINEAR-ONLY, mutating)'));

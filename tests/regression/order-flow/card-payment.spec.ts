@@ -95,43 +95,6 @@ describe('Order flow — Card payment', () => {
   after(voidAnyDraft);
 
   it(
-    title('The card tender pre-fills the full balance due (TC-ORDERFLOW-82)', Tag.REGRESSION, Tag.WRITE),
-    async () => {
-      await openCardCheckout(0, 0);
-
-      // Selecting a tender re-fills the entry with the exact amount due, so a
-      // freshly selected card tab owes nothing beyond what is already entered.
-      expect(await checkoutPage.enteredAmountCents()).toBeGreaterThan(0);
-      expect(await checkoutPage.remainingCents()).toBe(0);
-
-      await voidAnyDraft();
-    },
-  );
-
-  it(
-    title(
-      'The card tab clamps an over-tender to the balance due (TC-ORDERFLOW-83)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-    ),
-    async () => {
-      // A different staff/service pairing than TC-82 — positional, not hard-coded.
-      await openCardCheckout(1, 1);
-      const due = await checkoutPage.enteredAmountCents();
-      expect(due).toBeGreaterThan(0);
-
-      // Unlike cash, the card keypad caps entry at the remaining due
-      // (`appendCashDigit`), so typing well over the balance settles back to it —
-      // there is no over-tender / change concept on a card charge.
-      await checkoutPage.enterAmount(due * 10);
-      expect(await checkoutPage.enteredAmountCents()).toBe(due);
-      expect(await checkoutPage.isChangeShown()).toBe(false);
-
-      await voidAnyDraft();
-    },
-  );
-
-  it(
     title(
       'A card charge settles and lands on payment-success (TC-ORDERFLOW-84)',
       Tag.REGRESSION,

@@ -22,6 +22,8 @@ export const Paths = {
   APP_LOGS: path.join(ROOT, 'reports', 'app-logs'),
   /** The page's DOM at each failure, next to its screenshot's name (AppLifecycleService). */
   FAILURE_DOM: path.join(ROOT, 'reports', 'failure-dom'),
+  /** One folder per failed test: final shot, replay frames, last steps, DOM, app log (src/support/evidence.ts). */
+  EVIDENCE: path.join(ROOT, 'reports', 'evidence'),
   LOGS: path.join(ROOT, 'logs'),
   TMP: path.join(ROOT, '.tmp'),
 

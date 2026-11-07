@@ -375,7 +375,8 @@ describe('volt-qc 15 TURN — turn-count formulas (write, settings)', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'While an order is re-opened its turns are excluded and its staff is not Busy; Re-Open Done unchanged brings them back (TURN-025, TURN-051)',
       Tag.REGRESSION,

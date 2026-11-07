@@ -49,7 +49,8 @@ import { Tag, title } from '../../../../src/types/testTags.js';
 const HAS_GIFT_CARD = giftCard.code !== '';
 const INVALID_GC = '000000000000';
 
-describe('volt-qc 17 RE-OPEN — difference by tender (write)', () => {
+// PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+describe.skip('volt-qc 17 RE-OPEN — difference by tender (write)', () => {
   afterEach(async () => {
     await leaveReopen();
   });

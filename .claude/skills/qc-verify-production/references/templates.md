@@ -58,6 +58,8 @@ I have verified that the task passed on production (version <version>) Thank you
 ![4823-prod-01-pending.png](https://uploads.linear.app/...)
 2. ...
 
+[🎬 Video: VP-4823-TC01 – <mô tả ngắn case chính>](https://uploads.linear.app/...)
+
 **Dev <version dev> — dd/MM/yyyy** (vòng QC trước)
 3. TC-VP4823-02 – ...
 ![...](https://uploads.linear.app/...)
@@ -89,6 +91,8 @@ Please help me fix bug @<dev>  cc @tienpd @loan_dang
 
 **Hình ảnh minh họa:**
 <như mẫu PASS, ảnh bug đặt trước>
+
+[🎬 Video: VP-aaaa – <bug tái hiện>](https://uploads.linear.app/...)
 ```
 
 Sau khi post: `save_issue(id, assignee: <dev>)`. Không đổi trạng thái task cha trừ khi user bảo
@@ -123,6 +127,8 @@ Volt POS Windows production <version>, store <id> (<tên>), ngày dd/MM/yyyy. T�
 
 **Hình ảnh**
 ![...](https://uploads.linear.app/...)
+
+[🎬 Video: VP-aaaa – tái hiện bug](https://uploads.linear.app/...)
 
 Task gốc: <VP-cha> (TC-VPxxxx-NN)
 ```

@@ -28,6 +28,8 @@
  */
 
 import { browser } from '@wdio/globals';
+// Side effect: records WHY each runtime this.skip() happened, for the GUI.
+import '../../src/support/skipReason.js';
 import { Timeouts } from '../../configs/constants/timeouts.js';
 import { loadEnv } from '../../configs/env/loadEnv.js';
 import { ensureLoggedIn, returnToHome } from '../../src/flows/index.js';

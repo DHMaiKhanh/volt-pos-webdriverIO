@@ -32,7 +32,7 @@ import { expect } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { env } from '../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../../src/components/index.js';
-import { isPasscodeGateOn, returnToHome } from '../../../src/flows/index.js';
+import { armPasscodeGate, returnToHome } from '../../../src/flows/index.js';
 import { step } from '../../../src/helpers/steps.js';
 import { staffPayrollPage } from '../../../src/pages/index.js';
 import { PAYROLL_LABELS } from '../../../src/pages/payroll/StaffPayrollPage.js';
@@ -71,9 +71,9 @@ describe('Staff Payroll', () => {
   it(
     title('Passcode gate hides the page until the passcode is entered (TC-01)', Tag.REGRESSION),
     async function (this: Mocha.Context) {
-      // With the "staff_payroll" gate OFF in Passcode Setting the app opens the
-      // page by design, so there is no gate to observe — skip, do not fail.
-      if (!(await isPasscodeGateOn('staff_payroll'))) this.skip();
+      // With the "staff_payroll" gate OFF the app opens the page by design, and a
+      // spec that flips gates may have left it off: switch it back ON first.
+      await armPasscodeGate('staff_payroll');
 
       await step('Drop the 30-minute grant and open the route', async () => {
         await returnToHome();

@@ -17,6 +17,7 @@ import { expect } from '@wdio/globals';
 import { assertWritesAllowed } from '../../../../configs/env/loadEnv.js';
 import { VqcCommon, btn, inMain } from '../../../../src/constants/testids.voltqc-pos.js';
 import { VqpsHome, VqpsSplit } from '../../../../src/constants/testids.voltqc-promo-split.js';
+import { ensurePasscodeGateOn } from '../../../../src/flows/index.js';
 import { step } from '../../../../src/helpers/steps.js';
 import { settle } from '../../../../src/helpers/wait.js';
 import { voltQcProbe as P } from '../../../../src/pages/voltqc/pos/VoltQcProbe.js';
@@ -148,7 +149,8 @@ describe('volt-qc 05 SPLIT plan A (SPLIT-E … SPLIT-J)', () => {
       },
     );
 
-    it(
+    // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+    it.skip(
       title(
         'SPLIT-E3 Re-open a paid order: no Split button on Home; split-order?editOrderId redirects to /order-history/<id> (SPLIT-007)',
         Tag.REGRESSION,
@@ -818,6 +820,7 @@ describe('volt-qc 05 SPLIT plan A (SPLIT-E … SPLIT-J)', () => {
           this.skip();
         }
         this.timeout(6 * 60_000);
+        await ensurePasscodeGateOn('complete_order'); // another spec may have left the gate off
         const m = await priceModel(); // measure before opening the order
         await app.clearPasscodeSkip();
         const id = await app.createOrder();
@@ -874,6 +877,9 @@ describe('volt-qc 05 SPLIT plan A (SPLIT-E … SPLIT-J)', () => {
       ),
       async function () {
         this.timeout(4 * 60_000);
+        // The prompt needs the Completed Payment gate ON and no 30-minute grant.
+        await ensurePasscodeGateOn('complete_order');
+        await app.clearPasscodeSkip();
         const id = await app.createOrder();
         await S.openSplit();
         await S.selectCheck(id, 1);

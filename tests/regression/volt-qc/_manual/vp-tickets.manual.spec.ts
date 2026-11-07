@@ -256,7 +256,7 @@ describe('gift-card-pos-test-cases — manual rows (from vp-tickets/gift-card-po
     [
       'gift-card-pos-test-cases TC-45',
       'Partial redeem',
-      'covered live by order-flow/gift-card-payment.spec.ts (spends a real card)',
+      'covered live by order-flow/giftcard-multi-pay.spec.ts (spends a real card)',
     ],
     [
       'gift-card-pos-test-cases TC-46',
@@ -721,30 +721,6 @@ describe('VP-1252-5 — manual rows (from vp-tickets/vp-1252-pending-order.spec.
       'Order Date = payment time, not creation; pending never expires overnight',
       'needs a pending order carried past midnight',
     ],
-  ]);
-});
-
-describe('VP-1261 — manual rows (from vp-tickets/vp-1261-gift-card-offline.spec.ts)', () => {
-  const OFFLINE = 'needs the till network cut and restored (fault injection — out of scope for the lane)';
-  manualRows([
-    ['VP-1261 TC-01', 'Sell a gift card while offline (happy path)', OFFLINE],
-    ['VP-1261 TC-02', 'Reload a gift card while offline', OFFLINE],
-    ['VP-1261 TC-03', 'Offline gift card order allows Cash only', OFFLINE],
-    [
-      'VP-1261 TC-04',
-      'Gift card data stored encrypted locally',
-      `${OFFLINE}; inspects the local SQLCipher DB`,
-    ],
-    ['VP-1261 TC-05', 'Offline gift card order queues a pending-sync transaction', OFFLINE],
-    ['VP-1261 TC-06', 'Auto-sync when the network returns', OFFLINE],
-    ['VP-1261 TC-07', 'Retry when the network drops again during sync', OFFLINE],
-    [
-      'VP-1261 TC-08',
-      'Server activates/reloads only after validation; POS refreshes balance',
-      `${OFFLINE}; verifies server state`,
-    ],
-    ['VP-1261 TC-09', 'Warning before completing an offline gift card order', OFFLINE],
-    ['VP-1261 TC-10', 'Several pending-sync transactions sync once each, in order', OFFLINE],
   ]);
 });
 

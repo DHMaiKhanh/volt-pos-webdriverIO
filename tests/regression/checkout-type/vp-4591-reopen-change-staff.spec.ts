@@ -197,7 +197,8 @@ interface ManualRun {
   staff: [string, string];
 }
 
-describe('Checkout Type — Re-Open change staff (VP-4591)', () => {
+// PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+describe.skip('Checkout Type — Re-Open change staff (VP-4591)', () => {
   let orderId = '';
 
   before(() => {
@@ -272,7 +273,8 @@ describe('Checkout Type — Re-Open change staff (VP-4591)', () => {
   );
 });
 
-describe('Checkout Type — Re-Open locks, change staff with tip, resume (VP-4591, manual 03/11)', () => {
+// PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+describe.skip('Checkout Type — Re-Open locks, change staff with tip, resume (VP-4591, manual 03/11)', () => {
   const TIP_CENTS = 2_000;
   let run: ManualRun | null = null;
   let reopened = false;

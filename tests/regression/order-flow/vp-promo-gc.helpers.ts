@@ -480,13 +480,13 @@ export async function waitPromoBadge(expected: number, timeoutMs = 15_000): Prom
 
 /** What the stub answers for a code: the API's "unresolved" empty card, a real card, or a transport error. */
 export type GcStubAnswer =
-  { kind: 'empty' } | { kind: 'card'; currentBalanceCents: number } | { kind: 'error' };
+  { kind: 'empty' } | { kind: 'card'; currentBalanceCents: number; status?: string } | { kind: 'error' };
 
 /**
- * Wrap `__TAURI_INTERNALS__.invoke` so `getGiftCardByCode` answers `answer` for
- * the listed codes (`'*'` = every code). Every other call passes through.
- * Returns false when the webview refuses the wrap (frozen internals) — the
- * caller skips then. Always pair with {@link removeGiftCardStub}.
+ * Wrap `__TAURI_INTERNALS__.invoke` (or, where invoke is non-writable, the
+ * `window.fetch` that carries IPC to `ipc.localhost/graphql`) so `getGiftCardByCode`
+ * answers `answer` for the listed codes (`'*'` = every code). Every other call
+ * passes through. Returns false when neither can be wrapped — the caller skips then. Always pair with {@link removeGiftCardStub}.
  */
 export async function installGiftCardStub(stubs: Record<string, GcStubAnswer>): Promise<boolean> {
   return P.exec<boolean>(
@@ -505,13 +505,39 @@ export async function installGiftCardStub(stubs: Record<string, GcStubAnswer>): 
            if (s && s.kind === 'empty')
              return Promise.resolve({ data: { giftCardQueryByCode: { id: '', code: '', currentBalance: 0, posGiftCard: null, status: '' } } });
            if (s && s.kind === 'card')
-             return Promise.resolve({ data: { giftCardQueryByCode: { id: 'vp-stub-' + code, code: code, currentBalance: s.currentBalanceCents, posGiftCard: null, status: 'active' } } });
+             return Promise.resolve({ data: { giftCardQueryByCode: { id: 'vp-stub-' + code, code: code, currentBalance: s.currentBalanceCents, posGiftCard: null, status: s.status || 'active' } } });
          }
        } catch (e) { /* fall through to the real call */ }
        return window.__vpOrigInvoke.apply(I, arguments);
      };
-     try { I.invoke = wrapper; } catch (e) { return false; }
-     return I.invoke === wrapper;`,
+     try { I.invoke = wrapper; } catch (e) { /* non-writable on newer builds */ }
+     if (I.invoke === wrapper) return true;
+     // Newer builds (seen on dev 1.1.106) define invoke non-writable, but IPC still
+     // travels as fetch POST http://ipc.localhost/graphql — answer the lookup there.
+     if (typeof window.fetch !== 'function') return false;
+     if (!window.__vpOrigFetch) window.__vpOrigFetch = window.fetch;
+     var reply = function (status, body, ok) {
+       return Promise.resolve(new Response(body, { status: status, headers: { 'Content-Type': 'application/json', 'Tauri-Response': ok ? 'ok' : 'error' } }));
+     };
+     var fetchWrapper = function (input, init) {
+       try {
+         var url = typeof input === 'string' ? input : (input && input.url) || '';
+         var body = init && typeof init.body === 'string' ? init.body : '';
+         if (url.indexOf('ipc.localhost/graphql') >= 0 && body.indexOf('giftCardQueryByCode') >= 0) {
+           var a = JSON.parse(body);
+           var code = String((a.variables && a.variables.code) || '').replace(/\\D/g, '');
+           var s = window.__vpGcStubs && (window.__vpGcStubs[code] || window.__vpGcStubs['*']);
+           if (s && s.kind === 'error') return reply(200, JSON.stringify('vp-stub: gift card lookup failed'), false);
+           if (s && s.kind === 'empty')
+             return reply(200, JSON.stringify({ data: { giftCardQueryByCode: { id: '', code: '', currentBalance: 0, posGiftCard: null, status: '' } } }), true);
+           if (s && s.kind === 'card')
+             return reply(200, JSON.stringify({ data: { giftCardQueryByCode: { id: 'vp-stub-' + code, code: code, currentBalance: s.currentBalanceCents, posGiftCard: null, status: s.status || 'active' } } }), true);
+         }
+       } catch (e) { /* fall through to the real call */ }
+       return window.__vpOrigFetch.apply(window, arguments);
+     };
+     try { window.fetch = fetchWrapper; } catch (e) { return false; }
+     return window.fetch === fetchWrapper;`,
     stubs,
   );
 }
@@ -521,6 +547,7 @@ export async function removeGiftCardStub(): Promise<void> {
   await P.exec<null>(
     `var I = window.__TAURI_INTERNALS__;
      if (I && window.__vpOrigInvoke) { try { I.invoke = window.__vpOrigInvoke; } catch (e) {} }
+     if (window.__vpOrigFetch) { try { window.fetch = window.__vpOrigFetch; } catch (e) {} window.__vpOrigFetch = undefined; }
      window.__vpOrigInvoke = undefined;
      window.__vpGcStubs = undefined;
      return null;`,

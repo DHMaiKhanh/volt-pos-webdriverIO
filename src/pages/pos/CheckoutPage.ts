@@ -803,6 +803,16 @@ export class CheckoutPage extends BasePage {
     return this.isVisible(CheckoutIds.gcInvalidMsg);
   }
 
+  /** Did the lookup refuse the card as not active ("Gift card is inactive", VP-4894)? */
+  isGiftCardInactive(): Promise<boolean> {
+    return this.isVisible(CheckoutIds.gcInactiveMsg);
+  }
+
+  /** Is the rejection screen's Scan Again button offered? */
+  isGiftCardScanAgainAvailable(): Promise<boolean> {
+    return this.isVisible(CheckoutIds.gcScanAgainBtn);
+  }
+
   isGiftCardInsufficient(): Promise<boolean> {
     return this.isVisible(CheckoutIds.gcInsufficientMsg);
   }

@@ -24,7 +24,7 @@ import { step } from '../../../helpers/steps.js';
 import { settle } from '../../../helpers/wait.js';
 import { checkoutPage, orderPendingPage } from '../../index.js';
 import { clearPasscodeGrant, ensurePasscodeGrant } from '../../../support/passcodeGrant.js';
-import { quickCheckout, serviceTiles, visibleStaffNames } from '../pos/homeProbe.js';
+import { quickCheckout, serviceTiles, unlockQuickCheckoutGate, visibleStaffNames } from '../pos/homeProbe.js';
 import { voltQcProbe as P } from '../pos/VoltQcProbe.js';
 
 /**
@@ -81,8 +81,8 @@ export function uniqueName(prefix: string): string {
 export const fmtPhone = (p: string): string => `(${p.slice(0, 3)}) ${p.slice(3, 6)}-${p.slice(6)}`;
 export const masked = (p: string): string => `***-***-${p.slice(-4)}`;
 
-/** A 4-digit code that belongs to no staff (volt-qc found 0000 taken on merchant 14). */
-export const unknownCode = (): string => (process.env.VOLT_UNKNOWN_CODE ?? '').trim() || '9137';
+/** A 4-digit code that belongs to no staff (0000 and, since 11/2026, 9137 — an Inactive staff — are taken on merchant 14). */
+export const unknownCode = (): string => (process.env.VOLT_UNKNOWN_CODE ?? '').trim() || '6402';
 /** Code of an Inactive staff — optional, cases skip without it. */
 export const inactiveCode = (): string => (process.env.VOLT_INACTIVE_CODE ?? '').trim();
 /** Code of a staff whose role LACKS Delete Order — optional. */
@@ -155,6 +155,8 @@ export async function pickStaff(name: string): Promise<void> {
     await settle(500);
   }
   await P.jsClickQ(VqhOrder.staffTile(name)).catch(() => P.clickQ(VqhOrder.staffTile(name)));
+  // Picking a staff on an empty till opens a new order → same Quick Checkout gate.
+  if (before === 0) await unlockQuickCheckoutGate();
   await P.poll(
     async () => (await orderStaffNames()).length,
     (n) => n > before,
@@ -204,14 +206,19 @@ export async function addService(name: string): Promise<void> {
     await P.fillQ(VqcHome.serviceSearch, name);
     await settle(600);
   }
-  await P.clickQ(VqhOrder.serviceTile(name));
+  // A tile clicked a moment ago is still in its press animation: the native click
+  // on the name span lands on its own <li> ("element click intercepted"). Click in
+  // JS like pickStaff, with the native click as fallback.
+  const tap = (): Promise<unknown> =>
+    P.jsClickQ(VqhOrder.serviceTile(name)).catch(() => P.clickQ(VqhOrder.serviceTile(name)));
+  await tap();
   let n = await P.poll(
     () => lineCount(name),
     (c) => c > before,
     3_000,
   );
   if (n <= before && !(await P.has(VqhOrder.selectStaffFirst))) {
-    await P.clickQ(VqhOrder.serviceTile(name));
+    await tap();
     n = await P.poll(
       () => lineCount(name),
       (c) => c > before,

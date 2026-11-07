@@ -1,6 +1,6 @@
 ---
 name: qc-verify-production
-description: Verify production cho Volt POS — nhận link project/milestone Linear (vd Maintenance 2026-Q4-M10-W4) hoặc danh sách VP-xxxx, đọc từng task, lọc task app POS (bỏ task Portal), tự lái app Volt POS production đang cài (code qua CDP 9222) để test, lập bảng test case PASS/FAIL, comment tiếng Việt kèm nhiều ảnh nhiều ngày. PASS → "I have verified that the task passed on production (version X) Thank you @dev  cc @tienpd @loan_dang" + chuyển Verified Production. FAIL → mỗi bug 1 sub task, comment "Please help me fix bug @dev  cc @tienpd @loan_dang" + assign lại dev. Dùng khi user nói "verify production", "verify lại tất cả các task volt pos", "test task trên production xem pass chưa", "chuyển trạng thái verify production", dán link project Linear kèm yêu cầu verify, hoặc "/qc-verify-production" — kể cả khi chỉ có 1 task.
+description: Verify production cho Volt POS — nhận link project/milestone Linear (vd Maintenance 2026-Q4-M10-W4) hoặc danh sách VP-xxxx, đọc từng task, lọc task app POS (bỏ task Portal), tự lái app Volt POS production đang cài (code qua CDP 9222) để test, lập bảng test case PASS/FAIL, comment tiếng Việt kèm nhiều ảnh nhiều ngày + video quay màn staff/màn khách (🎬 Video). PASS → "I have verified that the task passed on production (version X) Thank you @dev  cc @tienpd @loan_dang" + chuyển Verified Production. FAIL → mỗi bug 1 sub task, comment "Please help me fix bug @dev  cc @tienpd @loan_dang" + assign lại dev. Dùng khi user nói "verify production", "verify lại tất cả các task volt pos", "test task trên production xem pass chưa", "chuyển trạng thái verify production", dán link project Linear kèm yêu cầu verify, hoặc "/qc-verify-production" — kể cả khi chỉ có 1 task.
 argument-hint: '<URL project Linear | VP-xxxx [VP-yyyy …]> [version prod, vd 1.1.6] [dry-run] [@dev]'
 ---
 
@@ -22,6 +22,7 @@ mẫu comment ở [references/templates.md](references/templates.md).
 | cc                  | `@tienpd @loan_dang`                                                                                  |
 | Trạng thái khi PASS | `Verified Production` (team VOLT; QC Completed = mới pass dev)                                        |
 | Khi FAIL            | sub task mỗi bug + assign task cha cho dev; không đổi trạng thái task cha nếu user chưa bảo           |
+| Video               | Mỗi task: 1 video case chính; mỗi bug FAIL: 1 video riêng (trong sub task + comment) — xem §4b        |
 | Ngôn ngữ            | Tiếng Việt cho comment, bảng, sub task, caption ảnh — chỉ câu mở đầu giữ tiếng Anh                    |
 | Phạm vi             | Chỉ hành vi trên app POS Windows. Portal / Android / chỉ-backend không có biểu hiện trên POS → bỏ qua |
 
@@ -89,6 +90,9 @@ Không chạy `npm run test:attach` / `test:spec` / `test:dev` vào build produc
 - Đổi setting tiệm chỉ khi task cần, chụp giá trị cũ và trả lại ngay sau test.
 - Kiosk GoCheckin production: creds `PROD_GCI_*` trong `configs/env/.env.dev` (git-ignored).
 
+**Quay video khi test:** trước bước tái hiện của case chính (và của mỗi case nghi FAIL, lần tái hiện thứ 2)
+chạy `npm run rec:start -- --name VP-xxxx-TCnn`, làm xong thì `npm run rec:stop` (§4b).
+
 **Chấm từng TC:** `PASS` / `FAIL` / `Not Run` (ghi lý do: cần terminal, cần 100 check-in…) / `N/A (Portal)`.
 
 - Nghi FAIL → tái hiện lần 2, đọc giá trị bằng snapshot/evaluate (WebView2 hay render trễ, đừng tin ảnh một mình).
@@ -115,6 +119,30 @@ Không chạy `npm run test:attach` / `test:spec` / `test:dev` vào build produc
      ```
      Script in ra dòng `![caption](assetUrl)` để dán vào comment.
 - Caption tiếng Việt, nhóm theo ngày + môi trường: `**Production 1.1.6 — 03/11/2026**`, `**Dev 1.1.90 — 31/10/2026**`.
+
+## 4b. Video minh hoạ (giống dev đính "🎬 Video: …mp4")
+
+Công cụ: `scripts/record.mjs` (ffmpeg có sẵn qua devDependency `ffmpeg-static`, không cần cài gì thêm).
+
+1. **Bắt đầu quay** ngay trước bước tái hiện: `npm run rec:start -- --name VP-xxxx-TC01`
+   (chạy ở thư mục repo, chờ dòng `● REC …` mới thao tác — mất ~1–5s).
+   - App mở CDP 9222 → tự quay **màn staff + màn khách cạnh nhau** (2560x720) thẳng từ WebView. Cửa sổ khác
+     (Claude, Chrome, Discord…) che lên POS cũng **không** bị quay vào.
+   - Chỉ cần 1 màn: `--screens staff` (hoặc `customer`).
+   - Không có CDP (vd lúc app đang update/restart) → tự rơi về quay desktop: khi đó cái gì nằm trên cùng màn hình
+     sẽ bị quay → đưa POS lên trên, đóng app có dữ liệu riêng tư trước.
+2. Làm các bước bằng `volt-app`, dừng 1–2s ở màn kết quả (số tiền / thẻ order / thông báo) cho video thấy rõ.
+3. **Dừng**: `npm run rec:stop` → in `■ Saved .recordings/<name>-<time>.mp4 (x MB, ~Ns)`. Quên dừng thì 600s tự dừng
+   (`--max <giây>` để đổi). `npm run rec:status` xem đang quay hay không.
+4. **Kiểm nhanh** trước khi up: trích 1 khung để xem không đen/không sai màn:
+   `node -e "require('child_process').spawnSync(require('ffmpeg-static'),['-y','-ss','2','-i','<file.mp4>','-frames:v','1','<scratchpad>/check.jpg'])"` rồi Read ảnh.
+5. **Upload** như ảnh, prepare xong PUT ngay:
+   `prepare_file_upload(filename: "<name>.mp4", contentType: "video/mp4", size: <stat -c %s>)` → ngay lập tức
+   `node .claude/skills/qc-verify-production/scripts/linear-put.mjs <file.mp4> "VP-xxxx-TC01 – <mô tả>" <<'JSON' … JSON`
+   → script in `[🎬 Video: VP-xxxx-TC01 – <mô tả>](assetUrl)` để dán vào comment / sub task.
+6. Production là tiệm thật: chỉ quay khi màn hình đang là dữ liệu test (khách `QC Prod <ddMM>`); thấy tên / SĐT khách
+   thật trên màn khách thì quay lại hoặc dùng `--screens staff`.
+7. Video nằm trong `.recordings/` (git-ignored); xoá sau khi đã post comment.
 
 ## 5. Comment & trạng thái
 

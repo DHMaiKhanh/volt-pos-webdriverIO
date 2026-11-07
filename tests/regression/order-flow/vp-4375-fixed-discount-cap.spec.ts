@@ -554,7 +554,8 @@ describe('VP-4375 — FIXED promo/reward above the discountable amount is shown 
       },
     );
 
-    it(
+    // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+    it.skip(
       title(
         'TC-VP4375-16: Re-Open → Re-Open Done without changes keeps promo $20, discountAmount $20, staff fee $10',
         Tag.REGRESSION,
@@ -665,7 +666,8 @@ describe('VP-4375 — FIXED promo/reward above the discountable amount is shown 
       },
     );
 
-    it(
+    // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+    it.skip(
       title(
         'TC-VP4375-23: Re-Open → Re-Open Done on the Card order keeps promo $20, discountAmount $20, staff fee $10',
         Tag.REGRESSION,

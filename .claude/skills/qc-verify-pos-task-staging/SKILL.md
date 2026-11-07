@@ -58,6 +58,21 @@ Từng ảnh một: `prepare_file_upload` (size = `stat -c %s`) → PUT ngay tro
 `sh .claude/skills/qc-verify-pos-task-staging/up.sh <file> <signed-url>` (curl PUT kèm đủ header: content-type, cache-control,
 x-goog-content-length-range `N,N`, Content-Disposition) → dùng `markdown` trả về.
 
+### Video (mặc định cho case chính và mọi bug)
+
+Quay bằng `scripts/record.mjs` (ffmpeg-static đã có trong devDependencies):
+
+1. Ngay trước khi làm các bước tái hiện: `npm run rec:start -- --name VP-xxxx-TC01`.
+   App mở CDP 9222 thì nó tự quay **màn staff + màn khách cạnh nhau** qua CDP, cửa sổ khác (Claude, Chrome…) che lên
+   cũng không bị quay vào. Chỉ cần 1 màn: `--screens staff`. Không có CDP thì tự quay cả desktop (đóng app riêng tư trước).
+2. Làm các bước, dừng 1–2s ở kết quả để video thấy rõ → `npm run rec:stop` → in ra đường dẫn `.recordings/<name>-<time>.mp4`.
+   Quá 600s tự dừng (`--max` để đổi).
+3. Upload: `prepare_file_upload(contentType: "video/mp4", size)` → ngay lập tức
+   `node .claude/skills/qc-verify-production/scripts/linear-put.mjs <file.mp4> "<tên>" <<'JSON' … JSON`
+   → script in `[🎬 Video: <tên>](url)`, dán vào comment/sub task dưới ảnh. (`up.sh` cứng `image/png`, đừng dùng cho video.)
+
+Mỗi bug FAIL: 1 video trong sub task + comment. PASS: 1 video cho case chính là đủ.
+
 ## 5. Bảng TC (bắt buộc)
 
 ```

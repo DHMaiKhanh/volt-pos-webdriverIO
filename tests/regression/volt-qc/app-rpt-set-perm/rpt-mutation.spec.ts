@@ -282,7 +282,8 @@ describe('volt-qc RPT — new orders vs the reports (mutation)', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'A re-opened order leaves Daily Sale; completed again it is counted exactly once (RPT-049)',
       Tag.REGRESSION,

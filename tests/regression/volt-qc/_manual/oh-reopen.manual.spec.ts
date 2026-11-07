@@ -55,20 +55,6 @@ describe('volt-qc 07 ORDER HISTORY / 17 RE-OPEN — manual', () => {
     title('[MANUAL] Tip adjusted on FBP syncs tip and new total back to POS (OH-197)', Tag.REGRESSION),
     () => {},
   );
-  it.skip(
-    title(
-      '[MANUAL] A card order completed on P8D still offers Adjust Tip on Windows (OH-198)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  it.skip(
-    title(
-      "[MANUAL] Windows reopen of an order paid on P8D, dropping / swapping the customer, takes back A's points (RO-064)",
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
 
   /* ---------------- Portal web ---------------- */
   // GoCheckin web check-in (cross-surface web lane) creates the order.
@@ -192,52 +178,8 @@ describe('volt-qc 07 ORDER HISTORY / 17 RE-OPEN — manual', () => {
     () => {},
   );
 
-  /* ---------------- network cut ---------------- */
-  it.skip(
-    title('[MANUAL] Offline hides Adjust Tip; back online shows it (OH-110)', Tag.REGRESSION),
-    () => {},
-  );
   it.skip(
     title('[MANUAL] Losing the network on Save shows an error and keeps the tip (OH-199)', Tag.REGRESSION),
-    () => {},
-  );
-  it.skip(
-    title(
-      '[MANUAL] Cancel / refund shows Canceling / Refunding first, then the final status (offline card void) (OH-209)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  it.skip(
-    title(
-      '[MANUAL] Offline, reopen with a higher total: only Cash can pay; Card / Gift Card / Other locked (RO-091)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  it.skip(
-    title(
-      '[MANUAL] Offline, reopen with a lower total: void is queued as canceling and pushed when online (RO-092)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  it.skip(
-    title(
-      '[MANUAL] Offline: Cash is the only tender for the difference; stored locally, pushed later (RO-309)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  it.skip(
-    title(
-      '[MANUAL] Offline: the Gift Card tab is locked when paying the difference (RO-407)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
-  it.skip(
-    title('[MANUAL] Offline: the Other tab is locked when paying the difference (RO-508)', Tag.REGRESSION),
     () => {},
   );
 

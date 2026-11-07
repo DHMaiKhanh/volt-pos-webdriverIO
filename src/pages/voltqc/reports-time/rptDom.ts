@@ -768,50 +768,6 @@ async function countTextContains(css: string, text: string | RegExp): Promise<nu
   );
 }
 
-/** Fake offline/online for `useOnlineStatus` (navigator.onLine + event) — the network is not touched. */
-export async function fakeOnline(online: boolean): Promise<void> {
-  await browser.execute(function (on: boolean) {
-    if (on) delete (navigator as unknown as Record<string, unknown>)['onLine'];
-    else
-      Object.defineProperty(navigator, 'onLine', {
-        configurable: true,
-        get: function () {
-          return false;
-        },
-      });
-    window.dispatchEvent(new Event(on ? 'online' : 'offline'));
-  }, online);
-  await settle(500);
-}
-
-/** The offline banner: by testid when the build keeps it, else by its copy. */
-export async function offlineBanner(): Promise<{ visible: boolean; role: string | null; text: string }> {
-  return browser.execute(
-    function (css: string, copy: string) {
-      let el = document.querySelector<HTMLElement>(css);
-      if (!el || el.getClientRects().length === 0) {
-        el =
-          (Array.from(document.querySelectorAll('[role="alert"], div, p, span')).find(function (e) {
-            return (
-              e.getClientRects().length > 0 &&
-              (e.textContent || '').replace(/\s+/g, ' ').trim() === copy &&
-              !Array.from(e.children).some(function (c) {
-                return (c.textContent || '').replace(/\s+/g, ' ').trim() === copy;
-              })
-            );
-          }) as HTMLElement | undefined) ?? null;
-        // Prefer the role=alert ancestor when the copy sits in a child.
-        const alert = el?.closest<HTMLElement>('[role="alert"]');
-        if (alert) el = alert;
-      }
-      if (!el || el.getClientRects().length === 0) return { visible: false, role: null, text: '' };
-      return { visible: true, role: el.getAttribute('role'), text: (el.innerText || '').trim() };
-    },
-    RptCss.offlineBanner,
-    'The data is not accurate when the app is offline',
-  );
-}
-
 /* ------------------------------------------------------------------------- *
  * Passcode gate (for the specs that inspect the guard itself)
  * ------------------------------------------------------------------------- */

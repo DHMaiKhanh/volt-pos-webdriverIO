@@ -90,12 +90,6 @@ describe('Payment flows — Cancel Order', () => {
 
   it(
     title(
-      'CAN-R2 (VP-3374): POS Canceled while P8D still Canceling — PENDING 🌙 (cross-system, P8D not observable from POS)',
-    ),
-  );
-
-  it(
-    title(
       'CAN-R3 (VP-3278): order stuck Canceling on batch-close race, income still counts — PENDING 🌙 (batch-close race + income read)',
     ),
   );

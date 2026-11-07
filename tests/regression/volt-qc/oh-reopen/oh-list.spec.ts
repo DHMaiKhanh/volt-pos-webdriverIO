@@ -628,7 +628,8 @@ describe('volt-qc 07 ORDER HISTORY — list / search / filter (write)', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'A Re-open order shows the Re-open badge, the Status filter has no "Re-open", detail offers Continue Re-open (OH-066)',
       Tag.REGRESSION,

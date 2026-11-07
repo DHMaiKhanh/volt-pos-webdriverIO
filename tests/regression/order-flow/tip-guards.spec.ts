@@ -4,9 +4,8 @@
  *
  * Four describe blocks, by fixture:
  *
- *   - **Adjust Tip** runs on a single-staff cash order (the attach lane can build
- *     one): the dialog is cashier-side, no customer display. Covers the Cash branch
- *     of TIP-01 and VP-3936 (TIP-R1 — the entry must start at $0, not the old tip).
+ *   - **Adjust Tip** holds only pending cases: TIP-01 and TIP-R1 (VP-3936) run in
+ *     adjust-tip.spec.ts and volt-qc oh-tip.spec.ts (see the note above the block).
  *
  *   - **Split Tip** needs an order with MORE THAN ONE staff AND a tip on it, so its
  *     before-hook composes a two-staff order and seeds a tip on the customer
@@ -43,59 +42,14 @@ import { Tag, title } from '../../../src/types/testTags.js';
 import {
   buildTwoStaffDraftOrSkip,
   CARD_SETTLE_ENABLED,
-  createAndSettleCashOrder,
   createAndSettleCardOrder,
   createAndSettleTwoStaffCardOrderWithTip,
 } from './payment-flows.helpers.js';
 
+// TIP-01 runs as adjust-tip.spec.ts TC-ORDERFLOW-69. TIP-R1 (VP-3936) runs as
+// volt-qc/oh-reopen/oh-tip OH-185/OH-186: the build shows the current tip, and the
+// first digit REPLACES it, so a new tip can never be added on top of the old one.
 describe('Payment flows — Adjust Tip', () => {
-  before(async function (this: Mocha.Context): Promise<void> {
-    this.timeout(Timeouts.MOCHA_HOOK);
-    await createAndSettleCashOrder();
-  });
-
-  after(async () => {
-    await returnToHome();
-    await homePage.waitForReady();
-  });
-
-  it(
-    title('Adjust Tip is offered on an eligible unsettled cash order (TIP-01)', Tag.REGRESSION, Tag.WRITE),
-    async function (this: Mocha.Context): Promise<void> {
-      if (!(await orderHistoryDetailPage.isAdjustTipAvailable())) {
-        // Tip-after-payment is off on this merchant — nothing to adjust. The
-        // Gift-Card exclusion half of TIP-01 needs an unsettled gift-card order,
-        // which this suite cannot leave unsettled.
-        this.skip();
-      }
-
-      await orderHistoryDetailPage.openAdjustTip();
-      // A single-tender cash order skips the tender picker and lands on amount entry.
-      expect(await orderHistoryDetailPage.isTenderPickerOpen()).toBe(false);
-      expect(await orderHistoryDetailPage.isAdjustTipEntryShown()).toBe(true);
-      await orderHistoryDetailPage.closeAdjustTip();
-    },
-  );
-
-  it(
-    title(
-      'Adjust Tip starts the entry at $0, not the current tip (TIP-R1, VP-3936)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-    ),
-    async function (this: Mocha.Context): Promise<void> {
-      if (!(await orderHistoryDetailPage.isAdjustTipAvailable())) {
-        this.skip();
-      }
-
-      await orderHistoryDetailPage.openAdjustTip();
-      // VP-3936: the keypad must open empty so a cashier types the NEW tip, rather
-      // than prefilling the old one (which risks doubling it on save).
-      expect(await orderHistoryDetailPage.readEnteredTip()).toBe(0);
-      await orderHistoryDetailPage.closeAdjustTip();
-    },
-  );
-
   it(title('TIP-02: multi-tender order forces a tender choice — PENDING 🌙 (two-settle order)'));
 
   it(
@@ -105,12 +59,6 @@ describe('Payment flows — Adjust Tip', () => {
   );
 
   it(title('TIP-R4 (VP-4167): point calculation includes the tip — PENDING 🌙 (needs a point/report read)'));
-
-  it(
-    title(
-      'TIP-R6 (VP-3976): tip always Proportion despite the setting — PENDING 🌙 (needs a setting + P8D order read)',
-    ),
-  );
 });
 
 describe('Payment flows — Split Tip', () => {
@@ -164,19 +112,6 @@ describe('Payment flows — Split Tip', () => {
 
       // Confirm the (default) proportional split — proves the Confirm path closes.
       await orderHistoryDetailPage.confirmSplitTip();
-    },
-  );
-
-  it(
-    title(
-      'Split Tip action is present on an unsettled order with a tip (TIP-R8, VP-3884)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-    ),
-    async () => {
-      // The before-hook already gated on this; asserting it documents the fix for
-      // VP-3884 (the action was missing in Order History for such orders).
-      expect(await orderHistoryDetailPage.isSplitTipAvailable()).toBe(true);
     },
   );
 

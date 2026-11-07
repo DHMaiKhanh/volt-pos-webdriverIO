@@ -12,6 +12,8 @@
  * that reason.
  */
 
+import type { SkipInfo } from './liveRegistry.js';
+
 /** A test's final state. `pending` is Mocha's `it.skip`/`describe.skip`. */
 export type TestState = 'passed' | 'failed' | 'skipped' | 'pending';
 
@@ -26,6 +28,12 @@ export interface DashboardTest {
   stack?: string;
   /** Mocha test-level retries consumed before this result. */
   retries?: number;
+  /** Present only for `failed` — the whole message (multi-line expect diffs). */
+  message?: string;
+  /** Present only for `failed` — evidence folder under reports/evidence (src/support/evidence.ts). */
+  evidence?: string;
+  /** Present only for `skipped` — why it did not run (src/support/skipReason.ts). */
+  skip?: SkipInfo;
 }
 
 /** A `describe` block. Suites nest; tests hang off the leaf that owns them. */

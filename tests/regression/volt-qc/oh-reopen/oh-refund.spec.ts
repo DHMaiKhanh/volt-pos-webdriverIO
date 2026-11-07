@@ -306,7 +306,8 @@ describe('volt-qc 07 ORDER HISTORY — Refund (settled orders)', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       '🌙 Partial refund of one service: Refunding → Partial Refunded, Refund information, refunded line locked on reopen; list badge = detail (OH-138, OH-146, OH-211)',
       Tag.REGRESSION,

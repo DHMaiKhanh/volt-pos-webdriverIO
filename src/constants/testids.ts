@@ -953,7 +953,13 @@ export const CheckoutIds = {
     `${CASHIER_TIP_DIALOG}//button[normalize-space()="Add" or normalize-space()="Thêm"]`,
   ),
   printBtn: locator('checkout print button', 'checkout-print-btn', 'button.bg-primary'),
-  cashDrawerBtn: locator('cash drawer button', 'checkout-cash-drawer-btn', 'button[class*="bg-[#DB4B91]"]'),
+  cashDrawerBtn: locator(
+    'cash drawer button',
+    'checkout-cash-drawer-btn',
+    'button[class*="bg-[#DB4B91]"]',
+    // Build 1.1.87 swapped the hex for the `dark-raspberry` theme token.
+    'button[class*="bg-dark-raspberry"]',
+  ),
 
   /**
    * The header's back arrow — the only way off checkout that is not a payment.
@@ -996,6 +1002,16 @@ export const CheckoutIds = {
     'checkout-gc-invalid-msg',
     // `-gift-card-payment/content-gift-card-dialog.tsx`, `giftCardNotValid`.
     textIsAnyOf('Gift card is not valid', 'Thẻ quà tặng không hợp lệ'),
+  ),
+  /**
+   * The rejection screen for a card the server reports as NOT active (VP-4894,
+   * from dev 1.1.106): "Gift card is inactive" + Scan Again, in place of the old
+   * "Gift Card Accepted". English verified live; no testid on the dialog.
+   */
+  gcInactiveMsg: locator(
+    'gift card inactive message',
+    'checkout-gc-inactive-msg',
+    textIsAnyOf('Gift card is inactive'),
   ),
   gcBalanceInfo: locator(
     'gift card balance info',
@@ -1387,6 +1403,9 @@ export const OrderHistoryDetailIds = {
   actionCancel: locator(
     'cancel order button',
     'oh-action-cancel',
+    // Build 1.1.87 renamed the testid and made it an alert-dialog trigger.
+    '[data-testid="order-action-cancel"]',
+    'button[data-slot="alert-dialog-trigger"].bg-destructive',
     'button[data-slot="button"].bg-destructive',
   ),
 

@@ -29,11 +29,11 @@ import { cents, ReportService } from '../../../../src/api/index.js';
 import type { StoreDailyIncomeRow } from '../../../../src/api/index.js';
 import { passcodeDialog } from '../../../../src/components/index.js';
 import { Routes } from '../../../../src/constants/routes.js';
-import { createOrder, payInCash, returnToHome } from '../../../../src/flows/index.js';
+import { armPasscodeGate, createOrder, payInCash, returnToHome } from '../../../../src/flows/index.js';
 import { goTo } from '../../../../src/helpers/navigate.js';
 import { step } from '../../../../src/helpers/steps.js';
 import { incomeDailyPage } from '../../../../src/pages/index.js';
-import { clearPasscodeGrant, ensurePasscodeGrant } from '../../../../src/support/passcodeGrant.js';
+import { ensurePasscodeGrant } from '../../../../src/support/passcodeGrant.js';
 import { Tag, title } from '../../../../src/types/testTags.js';
 import { expectCentsEqual } from '../../../../src/utils/money.js';
 
@@ -320,8 +320,7 @@ describe('VP-1048 DSR — Daily Sale Report', () => {
     ),
     async function (this: Mocha.Context): Promise<void> {
       this.timeout(Timeouts.MOCHA_HOOK);
-      await returnToHome();
-      await clearPasscodeGrant();
+      await armPasscodeGate('daily_income');
       await goTo(Routes.INCOME_DAILY);
       try {
         expect(await passcodeDialog.isPrompting(Timeouts.MEDIUM)).toBe(true);
@@ -336,8 +335,7 @@ describe('VP-1048 DSR — Daily Sale Report', () => {
     title('VP-1048 DSR TC-33 A wrong passcode keeps the dialog open and the report hidden', Tag.REGRESSION),
     async function (this: Mocha.Context): Promise<void> {
       this.timeout(Timeouts.MOCHA_HOOK);
-      await returnToHome();
-      await clearPasscodeGrant();
+      await armPasscodeGate('daily_income');
       await goTo(Routes.INCOME_DAILY);
       try {
         expect(await passcodeDialog.isPrompting(Timeouts.MEDIUM)).toBe(true);
@@ -360,8 +358,7 @@ describe('VP-1048 DSR — Daily Sale Report', () => {
     ),
     async function (this: Mocha.Context): Promise<void> {
       this.timeout(Timeouts.MOCHA_HOOK);
-      await returnToHome();
-      await clearPasscodeGrant();
+      await armPasscodeGate('daily_income');
       await goTo(Routes.INCOME_DAILY);
       await passcodeDialog.enter(env.OWNER_PASSCODE, { skipForNext30Min: true });
       await returnToHome();

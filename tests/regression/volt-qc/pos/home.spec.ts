@@ -164,7 +164,13 @@ describe('volt-qc 02 HOME — read-only', () => {
       const firstHeading = await P.info(inMain({ role: 'heading', name: tiles[0]?.name ?? '', nth: 0 }));
       expect(firstHeading).not.toBeNull();
       const r = firstHeading?.rect ?? { x: 0, y: 0, w: 0, h: 0 };
-      await P.drag({ x: r.x + 600, y: r.y + r.h / 2 }, { x: Math.max(5, r.x - 400), y: r.y + r.h / 2 }, 700);
+      // The carousel sits on the right edge (x≈1400 at 1920 px): a fixed +600 start
+      // lands off-screen → "move target out of bounds". Start inside the viewport.
+      // Start INSIDE the carousel (its right edge is ~25 px short of the window), a
+      // couple of tiles right of the first heading, and drag ~500 px left.
+      const vw = await P.exec<number>('return window.innerWidth');
+      const startX = Math.min(r.x + 300, vw - 60);
+      await P.drag({ x: startX, y: r.y + r.h / 2 }, { x: Math.max(5, startX - 500), y: r.y + r.h / 2 }, 700);
       const target = inMain({ role: 'heading', name: page2?.name ?? '', nth: 0 });
       const shown = await P.poll(
         async () => (await P.info(target))?.inViewport ?? false,

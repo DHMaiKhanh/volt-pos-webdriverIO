@@ -77,6 +77,11 @@ function preflightFirst(warm, firstMode) {
     );
     return true;
   }
+  // No usable warm app: whatever Volt POS / driver is up is in the way — an app the
+  // updater relaunched (no CDP), one opened by hand, an older warm's msedgedriver
+  // still on :4444. Preflight only reports those (02/11: the run never started), and
+  // a GUI sweep owns the machine, so clear them first. Copies (`-iN`) are not touched.
+  if (!warmReady) sh('npm run app:kill');
   return (
     sh('npm run preflight', {
       WDIO_MODE: firstMode === 'attach' && warmReady ? 'attach' : 'launch',

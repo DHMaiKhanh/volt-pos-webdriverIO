@@ -3,6 +3,7 @@ import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { pathOf, Routes } from '../../constants/routes.js';
 import { appSidebarItem, CommonIds, headerMenuItem } from '../../constants/testids.js';
 import { SidebarVpIds } from '../../constants/testids.vp.js';
+import { locator } from '../../helpers/selectors.js';
 import { logStep } from '../../helpers/steps.js';
 import { settle, waitUntilPath } from '../../helpers/wait.js';
 import { UiObject } from '../../support/UiObject.js';
@@ -98,6 +99,24 @@ export class AppNav extends UiObject {
     await waitUntilPath((path) => path.startsWith(Routes.APPOINTMENT), {
       timeout: Timeouts.NAVIGATION,
       message: 'The header Appointment link did not navigate',
+    });
+  }
+
+  /** Press the header's Pending Orders link. */
+  async goToPendingOrders(): Promise<void> {
+    await logStep('Nav: pending orders');
+    // A <button> in the header (not a link like Order History / Appointment) on 1.1.107.
+    await this.click(
+      locator(
+        'header pending orders button',
+        `header-menu-item-${Routes.ORDER_PENDING}`,
+        `a[href="${Routes.ORDER_PENDING}"]`,
+        `//header//button[normalize-space(.)="Pending Orders" or normalize-space(.)="Đơn chờ"]`,
+      ),
+    );
+    await waitUntilPath((path) => path.startsWith(Routes.ORDER_PENDING), {
+      timeout: Timeouts.NAVIGATION,
+      message: 'The header Pending Orders link did not navigate',
     });
   }
 

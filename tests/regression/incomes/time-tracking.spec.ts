@@ -28,7 +28,7 @@ import { expect } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { assertWritesAllowed, env } from '../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../../src/components/index.js';
-import { isPasscodeGateOn, returnToHome } from '../../../src/flows/index.js';
+import { armPasscodeGate, returnToHome } from '../../../src/flows/index.js';
 import { step } from '../../../src/helpers/steps.js';
 import { timeTrackingPage } from '../../../src/pages/index.js';
 import { clearPasscodeGrant, ensurePasscodeGrant } from '../../../src/support/passcodeGrant.js';
@@ -93,9 +93,9 @@ describe('Time Tracking', () => {
   it(
     title('The passcode gate blocks /time-tracking (TC-TT-01)', Tag.REGRESSION),
     async function (this: Mocha.Context) {
-      // With the "time_tracking" gate OFF in Passcode Setting the app opens the page
-      // by design, so there is no gate to observe — skip, do not fail.
-      if (!(await isPasscodeGateOn('time_tracking'))) this.skip();
+      // With the "time_tracking" gate OFF the app opens the page by design, and a
+      // spec that flips gates may have left it off: switch it back ON first.
+      await armPasscodeGate('time_tracking');
 
       await step('Drop the 30-minute grant and open the route', async () => {
         await returnToHome();

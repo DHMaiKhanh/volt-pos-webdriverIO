@@ -62,14 +62,6 @@ describe('volt-qc 02 HOME — manual cases', () => {
     ),
     () => {},
   );
-  // Needs a P8D / second device.
-  it.skip(
-    title(
-      '[MANUAL] An order open on P8D shows In Use on Windows and clears when it leaves, both ways (HOME-014)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
 
   /* --------------------------- Portal data / settings ------------------ */
 
@@ -253,14 +245,6 @@ describe('volt-qc 02 HOME — manual cases', () => {
       '[MANUAL] In Vietnamese, check-in status, booking time and date in the customer popup follow the VI locale (HOME-175)',
       Tag.REGRESSION,
     ),
-    () => {},
-  );
-
-  /* --------------------------- Network cut ---------------------------- */
-
-  // Network cut: needs the till's network dropped and restored mid-flow.
-  it.skip(
-    title('[MANUAL] An order created offline syncs when the network returns (HOME-176)', Tag.REGRESSION),
     () => {},
   );
 });
@@ -565,16 +549,6 @@ describe('volt-qc 06 PEND — manual cases', () => {
     () => {},
   );
 
-  /* --------------------------- Network cut ---------------------------- */
-
-  // Network cut on the shared till.
-  it.skip(
-    title(
-      '[MANUAL] Offline: a pending order can be created and only Cash completes it (PEND-087)',
-      Tag.REGRESSION,
-    ),
-    () => {},
-  );
   // Network cut while Other is selected.
   it.skip(
     title(
@@ -583,10 +557,6 @@ describe('volt-qc 06 PEND — manual cases', () => {
     ),
     () => {},
   );
-  // Network cut + restore.
-  it.skip(title('[MANUAL] Back online, the offline order syncs (PEND-089)', Tag.REGRESSION), () => {});
-  // Network cut.
-  it.skip(title('[MANUAL] Only offline orders show a sync status (PEND-090)', Tag.REGRESSION), () => {});
 
   /* --------------------------- Language ------------------------------- */
 

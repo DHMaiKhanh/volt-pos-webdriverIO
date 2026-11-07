@@ -36,9 +36,40 @@ export interface LiveResult {
   attempt: number;
   hook: boolean;
   error?: string;
+  /** Whole failure message (multi-line expect diffs). */
+  message?: string;
+  stack?: string;
+  /** Why a skipped test did not run. */
+  skip?: SkipInfo;
+  /** Screenshot / replay / steps captured at the failure. */
+  evidence?: Evidence;
   flaky: boolean;
   at: number;
 }
+
+/** Mirrors configs/reporters/liveRegistry.ts — keep in sync by hand. */
+export interface SkipInfo {
+  text: string;
+  kind: 'runtime' | 'static' | 'hook-failed' | 'unknown';
+  where?: string;
+  code?: string;
+  comment?: string;
+}
+
+export interface Evidence {
+  dir: string;
+  shot?: string;
+  frames: { name: string; at: number; label: string }[];
+  steps: { at: number; text: string }[];
+  dom?: string;
+  log?: string;
+  url?: string;
+  failedAt: number;
+}
+
+/** URL of one file in a failure's evidence folder, served by runner.mjs. */
+export const evidenceUrl = (ev: Evidence, name: string): string =>
+  `/api/gui/evidence/${ev.dir.split('/').map(encodeURIComponent).join('/')}/${encodeURIComponent(name)}`;
 
 export interface RunSummary {
   passed: number;
@@ -76,6 +107,41 @@ export interface RunRequest {
   fast?: boolean;
   /** Apps for this run; omitted = the choice saved on the runner (AppsStatus.config). */
   apps?: { count?: number; stores?: string[] };
+  /** "Chạy tất cả": the runner first checks web pages + terminal (preflight.mjs). */
+  all?: boolean;
+}
+
+/* ── "Chạy tất cả" gate (dashboard/server/preflight.mjs) ─────────────────── */
+
+export type PreflightState = 'ok' | 'login' | 'closed' | 'nocreds' | 'down' | 'unknown';
+export interface PreflightItem {
+  state: PreflightState;
+  detail: string;
+  url?: string;
+}
+export interface PreflightStore {
+  store: string;
+  name: string;
+  sites: { gocheckin: PreflightItem; gap: PreflightItem; portal: PreflightItem };
+  terminal: PreflightItem;
+}
+export interface PreflightStatus {
+  env: string;
+  stores: PreflightStore[];
+  ok: boolean;
+  problems: string[];
+  checkedAt: string | null;
+  busy?: boolean;
+}
+
+export async function fetchPreflight(env: string): Promise<PreflightStatus> {
+  return (await json<{ preflight: PreflightStatus }>(`/api/gui/preflight?env=${encodeURIComponent(env)}`))
+    .preflight;
+}
+
+/** `open`: open + sign in the missing web pages and boot the app to read the terminal. */
+export async function checkPreflight(env: string, open: boolean): Promise<PreflightStatus> {
+  return (await json<{ preflight: PreflightStatus }>('/api/gui/preflight', post({ env, open }))).preflight;
 }
 
 export interface Schedule {

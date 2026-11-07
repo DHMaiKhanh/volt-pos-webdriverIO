@@ -33,7 +33,14 @@ export type { BootResult, BootScreen } from './auth.flow.js';
  * creates nothing — which is what lets the smoke suite and the root hooks call
  * them against a production till.
  */
-export { goToOrderHistory, goToSettings, isPasscodeGateOn, returnToHome } from './navigation.flow.js';
+export {
+  armPasscodeGate,
+  ensurePasscodeGateOn,
+  goToOrderHistory,
+  goToSettings,
+  isPasscodeGateOn,
+  returnToHome,
+} from './navigation.flow.js';
 
 export { createOrder, openPendingOrder } from './order.flow.js';
 export type { CreatedOrder, CreateOrderInput, OpenPendingOrderInput } from './order.flow.js';

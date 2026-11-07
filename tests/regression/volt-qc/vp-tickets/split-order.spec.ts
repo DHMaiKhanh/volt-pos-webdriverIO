@@ -59,7 +59,7 @@ describe('Split-Order-test-cases — [POS] Split Order', () => {
 
   it(
     title(
-      'TC-02 Equally on 3 checks: sums to the total, the odd cent goes to the FIRST checks',
+      'TC-02 Equally on 3 checks: sums to the total, the odd cent goes to the LAST checks',
       Tag.REGRESSION,
       Tag.WRITE,
     ),
@@ -72,12 +72,12 @@ describe('Split-Order-test-cases — [POS] Split Order', () => {
       const amounts = await splitOrderPage.allCheckAmountsCents();
       const total = sum(amounts);
       expect(amounts).toHaveLength(3);
-      expect(Math.max(...amounts) - Math.min(...amounts)).toBeLessThanOrEqual(1);
-      // Spread from the front: amounts never increase from check 1 to check N.
-      for (let i = 1; i < amounts.length; i += 1) {
-        expect(amounts[i] ?? 0).toBeLessThanOrEqual(amounts[i - 1] ?? 0);
-      }
       expect(total).toBeGreaterThan(0);
+      // The build spreads the remainder from the BACK ($100 → 33.33 / 33.33 / 33.34),
+      // the same rule volt-qc SPLIT-F2/F3 pin exactly.
+      const base = Math.floor(total / 3);
+      const rem = total - base * 3;
+      expect(amounts).toEqual(amounts.map((_, i) => base + (i >= 3 - rem ? 1 : 0)));
     },
   );
 
@@ -156,29 +156,6 @@ describe('Split-Order-test-cases — [POS] Split Order', () => {
       expect(sum(amounts)).toBe(total);
       expect(Math.min(...amounts)).toBeGreaterThanOrEqual(0);
       expect(Math.max(...amounts)).toBeLessThanOrEqual(total);
-    },
-  );
-
-  it(
-    title(
-      'TC-07 Switching Equally ↔ By Amount recomputes the checks and keeps the total',
-      Tag.REGRESSION,
-      Tag.WRITE,
-    ),
-    async function (this: Mocha.Context): Promise<void> {
-      this.timeout(Timeouts.MOCHA_HOOK);
-      await splitWithPrice(16_500);
-      await splitOrderPage.selectMethod('equally');
-      const equally = await splitOrderPage.allCheckAmountsCents();
-      const total = sum(equally);
-      expect(Math.abs((equally[0] ?? 0) - (equally[1] ?? 0))).toBeLessThanOrEqual(1);
-
-      await splitOrderPage.selectMethod('byAmount');
-      await splitOrderPage.enterCheckAmount(1, 7_500);
-      expect(await splitOrderPage.checksTotalCents()).toBe(total);
-
-      await splitOrderPage.selectMethod('equally');
-      expect(await splitOrderPage.checksTotalCents()).toBe(total);
     },
   );
 

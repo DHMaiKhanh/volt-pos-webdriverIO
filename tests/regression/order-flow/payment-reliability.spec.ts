@@ -115,9 +115,6 @@ describe('Payment flows — Payment reliability', () => {
     ),
   );
 
-  // --- 🔌 fault-injection: OUT OF SCOPE per §9 decision (a) — kept for reference ---
-  it(title('PAY-01: card offline → cash, Try again reconcile, back locked — PENDING 🔌 OUT OF SCOPE'));
-
   it(
     title(
       'PAY-R1 (VP-2919): phantom payment (Approved on reader, online-auth fails) — PENDING 🔌 OUT OF SCOPE',

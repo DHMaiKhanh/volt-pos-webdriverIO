@@ -96,7 +96,8 @@ async function linesAddUp(): Promise<{ sum: number; subtotal: number }> {
   return { sum: lines.reduce((a, b) => a + b, 0), subtotal: await homePage.cartSubtotal() };
 }
 
-describe('volt-qc 17 RE-OPEN — cash / other orders (write)', () => {
+// PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+describe.skip('volt-qc 17 RE-OPEN — cash / other orders (write)', () => {
   afterEach(async () => {
     await leaveReopen();
   });

@@ -7,6 +7,8 @@ import WDIOReporter, {
   type TestStats,
 } from '@wdio/reporter';
 import { Paths } from '../constants/paths.js';
+import { emitLive, registry, skipReasonFor, titleKey, type SkipInfo } from './liveRegistry.js';
+import { fullMessage, staticSkip } from './skipSource.js';
 import type {
   DashboardSpecResult,
   DashboardSuite,
@@ -79,9 +81,17 @@ export default class DashboardReporter extends WDIOReporter {
     this.emitTest(test, 'skipped');
   }
 
+  /** Failed hooks so far in this worker — the tests they take down are skipped "because of" them. */
+  private failedHookList: { title: string; parent: string; error: string }[] = [];
+
   override onHookEnd(hook: HookStats): void {
     const err = hook.error ?? hook.errors?.[0];
     if (hook.state !== 'failed' && !err) return;
+    this.failedHookList.push({
+      title: hook.title,
+      parent: hook.parent ?? '',
+      error: firstLine(err?.message) || 'Hook failed',
+    });
     emitLive({
       t: 'test',
       file: this.currentFile || (this.specs[0] ?? ''),
@@ -91,6 +101,8 @@ export default class DashboardReporter extends WDIOReporter {
       durationMs: hook.duration ?? 0,
       hook: true,
       error: firstLine(err?.message) || 'Hook failed',
+      message: fullMessage(err?.message),
+      stack: trimStack(err?.stack),
     });
   }
 
@@ -104,8 +116,35 @@ export default class DashboardReporter extends WDIOReporter {
       state,
       durationMs: test.duration ?? 0,
       mochaRetries: test.retries ?? 0,
-      ...(state === 'failed' ? { error: firstLine(err?.message) || 'Test failed' } : {}),
+      ...(state === 'failed'
+        ? {
+            error: firstLine(err?.message) || 'Test failed',
+            message: fullMessage(err?.message),
+            stack: trimStack(err?.stack),
+          }
+        : {}),
+      ...(state === 'skipped' ? { skip: this.skipInfo(test) } : {}),
     });
+  }
+
+  /**
+   * Why a test did not run, most specific first: the reason the patched
+   * `this.skip()` recorded (src/support/skipReason.ts), a hook that failed
+   * before it, then `it.skip` / `describe.skip` / a body-less `it` found in the
+   * spec source.
+   */
+  private skipInfo(test: TestStats): SkipInfo {
+    const runtime = skipReasonFor(test.fullTitle);
+    if (runtime) return runtime;
+    const hook = this.failedHookList.at(-1);
+    if (hook) {
+      const where = hook.parent ? ` (nhóm "${hook.parent}")` : '';
+      return {
+        kind: 'hook-failed',
+        text: `Không chạy vì hook "${hook.title}"${where} lỗi trước đó: ${hook.error}`,
+      };
+    }
+    return staticSkip(test.title, test.fullTitle, this.currentFile || (this.specs[0] ?? ''));
   }
 
   override onRunnerEnd(runner: RunnerStats): void {
@@ -211,6 +250,7 @@ export default class DashboardReporter extends WDIOReporter {
           durationMs: hook.duration ?? 0,
           retries: 0,
           error: firstLine(err?.message) || 'Hook failed',
+          message: fullMessage(err?.message),
           stack: trimStack(err?.stack),
         };
       });
@@ -227,15 +267,19 @@ export default class DashboardReporter extends WDIOReporter {
       durationMs: state === 'skipped' ? 0 : (test.duration ?? 0),
       retries: test.retries ?? 0,
     };
+    if (state === 'skipped') return { ...base, skip: this.skipInfo(test) };
     if (state !== 'failed') return base;
 
     // WDIO exposes both `error` and `errors[]`; the first error is the one the
     // spec reporter prints, so match that.
     const err = test.error ?? test.errors?.[0];
+    const evidence = registry().evidence.get(titleKey(test.fullTitle));
     return {
       ...base,
       error: firstLine(err?.message) || 'Test failed',
+      message: fullMessage(err?.message),
       stack: trimStack(err?.stack),
+      ...(evidence ? { evidence: evidence.dir } : {}),
     };
   }
 }
@@ -246,17 +290,6 @@ const normPath = (p: string): string =>
     .replace(/\\/g, '/')
     .toLowerCase();
 const samePath = (a: string, b: string): boolean => normPath(a) === normPath(b);
-
-/** Append one JSON line to the GUI runner's live-event file, if a GUI run set one. */
-function emitLive(event: Record<string, unknown>): void {
-  const file = process.env.GUI_LIVE_FILE;
-  if (!file) return;
-  try {
-    fs.appendFileSync(file, `${JSON.stringify({ ...event, at: Date.now() })}\n`);
-  } catch {
-    // Live view is a convenience — never fail a spec over it.
-  }
-}
 
 const hasContent = (suite: DashboardSuite): boolean =>
   suite.tests.length > 0 || suite.suites.some(hasContent);

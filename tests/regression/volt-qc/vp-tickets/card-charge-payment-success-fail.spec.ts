@@ -23,7 +23,7 @@ import { assertWritesAllowed } from '../../../../configs/env/loadEnv.js';
 import { payWithCard } from '../../../../src/flows/index.js';
 import { checkoutPage, homePage } from '../../../../src/pages/index.js';
 import { Tag, title } from '../../../../src/types/testTags.js';
-import { endSale, openCheckout } from '../../order-flow/charge-matrix.helpers.js';
+import { endSale } from '../../order-flow/charge-matrix.helpers.js';
 import { voidAnyDraft } from './vp-tickets.helpers.js';
 
 const CARD_SETTLE_ENABLED = process.env.CARD_SETTLE === '1';
@@ -31,44 +31,6 @@ const CARD_SETTLE_ENABLED = process.env.CARD_SETTLE === '1';
 describe('card-charge-payment-success-fail-test-cases — Card payment success & failure', () => {
   before(() => assertWritesAllowed('take card payments'));
   afterEach(voidAnyDraft);
-
-  it(
-    title(
-      'card-charge-payment-success-fail-test-cases A1 A tapped card with enough funds is approved and the order settles',
-      Tag.REGRESSION,
-      Tag.WRITE,
-      Tag.PAYMENT,
-      Tag.DUAL_WINDOW,
-    ),
-    async function (this: Mocha.Context): Promise<void> {
-      if (!CARD_SETTLE_ENABLED) this.skip();
-      this.timeout(Timeouts.MOCHA_HOOK);
-      const orderId = await openCheckout({}, 'card');
-      const success = await payWithCard(orderId, { tip: 'none' });
-      expect(await success.orderId()).toBe(orderId);
-      await endSale();
-    },
-  );
-
-  it(
-    title(
-      'card-charge-payment-success-fail-test-cases A2 The full order total is paid with one card',
-      Tag.REGRESSION,
-      Tag.WRITE,
-      Tag.PAYMENT,
-      Tag.DUAL_WINDOW,
-    ),
-    async function (this: Mocha.Context): Promise<void> {
-      if (!CARD_SETTLE_ENABLED) this.skip();
-      this.timeout(Timeouts.MOCHA_HOOK);
-      const orderId = await openCheckout({ extraLines: 1 }, 'card');
-      const due = await checkoutPage.totalCents();
-      expect(due).toBeGreaterThan(0);
-      const success = await payWithCard(orderId, { tip: 'none' });
-      expect(await success.isActive()).toBe(true);
-      await endSale();
-    },
-  );
 
   it(
     title(

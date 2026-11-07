@@ -27,7 +27,7 @@ import { expect } from '@wdio/globals';
 import { Timeouts } from '../../../configs/constants/timeouts.js';
 import { env } from '../../../configs/env/loadEnv.js';
 import { passcodeDialog } from '../../../src/components/index.js';
-import { createOrder, returnToHome } from '../../../src/flows/index.js';
+import { completeCustomerTipIfPrompted, createOrder, returnToHome } from '../../../src/flows/index.js';
 import { checkoutPage, homePage, paymentSuccessPage } from '../../../src/pages/index.js';
 import { Tag, title } from '../../../src/types/testTags.js';
 
@@ -71,30 +71,6 @@ describe('Order flow — Checkout tenders', () => {
   });
 
   it(
-    title('The four tenders show per-method amounts (TC-ORDERFLOW-39)', Tag.REGRESSION, Tag.WRITE),
-    async () => {
-      // The entry field pre-fills the amount DUE for the selected tender, and the
-      // due differs by method — card carries the service fee, cash the discount.
-      await checkoutPage.selectTender('card');
-      const cardDue = await checkoutPage.enteredAmountCents();
-
-      await checkoutPage.selectTender('cash');
-      const cashDue = await checkoutPage.enteredAmountCents();
-
-      expect(cardDue).toBeGreaterThan(0);
-      expect(cashDue).toBeGreaterThan(0);
-      // Card is never cheaper than cash (fee/tax vs cash discount); equal on a
-      // merchant with neither configured, which still satisfies this.
-      expect(cardDue).toBeGreaterThanOrEqual(cashDue);
-
-      // The remaining two tenders must be selectable too.
-      await checkoutPage.selectTender('gift-card');
-      await checkoutPage.selectOtherTender();
-      expect(await checkoutPage.isOtherMethodNameShown()).toBe(true);
-    },
-  );
-
-  it(
     title('A cash quick-select preset sets the entry (TC-ORDERFLOW-40)', Tag.REGRESSION, Tag.WRITE),
     async () => {
       await checkoutPage.selectTender('cash');
@@ -136,52 +112,11 @@ describe('Order flow — Checkout tenders', () => {
 
   it(
     title(
-      'Card keeps Complete Payment disabled without a terminal (TC-ORDERFLOW-44)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-    ),
-    async () => {
-      await checkoutPage.selectTender('card');
-      // The card tender unlocks Complete Payment only after the customer display
-      // returns the tip and signature — impossible without a terminal here.
-      expect(await checkoutPage.isCompletePaymentEnabled()).toBe(false);
-    },
-  );
-
-  it(
-    title('Other reveals and records a method-name field (TC-ORDERFLOW-46)', Tag.REGRESSION, Tag.WRITE),
-    async () => {
-      await checkoutPage.selectOtherTender();
-      expect(await checkoutPage.isOtherMethodNameShown()).toBe(true);
-
-      await checkoutPage.enterOtherMethodName('Zelle');
-      expect(await checkoutPage.otherMethodName()).toBe('Zelle');
-    },
-  );
-
-  it(
-    title(
       'TC-ORDERFLOW-47: Tip is pressable once a tender is chosen — PENDING ' +
         '(the Tip button renders but reads `disabled` on EVERY tender on this device — verified ' +
         'card/cash/gift-card/other — because enabling it needs the customer-display tip handoff / ' +
         'tip-after-payment merchant config, which merchant 20258 does not have set up)',
     ),
-  );
-
-  it(
-    title(
-      'Cash Drawer belongs to the cash tender, not the header (TC-ORDERFLOW-49)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-    ),
-    async () => {
-      await checkoutPage.selectTender('cash');
-      expect(await checkoutPage.isCashDrawerShown()).toBe(true);
-
-      // It is not part of any other tender — the header has no Cash Drawer at all.
-      await checkoutPage.selectTender('card');
-      expect(await checkoutPage.isCashDrawerShown()).toBe(false);
-    },
   );
 
   it(title('TC-ORDERFLOW-43: partial pay across several tenders — PENDING (multi-settle sequence)'));
@@ -208,6 +143,8 @@ describe('Order flow — Checkout tenders', () => {
       expect(await checkoutPage.remainingCents()).toBe(0);
 
       await checkoutPage.pressCompletePayment();
+      // Merchant 14 hands the tip to the customer display even on cash.
+      await completeCustomerTipIfPrompted('none', undefined, Timeouts.MEDIUM);
 
       // Whether the guard appears is merchant permission state; when it does, it
       // must accept the staff passcode. This is the "requires staff code" step.

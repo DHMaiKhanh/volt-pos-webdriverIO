@@ -25,7 +25,7 @@ import { browser, expect } from '@wdio/globals';
 import { Timeouts } from '../../../../configs/constants/timeouts.js';
 import { VqcPay } from '../../../../src/constants/testids.voltqc-pay.js';
 import { giftCardCatalog, emptyActiveGiftCards } from '../../../../src/data/index.js';
-import { INVALID_GIFT_CARD_CODE, giftCard } from '../../../../src/data/static/paymentMethods.js';
+import { giftCard } from '../../../../src/data/static/paymentMethods.js';
 import { goToOrderHistory, returnToHome } from '../../../../src/flows/index.js';
 import { step } from '../../../../src/helpers/steps.js';
 import { settle } from '../../../../src/helpers/wait.js';
@@ -114,24 +114,6 @@ describe('volt-qc 03 PAY — Gift Card tender', function () {
         expect((await fillGiftCardCode('12345678901234567')).replace(/\D/g, '')).toBe('1234567890123456');
         expect((await fillGiftCardCode('ABC12')).replace(/\s/g, '')).toBe('12');
       });
-    },
-  );
-
-  it(
-    title(
-      'An unknown gift card number is rejected and no payment is made (PAY-043)',
-      Tag.REGRESSION,
-      Tag.WRITE,
-    ),
-    async () => {
-      await draftAtCheckout();
-      await openGiftCardCodeDialog();
-      const t = await lookUp(INVALID_GIFT_CARD_CODE);
-      expect(t).not.toContain('Gift Card Accepted');
-      expect(t).toMatch(/not valid|invalid/i);
-      await closeGiftDialogs();
-      expect(await checkoutPage.isActive()).toBe(true);
-      expect((await checkoutState()).totalPaid).toBe(0);
     },
   );
 

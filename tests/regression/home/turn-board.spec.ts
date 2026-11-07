@@ -27,13 +27,12 @@ import { timeKeepingDialog } from '../../../src/components/modal/TimeKeepingDial
 import { TURN_QUICK_VIEW_ROUTES, turnBoardDialog } from '../../../src/components/modal/TurnBoardDialog.js';
 import { Routes } from '../../../src/constants/routes.js';
 import { TURN_SORT_LABELS } from '../../../src/constants/testids.turn.js';
-import { returnToHome } from '../../../src/flows/index.js';
+import { armPasscodeGate, returnToHome } from '../../../src/flows/index.js';
 import { currentRoutePath, goTo } from '../../../src/helpers/navigate.js';
 import { step } from '../../../src/helpers/steps.js';
 import { dismissUpdaterIfPresent } from '../../../src/helpers/updater.js';
 import { waitUntilPath } from '../../../src/helpers/wait.js';
 import { homePage } from '../../../src/pages/index.js';
-import { clearPasscodeGrant } from '../../../src/support/passcodeGrant.js';
 import { Tag, title } from '../../../src/types/testTags.js';
 import {
   EMPTY_DAY,
@@ -176,7 +175,9 @@ describe('Turn board — dialog, roster, sort, date, quick view', () => {
     async function (this: Mocha.Context): Promise<void> {
       this.timeout(Timeouts.MOCHA_HOOK);
       try {
-        await step('Arm the gate: drop the 30-minute passcode grant', () => clearPasscodeGrant());
+        await step('Arm the gate: time_tracking ON, 30-minute grant dropped', () =>
+          armPasscodeGate('time_tracking'),
+        );
         await goTo(Routes.TIME_TRACKING, { search: { dialog: 'turn-board' } });
 
         expect(await passcodeDialog.isPrompting(Timeouts.MEDIUM)).toBe(true);

@@ -341,7 +341,8 @@ describe('volt-qc 04 PROMO — customer points & visits (plan 04 — PROMO-M/M2/
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title('PROMO-M2a Re-Open then finish again does not add a Visit (PROMO-098)', Tag.REGRESSION, Tag.WRITE),
     async function () {
       this.timeout(6 * 60_000);
@@ -397,7 +398,8 @@ describe('volt-qc 04 PROMO — customer points & visits (plan 04 — PROMO-M/M2/
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'PROMO-PT3 Re-Open an order without customer, add customer C, Re-Open Done → C earns the points',
       Tag.REGRESSION,
@@ -425,7 +427,8 @@ describe('volt-qc 04 PROMO — customer points & visits (plan 04 — PROMO-M/M2/
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'PROMO-J2 Re-Open: Home has no Promo & Rewards; the gift card line is read-only and cannot be deleted (PROMO-047, PROMO-163)',
       Tag.REGRESSION,

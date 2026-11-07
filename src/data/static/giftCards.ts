@@ -67,6 +67,15 @@ export const activeGiftCards: readonly GiftCardRecord[] = giftCardCatalog.filter
 );
 
 /**
+ * Cards the server reports as `inactive` that still carry a balance — the subjects
+ * of VP-4894: checkout must refuse them on lookup ("Gift card is inactive") rather
+ * than reach "Gift Card Accepted". Re-verified live on 20258 (06/11/2026).
+ */
+export const inactiveGiftCards: readonly GiftCardRecord[] = giftCardCatalog.filter(
+  (card) => card.status === 'inactive',
+);
+
+/**
  * Active cards that still hold a balance, richest first — the cards a redemption
  * can actually be settled with. Sorted by `balance` descending so the first entry
  * is the safest to spend; `balance` here is a magnitude, not an assertion.

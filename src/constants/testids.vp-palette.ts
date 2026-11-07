@@ -113,6 +113,8 @@ export const UNASSIGNED_LABELS = ['Unassigned', 'Chưa phân công'] as const;
  */
 export const GAP_EXPECTED_COLORS = {
   unassigned: '#5669FF',
+  /** GAP `var(--primary)` fallback for a staff with no colour (VP-5500 → POS side, VP-5481). */
+  nullStaff: '#5669FF',
   staff: {
     Anna: '#96BDF5',
     'Teri Jennings': '#F8D885',

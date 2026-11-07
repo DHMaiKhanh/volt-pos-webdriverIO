@@ -262,7 +262,8 @@ describe('volt-qc 13 CD — phone entry, confirm, check-in, lock', () => {
     },
   );
 
-  it(
+  // PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+  it.skip(
     title(
       'Re-opened paid order: phone block locked, no "No, enter again" (CD-028)',
       Tag.REGRESSION,

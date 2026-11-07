@@ -47,7 +47,8 @@ import {
   reopenOrder,
 } from './reopen-flow.helpers.js';
 
-describe('Order flow — Re-open Order lifecycle (VP-2585)', () => {
+// PENDING 04/11/2026: Re-Open Order tạm không test (theo yêu cầu) — bỏ .skip để chạy lại.
+describe.skip('Order flow — Re-open Order lifecycle (VP-2585)', () => {
   let orderId = '';
   let paidCents = 0;
 
